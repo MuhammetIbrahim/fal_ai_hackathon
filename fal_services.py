@@ -133,18 +133,22 @@ async def llm_generate(
     model: str = "google/gemini-2.5-flash",
     temperature: float = 0.8,
     max_tokens: int = 200,
+    reasoning: bool | None = None,
 ) -> LLMResult:
     """Tam yanit bekle, dondur."""
     try:
+        args = {
+            "prompt": prompt,
+            "system_prompt": system_prompt,
+            "model": model,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if reasoning is not None:
+            args["reasoning"] = reasoning
         handler = await fal_client.submit_async(
             LLM_ENDPOINT,
-            arguments={
-                "prompt": prompt,
-                "system_prompt": system_prompt,
-                "model": model,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
+            arguments=args,
         )
         result = await handler.get()
         return LLMResult(output=result.get("output", str(result)))

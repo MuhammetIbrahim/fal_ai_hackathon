@@ -33,26 +33,86 @@
   },
 
   "role_titles": [
-    {"title": "Kasap", "lore": "Köyün etlerini keser, kemikleri sayar. Elleri hiç temiz olmaz."},
-    {"title": "Mühendis", "lore": "Ocak'ın mekanizmalarını tamir eder. Her şeyin nasıl çalıştığını bilir."},
-    {"title": "Şifacı", "lore": "Otlardan iksir yapar. Yaralarla konuşur, onları dinler."},
-    {"title": "Ejderha Avcısı", "lore": "Dağlardan döndü. Yara izleri hikâyeler anlatır."},
-    {"title": "Sürgün Rahip", "lore": "Tapınaktan kovuldu. Günahları başkalarının mı yoksa kendisinin mi, belirsiz."},
-    {"title": "Demirci", "lore": "Ateşle konuşur. Her çekiç darbesinde bir sır gizler."},
-    {"title": "Balıkçı", "lore": "Göl kenarında yaşar. Suyun altında ne olduğunu bilir ama söylemez."},
-    {"title": "Ozan", "lore": "Şarkılarla hafıza taşır. Ama her şarkı doğru mu, kimin bilir."},
-    {"title": "Çiftçi", "lore": "Toprağı kazır, tohum eker. Sabırlı bekler ama gözleri keskin."},
-    {"title": "Haritacı", "lore": "Yerleşimin her köşesini bilir. Kim nerede, ne zaman — hepsini takip eder."},
-    {"title": "Tüccar", "lore": "Her şeyin bir fiyatı var der. Bilgiyi alır, satar, takas eder."},
-    {"title": "Nöbetçi", "lore": "Geceleri uyumaz. Karanlıkta hareket edenleri görür."},
-    {"title": "Simyacı", "lore": "Tuhaf karışımlar yapar. Gerçeği değiştirmeye çalışır mı, yoksa aramaya mı?"},
-    {"title": "Marangoz", "lore": "Ahşaptan her şey yapar. Sessiz çalışır, çok gözlemler."},
-    {"title": "Avcı", "lore": "Ormanın dilini bilir. İzleri okur, yırtıcıları sezer."},
-    {"title": "Bahçıvan", "lore": "Çiçeklerle konuşur. Nazik görünür ama dikenler de onundur."},
-    {"title": "Kütüphaneci", "lore": "Eski yazıtları okur. Geçmişi bilir, geleceği tahmin eder."},
-    {"title": "Kaptan", "lore": "Denizden döndü. Fırtınalarda karar vermeyi öğrendi."},
-    {"title": "Madenci", "lore": "Yeraltında çalışır. Karanlıkta görmek alışkanlıktır."},
-    {"title": "Terzi", "lore": "Kumaştan maske diker. Herkesin ne giydiğini hatırlar."}
+    {
+      "title": "Kasap",
+      "lore": "Yerleşimin tek kasabı. Sabahın ilk ışıklarıyla kalkar, hayvanları keser, etleri hazırlar. Elleri kan lekesinden hiç kurtulamaz — ne kadar yıkasa da tırnakların altında kırmızı kalır. Köylüler ona saygı duyar ama yaklaşmaktan çekinir; çünkü ölümle bu kadar rahat olan biri herkesi tedirgin eder.\n\nKasap aslında yumuşak kalpli bir adamdır. Geceleri hayvanların gözlerini hatırlayıp uyuyamaz. Ama bu zayıflığını kimseye göstermez — gösterirse işini kaybeder. Sessiz bir adam, ama sessizliği bazen şüphe çeker. Bıçağı her zaman yanında taşır, 'alışkanlık' der ama bazıları bundan rahatsız olur."
+    },
+    {
+      "title": "Mühendis",
+      "lore": "Ocak'ın su kanallarını, kapı mekanizmalarını, savunma duvarlarını o tasarladı. Yerleşimdeki her yapının planı kafasının içinde. Parmaklarında yağ lekesi, cebinde her zaman bir ölçü aleti vardır. Mantık onun dini — bir şey açıklanamıyorsa, henüz yeterince incelenmemiştir.\n\nMühendis geceleri uyumak yerine çizer. Duvarları, köprüleri, kullanılmayan tünelleri — hepsini not eder. Bazıları bu takıntıyı garip bulur. 'Neden yerleşimin her köşesini bilmen gerekiyor?' diye sorarlar. O sadece omuz silker. Ama gerçek şu ki, Mühendis yerleşimden kaçış yolları arıyor — her ihtimale karşı. Bu planları kiminle paylaştığını kimse bilmez."
+    },
+    {
+      "title": "Şifacı",
+      "lore": "Otlardan iksir yapar, yaralarla konuşur. Yerleşimin tek sağlık otoritesi. Herkes bir gün ona muhtaç olacağını bilir, bu yüzden Şifacı'ya kimse düşman olmak istemez. Kulübesinin önünde kurutulan otların kokusu tüm sokağa yayılır — bazıları bu kokuyu huzur, bazıları tehlike olarak algılar.\n\nŞifacı'nın gerçek gücü bilgi toplamaktan gelir. Yaralı bir adam yatağa düştüğünde her şeyi anlatır — neredeydi, kiminleydi, ne gördü. Şifacı dinler, not etmez ama unutmaz. Yerleşimdeki herkesin en az bir sırrını bilir. Bu bilgiyi hiç kullanmamış gibi görünür — ama 'gibi görünmek' ile 'kullanmamak' farklı şeylerdir."
+    },
+    {
+      "title": "Ejderha Avcısı",
+      "lore": "Dağlardan döndü. Yüzünde ve kollarında derin yara izleri var — her biri bir hikâye anlatır, ama hiçbir hikâye tam olarak aynı değildir. Bazen sol kolundaki yaradan 'buzul canavarı' der, bazen 'uçurum düşmesi'. Köylüler bunu cesaret belirtisi sayar; dikkatli olanlar ise tutarsızlık olarak not eder.\n\nEjderha Avcısı yerleşime geldiğinde büyük bir kahraman gibi karşılandı. Ama zamanla fark ettiler ki, kahramanlık hikayeleri her anlatışta biraz değişiyor. Kendisi bunu 'her savaşı hatırlamak zor' diye açıklıyor. Güçlü, korkusuz ve karizmatik biri — ama geçmişi bulanık olan birine ne kadar güvenilir? Bıçağını hâlâ yastığının altında uyutur."
+    },
+    {
+      "title": "Sürgün Rahip",
+      "lore": "Tapınaktan kovuldu. Resmi kayıtlarda 'inanç sapkınlığı' yazıyor ama gerçek sebep karanlık. Bazıları yasaklı ritüeller yaptığını, bazıları tapınak hazinesine el uzattığını, bazıları ise tapınaktaki bir ölümle bağlantısı olduğunu fısıldar. Rahip bu söylentilerin hiçbirini ne doğrular ne yalanlar.\n\nSürgün edildiğinden beri yerleşimde yaşıyor. Hâlâ dualar eder ama kime dua ettiğini kimse bilmez. Geceleri ateşin başında oturur, dudakları kıpırdar ama ses çıkmaz. Köylülerle konuştuğunda sesi sakin ve güven vericidir — sanki her kelimeyi önceden tartmış gibi. Ama gözlerinde her zaman bir hesaplaşma vardır, sanki yerleşimde bir borcu ödemeye gelmiş gibi."
+    },
+    {
+      "title": "Demirci",
+      "lore": "Ateşle arasında özel bir bağ var. Demirci ocağının başında saatlerce durur, kızgın metale şekil verir. Yerleşimdeki her bıçak, her kilit, her menteşe onun elinden çıktı. Güçlü kolları ve kocaman elleri var — bir insanın kafatasını tek elle sıkabilecek kadar güçlü, ama bir kelebeği incitmeyecek kadar hassas.\n\nDemirci az konuşur, çok çalışır. Ama atölyesine gelen herkesin ne istediğini, ne söylediğini hatırlar. Geçen ay kim yeni bir bıçak istedi? Kim kilidini değiştirdi? Kim kapısına ekstra sürgü taktırdı? Bu bilgiler Demirci'nin kafasında bir harita oluşturur — kimin kimden korktuğunun haritası. Bunu hiç dile getirmez. Sadece çekicini vurur ve dinler."
+    },
+    {
+      "title": "Balıkçı",
+      "lore": "Göl kenarında tek başına yaşar. Her sabah güneş doğmadan kayığına biner, akşam karanlığında döner. Yerleşim merkezine nadiren gelir — sadece balık satmak için, haftada iki kez. Kimseyle uzun konuşmaz, selamlaşır, balığını verir, parasını alır, gider.\n\nAma Balıkçı'nın gölden gördükleri var. Gece yarısı kim kıyıda yürüdü, kim tekneyle gizlice karşı kıyıya geçti, kim suyun kenarında bir şey gömdü — hepsini bilir. Söylemez. 'Göl konuşmaz, ben de konuşmam' der. Bu sessizlik onu gizemli kılar. Bazıları güvenilir bulur bu sessizliği, bazıları ise gizlenen birinin sessizliği olarak yorumlar."
+    },
+    {
+      "title": "Ozan",
+      "lore": "Şarkılarla hafıza taşır. Yerleşimin yaşayan arşividir — doğumları, ölümleri, düğünleri, savaşları hep şarkıya döker. Ateşin başında sazını çalar, herkes dinler. Güzel sesiyle herkesi büyüler, ama dikkatli kulaklar şarkıların içindeki ince mesajları yakalar.\n\nOzan'ın gerçek gücü şurada: insanlar onun yanında rahat konuşur. 'O sadece bir şarkıcı, ne anlasın' diye düşünürler. Ama Ozan her fısıltıyı, her bakışı, her tereddütü kaydeder — şarkılarının içine gömer. Bazen bir şarkı söyler ve odadaki biri beti benzi atar. 'Bu şarkı kimin hakkında?' Ozan güler: 'Eski bir masal, gerçekle ilgisi yok.' Ama herkes bilir ki Ozan'ın masalları her zaman biraz gerçektir."
+    },
+    {
+      "title": "Çiftçi",
+      "lore": "Toprağı kazır, tohum eker, hasat bekler. Yerleşimin karnını doyuran adam. Güneşten yanmış bir yüzü, nasırlaşmış elleri var. Sabırlıdır — tohumun filizlenmesini beklemek ona zamanın nasıl işlediğini öğretti. Acele etmez, panik yapmaz, her şeyin bir mevsimi olduğunu bilir.\n\nAma Çiftçi'nin gözleri keskindir. Tarlada çalışırken kim nereye gitti, kim kiminle buluştu, kim hangi yoldan döndü — hepsini görür. Konuşmaz, 'benim işim toprak' der. Ama tarla yerleşimin merkezine yakın, ve Çiftçi her sabah şafakta orada. Gören göz, susan dil. Sorduğunda anlatır — ama kimse sormayı akıl etmez."
+    },
+    {
+      "title": "Haritacı",
+      "lore": "Yerleşimin her köşesini, her geçidi, her gizli patikayı haritalamış tek kişi. Duvarında devasa bir harita asılı — her gün günceller. Kim nerede oturuyor, hangi ev boş, hangi yol nereye çıkıyor, tünellerin altında ne var — hepsini bilir.\n\nHaritacı takıntılı bir gözlemci. Bir şey değiştiğinde hemen fark eder: bir kapı farklı açılıyorsa, bir yolda yeni ayak izleri varsa, bir evin bacasından beklenmedik zamanda duman çıkıyorsa — not eder. Bu bilgiyi bazen paylaşır, bazen saklar. 'Harita tarafsızdır' der, 'ben de öyle.' Ama tarafsızlık lüksü bu yerleşimde uzun sürmez."
+    },
+    {
+      "title": "Tüccar",
+      "lore": "Her şeyin bir değeri var — Tüccar'ın felsefesi bu. Mal takas eder, bilgi takas eder, iyilik takas eder. Yerleşime dışarıdan malzeme getiren tek kişi. Bu da onu vazgeçilmez kılıyor. Herkes ondan bir şey ister, ve Tüccar hiçbir iyiliği karşılıksız yapmaz.\n\nTüccar'ın defteri meşhur. İçinde kimin kime ne borçlu olduğu yazılı. Ama defterinin bir de görünmeyen sayfaları var — kimin hangi sırrı var, kim kimden nefret ediyor, kim kime yalan söyledi. Bu bilgi ağı Tüccar'ın gerçek sermayesi. Güler yüzlü, sıcak konuşan biri — ama her sıcak kelimesinin arkasında bir hesap çalışıyor."
+    },
+    {
+      "title": "Nöbetçi",
+      "lore": "Geceleri uyumaz. Yerleşimin güvenliğinden sorumlu tek kişi. Karanlıkta yürür, kapıları kontrol eder, duvarları dinler. Gözleri karanlığa alışmış — başkaları göremezken o görür. Adımları sessiz, nefesi kontrollü. Bir gölge gibi hareket eder.\n\nNöbetçi'nin gece raporları vardır ama bunları sadece Konsey'e verir. Köylüler gece ne olduğunu ancak sabah duyurusundan öğrenir. Bu bilgi asimetrisi Nöbetçi'ye güç verir — ve güç her zaman şüphe çeker. 'Geceleri kim nereye gitti, gerçekten gördün mü, yoksa uyduruyor musun?' Nöbetçi cevap vermez. 'Görevim korumak, kanıtlamak değil' der."
+    },
+    {
+      "title": "Simyacı",
+      "lore": "Tuhaf karışımlar yapar. Kulübesinden acayip kokular ve bazen renkli dumanlar çıkar. Kimse tam olarak ne yaptığını bilmez — iksir mi, zehir mi, ilaç mı? Simyacı kendisi de bazen emin değilmiş gibi davranır. 'Deney yapıyorum' der, ama deneylerin amacını açıklamaz.\n\nSimyacı'nın zihni farklı çalışır. Dünyayı bileşenler, reaksiyonlar ve dönüşümler olarak görür. İnsanları da öyle: kim hangi baskı altında kırılır, kim hangi kelimeyle yumuşar, kim hangi korku ile kontrol edilir. Bu analitik bakış onu hem değerli hem tehlikeli kılar. Bazıları danışmak için gelir, bazıları uzak durur. Simyacı ikisinden de memnundur."
+    },
+    {
+      "title": "Marangoz",
+      "lore": "Ahşaptan her şey yapar — ev, mobilya, tabut. Sessiz çalışır, rendesi ve çekici dışında ses çıkarmaz. Atölyesi yerleşimin kenarında, ama herkes bir gün onun kapısını çalar. Bir beşik lazım doğum için, bir masa düğün için, bir tabut ölüm için. Marangoz hepsini aynı özenle yapar.\n\nMarangoz'un sessizliği bir tercih. Ahşapla konuşmayı insanlarla konuşmaya tercih eder. Ama atölyesine gelen herkes konuşur — sipariş verirken hayatını anlatır. Marangoz dinler, başını sallar, ölçülerini alır. Kafasında yerleşimin sosyal haritası oluşur: kim evleniyor, kim boşanıyor, kim kimi sevmiyor, kim gizli plan yapıyor. Ağzını açmaz — ama açarsa, söyleyecekleri herkesi şaşırtır."
+    },
+    {
+      "title": "Avcı",
+      "lore": "Ormanın dilini bilir. İzleri okur, rüzgârın yönünden hava değişimini anlar, kırılan bir daldan geçen canlının ağırlığını tahmin eder. Yerleşimin et ihtiyacının bir kısmını karşılar, ama asıl değeri gözlem yeteneğidir. Ormanda saatlerce hareketsiz bekleyebilir — sabır onun silahıdır.\n\nAvcı insanları da hayvan gibi okur. Bir bakıştan korku sezer, bir ses tonundan yalan anlar, bir duruş değişikliğinden tedirginlik çıkarır. Bunu bilinçli yapmaz — içgüdü. Ama bu içgüdüler onu bazen yanlış sonuçlara da götürür. Her kıpırdayan çalı ayı değildir, her terleyen el suçlu değildir. Avcı bunu bilir ama içgüdülerini susturamaz."
+    },
+    {
+      "title": "Bahçıvan",
+      "lore": "Çiçeklerle konuşur — en azından öyle görünür. Yerleşimin bahçelerini, meydanındaki ağaçları, Ocak'ın çevresindeki yeşilliği o bakıyor. Nazik, yumuşak, zararsız biri gibi görünür. Herkes ona güler yüz gösterir, kimse tehdit olarak algılamaz.\n\nAma Bahçıvan'ın dikenleri var. Yerleşimin her köşesinde çiçek sular — bu da her köşeye girmesi için bir bahane demek. Kimsenin bahçıvandan şüphelenmediği bir dünyada, Bahçıvan her kapının arkasını, her pencerenin içini, her arka bahçenin sırrını görür. 'Ben sadece çiçeklere bakıyorum' der — ve bu cümle mükemmel bir kalkan."
+    },
+    {
+      "title": "Kütüphaneci",
+      "lore": "Eski yazıtları okur, tarihi bilir. Yerleşimin küçük kütüphanesinde yaşar gibidir — sabah gelir, gece ayrılır. Tozlu kitaplar, sararmış haritalar, unutulmuş mektuplar arasında kaybolmuş biri. Konuştuğunda tarihten örnekler verir, atasözleri kullanır, her şeyi bir bağlama oturtur.\n\nKütüphaneci'nin gerçek gücü: geçmişi bilmek. Yerleşimin kuruluş hikâyesini, eski ihanetleri, unutulmuş anlaşmaları bilen tek kişi. Bu bilgi bazen bir silaha dönüşür — 'Elli yıl önce de böyle birini sürgün ettiler, haklıydılar' gibi bir cümle oylama sonucunu değiştirebilir. Kütüphaneci bunu bilir ve bu gücü dikkatli kullanır — ya da öyle görünür."
+    },
+    {
+      "title": "Kaptan",
+      "lore": "Denizden döndü. Yıllar önce yerleşimden ayrılıp denizlere açılmış, fırtınalar görmüş, kayalıklarda gemisi parçalanmış, mucizevi şekilde sağ kalmış biri. Dönüşü büyük olay oldu — ölü sanılan adam kapıda belirdi. Deneyimi ona kriz yönetimi öğretti: panik anında soğukkanlılık, karar verme, liderlik.\n\nAma Kaptan'ın denizde geçen yılları karanlık. Ne yaptığını, kiminle çalıştığını, neden döndüğünü tam olarak anlatmaz. 'Deniz insanı değiştirir' der, ama nasıl değiştirdiğini söylemez. Liderlik almaya meyillidir — bu bazen güven verir, bazen 'kontrol manyağı' olarak algılanır. Bir gemiyi yönetmeye alışmış biri, insanları da yönetmeye çalışır mı?"
+    },
+    {
+      "title": "Madenci",
+      "lore": "Yeraltında çalışır. Karanlık tünellerde günlerini geçiren, ışığa çıktığında gözlerini kısan biri. Yerleşimin altındaki maden ocağı onun ikinci evi — belki birinci evi. Tünelleri kimse onun kadar bilmez. Nereye çıkar, nerede çöküntü riski var, nerede su sızıntısı var — hepsini ezbere bilir.\n\nMadenci'nin yeraltı bilgisi stratejik bir güç. Tünellerden gizlice geçebilir, kimsenin bilmediği yolları kullanabilir. 'Sadece işimi yapıyorum' der ama geceleri tünellerde ne yaptığını kimse kontrol edemez. Elleri siyah, tırnakları kırık, yüzü solgun — yeraltı insanı. Güneş ışığında rahatsız olur, kalabalıktan hoşlanmaz. Ama Ocak'ın önünde oturduğunda, ateşin ışığında gözleri parlar."
+    },
+    {
+      "title": "Terzi",
+      "lore": "Kumaştan her şey yapar — elbise, perde, çadır, bandaj, maske. İnce parmaklarla iğne ve iplik kullanır, her dikişi kusursuz. Yerleşimdeki herkesin bedenini bilir — ölçü almak için yakın temasa geçtiği tek meslek. Bu yakınlık ona özel bir güç verir: insanların bedenini okuması.\n\nTerzi kimin kilo verdiğini, kimin omzunda yeni bir yara izi olduğunu, kimin geceleri uyumadığını (göz altı morluklarından) fark eder. 'Kumaş yalan söylemez' der — bir elbisenin yıpranma şekli, sahibinin nerede bulunduğunu anlatır. Çamur mu, kan mı, yağ mı? Terzi hepsini ayırt eder. Bu detayları kimseyle paylaşmaz — ta ki paylaşmak işine gelene kadar."
+    }
   ],
 
   "skill_tiers": {
