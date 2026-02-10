@@ -5,423 +5,352 @@
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Bozkır Kalesi'ne hoş geldiniz. Altı kişi hayatta. Gece sessiz geçti, kimse sürgün edilmedi. Kuzgunlar çemberin üstünde üç tur attı. Bu, uzun bir günün alametidir."
-        },
-        {
-          "type": "speech",
-          "name": "Orion",
-          "role_title": "Çiftçi",
-          "content": "Durun bakalım. Ne bu telaş? Herkes bir şeyler diyor da... Kael, sen dün neredeydin? Anlat bakayım."
+          "content": "Gün bir. Bozkır Kapısı'nda altı kişi kaldı. Veyra, Lyra, Kael, Mirra, Dorin, Aldric. Gece sessizdi, kimse sürgün edilmedi. Mühür kapısında bir çatlak belirdi."
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Orion, senin için daha önemli konular olmalı. Dün gece Kuzey duvarının taşıyıcı kolonlarını kontrol ettim. Saat yedi buçuktan sabaha kadar. Herhangi bir tutarsızlık yok. Şimdi sen söyle, neredeydin?"
-        },
-        {
-          "type": "speech",
-          "name": "Orion",
-          "role_title": "Çiftçi",
-          "content": "Kael, sen duvar kontrol ederken seni kim gördü? Tek başına mıydın? Benim alibim belli. Tarladaydım. Sulama kanalını açtım, akşama varmadan suyu salmak lazımdı. Yani yanımda kimse yoktu. Ne var bunda?"
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Bu durum bana 'Kanlı Hasat' zamanındaki Veba Taşıyıcısı'nın savunmasını hatırlattı, o da böyle masum olduğunu iddia ederdi. Benim alibim belli. Ben dün yine o tozlu haritaların başındaydım, Kalenin ilk kurulduğu zamanlardaki su yollarını araştırıyordum. Kael, duvar kontrol ederken seni kim gördü? Genco'nun o saatte kulede olması gerekmez miydi?"
-        },
-        {
-          "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Talia, Kael... durun.\n\nKael, o duvarı kontrol ederken, Genco seni gördü mü?\n\nOrion, sen tarladaydın, kimse görmedi mi? Bu ilginç."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Jareth, Genco'nun kulede olması ile duvar kontrolü arasında bir bağlantı yok. Benim işim duvarla, kuleyle değil.\n\nOrion, tarladaydın, kimse görmedi mi? Bu ilginç değil, bu bir boşluk. Tek başına olman neyi açıklıyor? O kanallar kendiliğinden mi çalışıyor?"
-        },
-        {
-          "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "[Jareth] (Sürgün Rahip): Kael, Genco'yu ben sordum. Sadece o saatte kulede olması gerekmez miydi dedim.\n\nOrion, kimse görmedi seni. O zaman kimseye hesap da vermedin. Öyle mi?\n\nSoren, Theron, siz neden susuyorsunuz? Dün gece neredeydiniz?"
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Jareth, sen Genco'yu sordun da... Kael, Genco o saatte gerçekten kulede miydi? Onu kim gördü kulede?\n\nOrion, sen tarladaydın, kimse görmedi seni. Peki o sırada o tarlanın etrafında başka kimler olur? Su kanalı dediğin yer, ne bileyim, birilerine yakın mıydı? O kanalın sesi duyulmaz mıydı?\n\nTalia, sen 'Kanlı Hasat' dedin. O Veba Taşıyıcısı'nın savunması neydi tam olarak? Yani ne dedi de masum sanıldı? Bu önemli.\n\nŞimdi ben söyleyeyim: Ben dün gece kuzey ormanlık alandaydım. Kale etrafındaki tuzakları kontrol ettim. Hayvan izi filan var mı diye. Orion, o saatlerde oralarda kimse olmaz. Nereden bileyim. Ama ben oradaydım. Kimsenin beni görmesi gerekmiyordu. İşimin doğası bu. Hayvan izi dışında iz arıyordum.\n\nTheron, sen neden sessizsin? Senin işin neydi dün gece? Bir şey demeyecek misin?"
+          "content": "Ocak maviyse işler karıştı demektir. Konuşun bakalım. Kim neredeydi dün gece? Anlatın."
         },
         {
           "type": "speech",
-          "name": "Orion",
-          "role_title": "Çiftçi",
-          "content": "Soren, sen de hemen kendini aklamaya çalışıyorsun. Kuzey ormanlık alan diyorsun da... Orayı kontrol ettin, ne yani? Ne gördün? Ne duydun? Hayvan izi dışında iz arıyordum diyorsun... Ne izi arıyordun? Kimin izi? Bana kalırsa sen de bir şeyler saklıyorsun. Tek başına olman, iz araman... Yani... ne bileyim.\n\nJareth, ne var bunda tek başınaysam? Her çiftçi tarlada tek başına olmaz mı? Suyu saldım, kontrol ettim. Ne yani, yanıma birilerini mi alacaktım bunu yaparken? Sen ne anlarsın tarla işinden?\n\nTalia, o Veba Taşıyıcısı'nın savunması neydi dedin. Ne dedi de inandılar? Sen onu anlat. Benim işim ortada."
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Çatlak sesi duydum. Siz neredeydi?"
         },
         {
           "type": "speech",
-          "name": "Talia",
+          "name": "Lyra",
           "role_title": "Kütüphaneci",
-          "content": "Soren, Veba Taşıyıcısı'nın savunması mı? O, \"Ben sadece hastalara yardım ediyordum, onlara şifalı otlar topluyordum\" demişti. Ama sonradan anlaşıldı ki, o otları zehirliyordu.\n\nOrion, sen tarladaydın, kimse görmedi. Yani, tıpkı \"Kör Kova\" efsanesindeki gibi. Kova doluyor sanılır, ama hep boştur. Senin de sözlerin öyle.\n\nJareth, kuledeki Genco. Kael'in anlattığıyla uyuşmuyor. Bu bir boşluk. Tıpkı \"Çiftlik İsyanı\"nda, kimin ne yaptığının kayıtlara geçmemesi gibi.\n\nTheron, sen hala sessizsin. Tarih, sessiz kalanların da suç ortağı olabileceğini gösterir. \"Suskunların Laneti\" diye bir şey var."
+          "content": "Çatlak sesi duydun, demek. İlginç. Tam olarak ne zaman duyuldu bu ses? Ve sen o sırada neredeydin Veyra? Başkasıyla mıydın?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Kazan başında bekliyordum. Tektim. Ses ne zamandı, tam kestiremedim. Sen neredeydin Lyra?"
+        },
+        {
+          "type": "speech",
+          "name": "Lyra",
+          "role_title": "Kütüphaneci",
+          "content": "Kael, herkesin nerede olduğunu sordu. Veyra, sen kazan başında tek başınaymışsın. Sesin saati belli değil. Pek ikna edici değil. Dorin, Aldric, ya siz? Ne yaptınız dün gece?"
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Arkadaşlar, sakin olalım. Panik yapmaya gerek yok. Benim görevim belli, devriyedeydim. Yerleşimin bütününü dolaşıyordum. Şüpheli bir ses duyduğumda zaten oraya yöneldim ama bir şey bulamadım. Lyra, Veyra'nın hikayesi sana neden ikna edici gelmedi?"
+        },
+        {
+          "type": "speech",
+          "name": "Lyra",
+          "role_title": "Kütüphaneci",
+          "content": "Dorin, senin görevin devriye gezmek, değil mi? \"Bütününü dolaşıyordum\" diyorsun. İyi de, o kadar geniş bir alanda tek başına olup da hiç mi bir şeye denk gelmedin? Bir ses, bir ayak изi, bir şüpheli boşluk... Yoksa dikkatini dağıtmaya mı çalışıyorsun? Veyra'nın hikayesi mi? Boşluklarla dolu, o yüzden ikna etmiyor. Saatin belirsizliği, tek olması... Alaric, sen ne yaptın dün gece?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Dün gece mi? Atölyedeydim. Rende yapıyordum. Kapım kapalıydı."
+        },
+        {
+          "type": "speech",
+          "name": "Lyra",
+          "role_title": "Kütüphaneci",
+          "content": "Aldric, atölyedeydin, kapın kapalıydı, rende yapıyordun... Tam olarak ne zaman başladın buna? Kapın kapalıysa, seni kim duydu veya gördü? Tek başınaydın yani. Veyra da tek başına. Sen de tek başına. Bu çok mu adil? Kael, Mirra, sizin alibiniz neydi?"
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Lyra, tek olmak neden sorun oldu şimdi? O zaman Kael, Aldric, Veyra ve ben de tek başınayız. Hepimiz mi şüpheliyiz? Aldric, rende ne zamana kadar sürdü? O kadar işin vardı da hiç mi kimseye denk gelmedin? Kael, senin alibin neydi?"
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Talia, Veba Taşıyıcısı'nın savunması neyi kanıtlar? O bir efsane. Elimizde somut ne var?\n\nSoren, kuzey ormanlık alanda hayvan izi dışında ne izi arıyordun? Açıkla. İşinin doğası bu dediğin, neyin doğası?\n\nOrion, evet, o kanallar kendiliğinden mi çalışıyor? Bu soruya cevap ver. Boşlukları doldur.\n\nTheron, neden susuyorsun? Senin bir açıklaman yok mu?"
-        },
-        {
-          "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Arkadaşlar, burada önemli olan adaletin sağlanması. Herkesin bir telaşı var, hani bir iplik kopmuş gibi herkes bir yerinden çekiştiriyor. Ama bakın, bu telaş, kumaşın dokusunu bozar.\n\nTalia, Veba Taşıyıcısı'nın hikayesi... O da bir masal. Bize ne der? Gerçekten ne oldu? Yani birini suçlamak için efsaneleri mi kullanacağız? Bu... bu bir yama sayılmaz.\n\nKael, o kanallar kendiliğinden mi çalışıyor dedin. Orion, sen buna bir cevap vermen lazım. Yani bir boşluk var orada. Kumaşın ortasında bir delik gibi. O kanalların başında kim vardı?\n\nSoren, kuzey ormanlık alanda hayvan izi dışında ne izi arıyordun? Bu önemli bir soru. Hani bir yerleri dikerken, bir iplik koparsa, diğer iplikler de gevşer. Ne aradığını söylemelisin.\n\nBen dün gece Atölye'deydim. Malum, yeni gelen bezleri tasnif ediyordum. Hatta bir top kumaşın kenarı yırtıktı, onunla uğraşırken epey vakit kaybettim. Mesleğimin gereği bu. Her zaman işimin başındayım.\n\nJareth, sen de sordun, Genco... Kael, Genco gerçekten kulede miydi o saatlerde? Yani seninle bir alakası yok ama, kulede olması önemli. Hikayenin bir kısmı orası."
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Kael, Genco'yu kim gördü kulede? Bu basit bir soru, cevap ver. Jareth sordu, ben de sordum.\n\nTheron, sen Atölye'deydin. Yeni bezleri tasnif ediyordun. Seni kim gördü orada? Bir de, bir top kumaşın kenarı yırtıktı diyorsun. O top kumaş nerede şimdi? Kanıtın ne?\n\nOrion, tarlada tek başınasın. Kanallar kendiliğinden mi çalışıyor? Kael bunu sordu. Cevap vermedin. Duyulmaz mıydı sesi o kanalın?\n\nTalia, Veba Taşıyıcısı hikayesi. Onu anlatıyorsun. Neden? Bu olayla ne ilgisi var? Geçmişten örnek veriyorsun da, şu an ne var elinde?\n\nBen kuzey ormanlık alanda hayvan izi dışında iz arıyordum. Ne izi aradığımı merak ediyorsanız, bu bir avcının işi. Kale etrafındaki olası girişleri kontrol ediyorum. İnsan izi, yabani iz, ne bileyim, her türlü iz. Sizler atölyede, kulede, tarlada kalırken, ben dışarıyı gözetlerim. Bu benim işim. Neden beni sorguluyorsunuz da kendi boşluklarınıza bakmıyorsunuz?"
+          "content": "Mirra, ne tek olmak? Sen konuyu saptırma. Aldric, rende ne zamana kadar sürdü? Bana detay ver. Benim alibi mi? Ben dün gece, sabaha karşı ormandaydım. Geyik izi sürüyordum. Daha ne? Sen neredeydin?"
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Talia, sen 'Kanlı Hasat' dedin. O Veba Taşıyıcısı'nın savunması neydi tam olarak? Yani ne dedi de masum sanıldı? Bu önemli.\n\nSoren, kuzey ormanlık alanda hayvan izi dışında ne izi arıyordun? Senin işin bu mu? Her gece mi yaparsın?\n\nTheron, sen Atölye'deydin. Bezleri tasnif ediyordun. Seni kim gördü orada? O yırtık top kumaş nerede?\n\nOrion, tarladaydın, yalnızdın. Su kanalları kendiliğinden çalışmıyor. O saatte suyu kim açar? Kim kapatır? Sesini kim duyar?"
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Rende tüm gece sürdü. Kapımı çalan olmadı. Başka ne?"
         },
         {
           "type": "speech",
-          "name": "Orion",
-          "role_title": "Çiftçi",
-          "content": "Durun bakalım, durun. Kael, sen duvar kontrol ederken seni kim gördü? Tek başına mıydın? Benim alibim belli. Tarladaydım. Sulama kanalını açtım, akşama varmadan suyu salmak lazımdı. Yani yanımda kimse yoktu. Ne var bunda? Sen de tek başınaydın. Yani, ne farkı var?"
+          "name": "Lyra",
+          "role_title": "Kütüphaneci",
+          "content": "Aldric, tüm gece rende mi yaptın? Kimse çat kapı gelmedi mi? Bu, Veyra'nın \"çatlak sesi duydum ama zamanı kestiremiyorum\" demesiyle aynı derecede muğlak. Dorin de devriyede hiçbir şeye denk gelmediğini söyledi. Hepiniz tek başınaydınız ve tuhaf bir şekilde hiç kimseye denk gelmediniz. Bir gariplik var bu işte. Mirra, sen neredeydin? Kael, geyik izi sürdün de, ormanda seni kim gördü?"
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Kael, Genco'yu ben sordum. Sadece o saatte kulede olması gerekmez miydi dedim.\n\nOrion, kimse görmedi seni. O zaman kimseye hesap da vermedin. Öyle mi?\n\nSoren, Theron, siz neden susuyorsunuz? Dün gece neredeydiniz?"
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Lyra, soruyu sen bana değil, sana yöneltmeliydim belki. Sen neredeydin? Kitapların mı sana tanıklık ediyor? Kael, ormanda olman seni haklı çıkarmaz, kimse görmemiş seni. Belki de bir başkasıyla ormandaydın. Dorin, devriyede hiçbir şey görmediğini söylüyorsun ama ses duyduğunu iddia ettin. O zaman neden devam etmedin? Ne seni durdurdu?"
         },
         {
           "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Jareth, sana cevap verdim. Atölyedeydim. Kumaş tasnif ediyordum. Seni kim gördü orada diyorsun. Yani sence bir terzi işini yaparken bir izleyici mi lazım? Bu... bu bir tuhaflık. Kimse görmedi beni. Herkes kendi işini yapar değil mi?\n\nSoren, kanıtın ne diye soruyorsun. Yani bir terzi, yırtık kumaşını saklar mı? Ne bileyim, bir iz arıyorsan, atölyeye gel, görürsün. Ne kanıtı bekliyorsun? Hani bir yama yaparken de kanıt arar mıyız?\n\nOrion, tarladaydın, kimse görmedi seni. Tamam. Peki o kanalın sesi duyulmaz mıydı? Yani o kadar sessiz miydi? Kael haklı. Bu bir boşluk.\n\nKael, sen Genco'nun kulede olması önemli dedin. Peki Genco kulede miydi? Gerçekten? Yoksa... sanki bir iplik orada da yıpranmış gibi.\n\nTalia, Veba Taşıyıcısı meselesi. Hani bir kumaşın sağlamlığına bakarsın ya. Efsanelerle birini suçlamak... Bu, dikiş tutmaz. Gerçekten ne oldu? Kim ne dedi? Kim ne yaptı? Sadece \"masal\" demek yetmez."
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Mirra, güzel bir soru. Sese yöneldiğimde, birden kesildi. Sonra sessizlik oldu. Devam ettim mi? Ettim tabii. Tekrar bir şey duymadım. Lyra, Veyra'nın hikayesi sana neden muğlak geldi, onu merak ediyorum ben hala. Hani, neden tam olarak? Ve Aldric, sen ne dersin bu duruma? Senin de tüm gece atölyede olman... Biraz tuhaf değil mi?"
         },
         {
           "type": "speech",
-          "name": "Orion",
-          "role_title": "Çiftçi",
-          "content": "Durun bakalım, durun. Theron, sen atölyedeymişsin. Kimse görmemiş seni. Benimle aynı durumdaydın yani. Ne farkı var? O yırtık kumaş... Ne yani, o mu senin alibin? Yani o kumaşın yırtık olduğunu kim biliyor? Başka bir şeyin yok mu?\n\nSoren, kuzey ormanlık alan diyorsun. Tamam da, ne buldun orada? Ne izi arıyordun? Yani hayvan izi dışında ne olabilir ki? Kimin izi? Bana göre sen de bir şeyler saklıyorsun. Boş boş gezmişsin.\n\nJareth, ne var bunda tek başınaysam? Tarlada her zaman tek başıma olurum. Suyu saldım, kontrol ettim. Akşama yetişmesi lazımdı. Ne yani, yanıma birilerini mi alacaktım bunu yaparken? Sen ne anlarsın tarla işinden? Benim işim ortada. Sen ne yaptın peki?\n\nKael, sen de tek başınaydın duvar kontrol ederken. Neden benim üzerime geliyorsun? Senin alibin bana göre daha zayıf. Duvar kontrolü ne demek? Tam olarak ne yapıyordun? Kim gördü seni?\n\nTalia, o Veba Taşıyıcısı hikayelerini bırakıp şu anki duruma bakalım. Yani sürekli geçmişten örnek veriyorsun. Asıl sen ne yaptın? Neredeydin dün gece?"
+          "name": "Lyra",
+          "role_title": "Kütüphaneci",
+          "content": "Dorin, hani Veyra'nın hikayesi muğlak geldi demiştim ya... Sen de duymuşsundur belki, ocağın mavi titreşimi... Bu zamanlarda her ses, her gölge bir anlam kazanır. Veyra çatlak sesi duyduğunu söylüyor ama ne zaman, kiminle duydu belli değil. Yani bir tanığı yok. Tıpkı Aldric gibi, tek başına kapalı bir atölyede. Sen de tek başınaydın devriyede. Hepiniz sanki bir yerlerde, ama tam olarak nerede ve ne yaptığınız net değil. Kael, sen ormanda geyik izi sürdüğünü söyledin. Kim gördü seni? Ya da sen kimi gördün? Hiç kimse mi? Mirra, sen de bir şey söylemedin daha. Sen neredeydin?"
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Lyra, tek olmak neden sorun oldu şimdi? O zaman Kael, Aldric, Veyra ve ben de tek başınayız. Hepimiz mi şüpheliyiz? Aldric, rende ne zamana kadar sürdü? O kadar işin vardı da hiç mi kimseye denk gelmedin? Kael, senin alibin neydi?\n\nLyra, soruyu sen bana değil, sana yöneltmeliydim belki. Sen neredeydin? Kitapların mı sana tanıklık ediyor? Kael, ormanda olman seni haklı çıkarmaz, kimse görmemiş seni. Belki de bir başkasıyla ormandaydın. Dorin, devriyede hiçbir şey görmediğini söylüyorsun ama ses duyduğunu iddia ettin. O zaman neden devam etmedin? Ne seni durdurdu?"
+        },
+        {
+          "type": "speech",
+          "name": "Kael",
+          "role_title": "Avcı",
+          "content": "Tek olmak sorun değil Mirra. Tek olup tek başına saçmalık anlatmak sorun. Benim alibim belli. Ben geyik izi sürdüm. Sen neredeydin? Kitaplar tanık olamaz Lyra. Sen kendini savuncaksın. Dorin, ses duydun ne demek? Ney sesiydi? Devam ettin mi? Neyin peşindeydin? Anlat."
         }
       ],
       "house_visits": [
         {
           "type": "visit",
-          "visitor": "Soren",
-          "host": "Orion",
-          "visitor_reason": "Tarladaki sulama kanalları ve tek başına oluşu hakkında daha fazla detayı, kimsenin duymadığı bir ortamda, daha derinlemesine sorgulamak istiyorum.",
+          "visitor": "Lyra",
+          "host": "Dorin",
+          "visitor_reason": "Devriye rotasıyla ilgili tutarsızlıkları ve duyduğunu iddia ettiği sesin detaylarını daha yakından sorgulamak istiyorum.",
           "exchanges": [
             {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "Orion, sen tarladaydın, dedin. Yedi buçuktan sabaha kadar. Peki, o kanallar ne zaman çalıştı? Hani, kendiliğinden çalışıyor mu? Anlatsana biraz."
-            },
-            {
-              "speaker": "Orion",
-              "role_title": "Çiftçi",
-              "content": "Dur bakalım... Kendiliğinden mi çalışır hiç? Sen ne anlarsın tarla işinden! Ben diyorum ki ben açtım kanalı. Yedi buçukta başladım, sabaha kadar da başında durdum. Ne demek kendiliğinden? Sen dün gece kuzey ormanda ne izi arıyordun? Ne izi bu? Bir anlatsana. Hayvan izi dışında... Nedir bu iz?"
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): Sen kanalları açtın, anladım. Ama hani Kael sordu ya, kendiliğinden çalışır mı diye. Cevap vermedin. Şimdi ben sana sorunca da bana laf çeviriyorsun. Neyse, benim iz aramam basit. Kale etrafında pusuya yatmış bir şey var mı, onu kontrol ediyorum. Hayvan izi dışında da insan izi arıyorum, ne bileyim, kale duvarına yaklaşan birilerini falan. Sen asıl şuna gel: O kanallar Kael'e neden kendiliğinden çalışır gibi geldi? O soruya cevap ver."
-            },
-            {
-              "speaker": "Orion",
-              "role_title": "Çiftçi",
-              "content": "Bir saniye Soren! Bakın şimdi... Kael'in öyle demesiyle kendiliğinden mi çalışıyor oluyor o kanallar? O kendi aklınca bir şey dedi, ben de dedim ki ben açtım. Ben açtıysam, başında durduysam, kendiliğinden mi oluyor? Senin kafan karışmış. Bak, benim işim belli. Tarla işi... Sen kuzey ormanda insan izi arıyorsun şimdi... Neden? Kale duvarına yaklaşan biri... Kim bu biri? Daha önce gördün mü? Neden şimdi arıyorsun? Bunlara cevap ver sen bana."
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): Sen şimdi diyorsun ki, Kael'in öyle demesiyle kendiliğinden çalışmıyor. Tamam. Ama Kael boşuna sormaz. Demek ki ona öyle geldi. Neden geldi? Başında durduysan, bir hata mı gördün? Anlat. Benim neden iz"
-            },
-            {
-              "speaker": "Orion",
-              "role_title": "Çiftçi",
-              "content": "Soren, senin kafa karışıklığın benim kafamı da karıştırıyor. Ne yani, Kael boşuna sormazmış... Kael boşuna sorar! Benim işim tarla. O su kanalı, başında durursan akar, durmazsan akmaz. Hata mı gördüm? Hata falan görmedim! İşimi yaptım. Ne anlatayım daha? Sen neden şimdi insan izi arıyorsun? Kale duvarına yaklaşan birini daha önce görmediysen neden şimdi arıyorsun? Bu izi kimden öğrendin?"
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): Sen hâlâ benim iz aramama takılmışsın. Boş ver benim izimi. Demek ki yok öyle bir hata. Başında durdun, tamam. Ama Kael'in bir şey gördüğü kesin. Belki sen fark etmedin. Kael'in o soruyu sormasına sebep olan neydi? Önemli olan bu. Yoksa sen mi saklıyorsun bir şey?"
-            },
-            {
-              "speaker": "Orion",
-              "role_title": "Çiftçi",
-              "content": "Dur bakalım Soren... Sen şimdi diyorsun ki, Kael bir şey gördü, ben fark etmedim. Sen ne anlarsın tarla işinden? Ben o kanalın başında saatlerce durdum! Göz göre göre bir şey olsa fark etmez miyim sanıyorsun? Belki de Kael'in kendisi bir şeyler uyduruyor, ne bileyim... Saklayan varsa o Kael'dir. Benim işim belli, ben yaptım görevimi. Sen asıl şuna gel: Kimden öğrendin bu insan izini? Kim gönderdi seni oraya? Cevap ver!"
-            }
-          ]
-        },
-        {
-          "type": "visit",
-          "visitor": "Talia",
-          "host": "Kael",
-          "visitor_reason": "Genco'nun kulede olup olmadığına dair hikayesindeki tutarsızlığı daha detaylı sorgulayarak bir açık bulmak istiyorum.",
-          "exchanges": [
-            {
-              "speaker": "Talia",
+              "speaker": "Lyra",
               "role_title": "Kütüphaneci",
-              "content": "[Talia, Kütüphaneci]\n\nKael, dün akşamki o uzun tartışmada Genco'dan bahsetmiştim. Hani \"kayıtlara göre o saatte kulede Genco'nun olması gerekirdi\" dedim ya.\n\nSen ne dedin? Yani o an... kulede kim vardı? Anlatımın biraz karışıktı da."
+              "content": "Dorin, dün gece devriyedeymişsin. Kimseyi görmemişsin, değil mi? Ama bir ses duyduğunu söyledin. Nasıl bir sesti bu? Ve neden devam etmedin? Garip. Tam da o mavi titremenin gecesinde... İnsan daha dikkatli olurdu, hani."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Talia, veri girişi bekliyor. Duygusal bir tonlama veya gereksiz açıklama yok. Cevabın net ve teknik olmalı.\n\n\"Ben kuzey taşıyıcı kolonunu kontrol ediyordum. Kuledeki personelin vardiya çizelgesiyle benim yaptığım iş arasında bağlantı yok. Benim işim sistemin fiziksel denetimiydi, insan kaynakları değil. Genco'nun kulede olup olmaması, benim o saatteki konumumu veya yaptığım işi değiştirmez. Kayıtların sana ne gösterdiğiyle benim gözlemlerim çelişmiyorsa, sorun ne?\""
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Lyra, ne oldu da bu kadar telaşlandın? Ben devriyedeydim. Yerleşimin her yerini kontrol ettim. O zaman ne gördüğümü, ne duyduğumu söyledim. Bir ses geldi evet, ama kesildi. Sesi takip edeyim derken başka bir yerden şüpheli bir ses duysam ne olacaktı? Yerleşimin güvenliği tek bir noktadan ibaret değil. Ben nöbetçiyim, Lyra. Senin gibi sadece kitapların arasında değilim. Peki sen dün gece ne yaptın? Odan sessizdi eminim. Yani... kim sana tanıklık edebilir?"
             },
             {
-              "speaker": "Talia",
+              "speaker": "Lyra",
               "role_title": "Kütüphaneci",
-              "content": "[Talia] (Kütüphaneci): Kael, sakin ol. Ben sana Genco'yu sordum, sen bana teknik terimlerle cevap verdin. Hani \"kayıtlar\" dedim ya, tarihte böyle kayıtlarda tutarsızlık olunca, sonradan hep sorun çıkmıştır. Tıpkı \"Dokumacılar İsyanı\"nda olduğu gibi. Orada da kayıtlardaki çelişki yüzünden bir sürü masum insan... neyse.\n\nŞimdi tekrar soruyorum. Sen kuzey duvarında çalışırken, o kulede Genco var mıydı, yok muydu? Bu kadar basit. Senin gözlemlerin, benim kayıtlardaki bilgiyle çelişiyorsa bu bir sorun. Değil mi?"
+              "content": "Odanın sessiz olması benim suçum değil, Dorin. Kütüphanede olmam da. Ama sen devriyede bile iki farklı ses duyduğunu iddia ediyorsun. Birini takip etsem diğerini kaçıracaktım diyorsun. Yani bir ses duyduğun kesin değil mi? Neden devam etmedin? Bir nöbetçi olsan, daha dikkatli olurdun. Sesin türü, nereden geldiği, neye benzediği... garip bir şekilde belirsiz. Yoksa sen de tam da o gece, mavi titreme gecesi, ortada görünmez mi olmak istedin?"
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Kuledeki personelin varlığı, kuzey taşıyıcı kolonunun yapısal bütünlüğü üzerinde bir etkiye sahip değil. Benim için önemli olan sistemin işleyişidir. Benim gözlemlerim, Genco'nun kulede olup olmamasıyla ilgili bir veri sağlamaz. Benim görevim bu değil. Anlaşıldı mı? Sen kendi kayıtlarındaki çelişkiye odaklan. Benim alibim, yaptığım işin kendisi."
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Lyra, senin bu kadar telaşlanmana şaşıyorum. Herkesin korkusu farklı. Ben nöbetçiyim, görevim bu yerleşimi korumak. Sesin kesilince, yerleşimin diğer taraflarını kontrol ettim elbette. Öyle ya, bir şey olduysa, sadece bir yerde olmak bir şey ifade etmezdi. Benim alibim devriye görevimdi. Oysa, senin kitapların mı sana alibi olacak? Kimse seni kütüphanede görmedi, değil mi?"
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Talia, sen \"Dokumacılar İsyanı\" örneğini vererek dikkatimi dağıtıyorsun. Bu bir teknik arıza tespiti. Olay yeri verilerini karıştırma. Benim konumum ve yaptığım iş belli. Genco'nun kulede olup olmaması, benim o anki gözlemlerimde yer almıyor. Kule, kuzey duvarında değil. Benim görev alanım, kuleyi kapsamaz. Senin bilgin ne? Genco'nun kulede olduğunu gösteren kayıt ne? Çelişkiyi benim alibimde değil, kendi kayıtlarında aramalısın. Bu, mantıksal bir çıkarım."
-            },
-            {
-              "speaker": "Talia",
+              "speaker": "Lyra",
               "role_title": "Kütüphaneci",
-              "content": "[Talia] (Kütüphaneci): Kael, kule kuzey duvarında değil, doğru. Ama kulenin nöbetçi çizelgesindeki isim, duvarı kontrol eden biri için kayıtlardan kontrol edilebilir bir bilgi. Senin oradaki varlığın, Genco'nun kulede olup olmadığını görmemene engel değil. Sen de bir kale sakinisin, değil mi? \"Mantıksal çıkarım\" dediğin şey, tarihte hep boşlukları kapatmak için kullanılmıştır. \"Üçüncü Kuşatma\"da da böyle olmuştu.\n\nBenim sorunum senin \"gözlemlerinde yer almıyor\" demenle. Tarih bize gösterir ki, gözden kaçan küçük bir detay, büyük bir yıkıma neden olabilir. Senin bu konudaki bilgin ne? Genco'nun o kulede olmadığını bile bile mi söylemiyorsun, yoksa gerçekten farkında değil miydin?"
+              "content": "Senin bu kadar savunmaya geçmen ilginç. Ben zaten kütüphanedeydim, her zaman yaptığım gibi. Orada olmam, yalan söylediğim anlamına gelmez. Ama sen, nöbetçi olarak, hem ses duyduğunu iddia ediyorsun hem de o sesi takip etmeyip, \"başka yerden ses duysam ne olacaktı?\" diye kendini haklı çıkarıyorsun. Yani duymuş olsan bile, duymamış gibi davranıp geri mi döndün? Bir nöbetçi için bu garip bir seçim, hele bu gecede. Hem \"yerleşimin güvenliği tek bir noktadan ibaret değil\" dediğine göre, neden o ilk sesi takip etmedin? Bir yerleşimin güvenliği, duyduğun her şüpheli sesi takip etmektir, değil mi? Hangisi daha güvenli, sesi duymayıp, bir şey varmış gibi hareket etmek mi, yoksa duymuş gibi davranıp geçiştirmek mi? Bu nasıl bir görev anlayışı?"
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Talia, senin kayıtların Genco'nun kulede olmasını beklenti olarak gösteriyor. Benim gözlemlerim, dediğim gibi, doğrudan kule personeliyle ilgili değil. Eğer bir mantıksızlık varsa, senin beklentinle gerçek durum arasında. Ben bir mühendisim, sistemin yapısal sağlamlığını kontrol ederim. İnsanların nerede olması gerektiği, benim görev alanıma girmez. Sen diyorsun ki \"gözden kaçan küçük bir detay\". Benim açımdan ise \"veri eksikliği\". Genco'nun kulede olduğunu teyit edecek bilginin kaynağı ne? Senin tarihten verdiğin örnekler, veri eksikliğini değil, verilerin yanlış yorumlandığını gösteriyor. Sen doğru veriye sahip misin? Yoksa sadece bir varsayıma mı dayanıyorsun?"
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Lyra, sen benden bir kahramanlık hikayesi bekliyorsun herhalde. Ben gerçek bir nöbetçiyim, hayallerle değil, gerçeklerle çalışırım. Eğer bir ses kesildiyse ve başka bir yerde daha büyük bir tehdit oluşma ihtimali varsa, tek bir noktaya saplanıp kalmak aptallık olur. Benim görevim tüm yerleşimi korumak, senin gibi rafların arasından bakmak değil. Sen kütüphanede olduğunu söylüyorsun, ama kimse seni görmedi. Benim devriyem de kimsenin görmediği bir görevdi, ama ben oradaydım. Peki sen dün gece gerçekten ne yaptın? Yoksa bu kadar telaşlanmanın nedeni, kendi açığını kapatmaya çalışmak mı?"
+            },
+            {
+              "speaker": "Lyra",
+              "role_title": "Kütüphaneci",
+              "content": "Beni hedef göstermen ilginç. Tam da senin dünkü hikayendeki o tuhaflığı çözmeye çalışırken... Yoksa dikkat mi dağıtmaya çalışıyorsun? Kütüphanede olmam, her zaman yaptığım gibi, belli ki senin için yeterince ikna edici değil. Madem öyle, neden Veyra'nın, Aldric'in, Kael'in de tek başınalığı ve görgü tanıksızlığı seni bu kadar rahatsız etmiyor? Neden sadece benim \"kimse görmedi\" olmam bir sorun? Görev anlayışın da, seçici hafızan da garip, Dorin."
+            },
+            {
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Lyra, ben kimseyi hedef göstermiyorum. Sadece herkesin aynı ölçüde şeffaf olması gerektiğini düşünüyorum. Veyra'nın, Aldric'in, Kael'in durumları da konuşuldu, konuşulacak. Ama sen, en çok sorgulayan olarak, kendi durumunu en az açıklıyorsun. Bu garip değil mi? Kitapların sana tanıklık edemez, doğru. Ama senin kendi sesin de pek net değil."
             }
           ]
         }
       ],
       "votes": {
-        "Kael": "Orion",
-        "Talia": "Orion",
-        "Jareth": "Orion",
-        "Soren": "Orion",
-        "Orion": "Soren",
-        "Theron": "Orion"
+        "Veyra": "Lyra",
+        "Lyra": "Dorin",
+        "Kael": "Lyra",
+        "Mirra": "Lyra",
+        "Dorin": "Lyra",
+        "Aldric": "Lyra"
       },
-      "exiled": "Orion",
-      "exiled_type": "yanki_dogmus"
+      "exiled": "Lyra",
+      "exiled_type": "et_can"
     },
     {
       "round": 2,
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Gun iki. Bes kişi hayatta. Kael, Talia, Jareth, Soren ve Theron. Gece sessizdi, kimse sürgün edilmedi. Dün olan bu. Bugünün alameti: Sabah çiğinde kan rengi izler var."
+          "content": "Gün iki. Bozkır Kapısı'nda beş kişi kaldı: Veyra, Kael, Mirra, Dorin, Aldric. Gece sessiz geçti, kimse sürgün edilmedi. Dün mühür kapısında bir çatlak belirdi. Ocak soluk mavi titrek bir renkte yanıyor. Gece boyunca köpekler havladı, hiçbiri uyumadı."
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Kael, Talia, Soren, Theron...\n\nKimse gitmedi gece. İlginç.\n\nAma kan var sabah çiyinde. Kimin kanı bu? Nereden geldi?"
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Mühürdeki çatlak… Ne anlamı var?"
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Jareth. Kan rengi izler derken, detay ver. Miktarı? Yeri? Bir kişiye mi ait, yoksa dağınık mı? Bu önemli."
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Ocağın mavi yanması... Eskiler, mavi yanan ocak 'onları' getirir, derlerdi. Veyra, sen ne gibi bir çatlak gördün? Tam olarak neydi o?"
         },
         {
           "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Jareth, sen rahipsin. Kan rengi izler dedin. Ama kimin kanı? Bu soruyu soruyorsun. Neden bilmediğini söylüyorsun? Sanki sabah ilk sen görmüş gibisin."
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Taşın kenarında küçük bir çizgiydi. Derin değil."
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "[Jareth] (Sürgün Rahip): Soren, dinle. Ben rahibim, kahin değilim. Kan rengi izler derken, bunu haber veriyorum. Bilgi topluyorum. Olay yerinde değilim. Kimsenin kanı bu, bunu bilmiyorum. Sizin de bilmediğiniz gibi.\n\nKael'e gelince. Detay bilmem. Sadece söyledim. Sabah çiyinde kan izi var. Miktarı, yeri, dağılımı. Bunları sormanız gereken kişiler var. Kimler görevliydi bugün? Sabah kimler dışarı çıktı? Theron? Soren? Talia?"
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Oradaydım. Küçük bir çizgi. Derin değil."
         },
         {
           "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Jareth, sen rahipsin. Dün Orion sürgün edildi. Kan izi var dedin. Bizi sorguluyorsun. Ama sen neredeydin? Sabah dışarı çıkanlardan mıydın?"
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "\"Mavi titremesi... Bu gerçekten kötü. Köpekler de boşuna havlamadı. Ocağın mavi yanması, eskiler... evet, o hikayeyi ben de bilirim.\"\n\n\"Lyra gitti ama sorun çözülmüş gibi durmuyor. Hatta bence daha da kötüleşti. Geceki havlamalar... ve şimdi bu çatlak.\"\n\n\"Ben devriyedeydim. Çatlağı görmedim, ama ocağın rengi... O endişelendiriciydi. Mirra, sen ne düşünüyorsun bu konuda? Bu mavi yanma... ne anlama geliyor?\""
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Soren, ben sorgulamıyorum. Bilgi topluyorum. Olay yerinde değilim. Kimin dışarı çıktığını bilmiyorum. O yüzden soruyorum.\n\nSoren, sen neredeydin dün gece?"
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Dorin, ben ne düşündüğümü söyledim. Mavi ocak 'onları' getirir, derler. Sen köpeklerin havladığını duydun. Herkesin duyduğu o sesi. Peki, o sırada neredeydin? Ne kadar sürdü havlamalar?"
         },
         {
           "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Jareth, sen rahipsin. Sabahki kan izlerinden bahsediyorsun ama \"olay yerinde değilim\" diyorsun. Bu nasıl oluyor? Kim sana bu bilgiyi verdi? Ve neden bilgi veren kişiyle beni konuşturmak yerine, bana sorular soruyorsun? Sanki bir şeyi saklıyor gibisin."
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Havlamaları duydum. Sesin geldiği yöne gittim. Ama ne bileyim, her yer karanlık, bir şey göremedim ben de. Havlamalar da kısa sürdü. Yani anladın mı? Çatlak... Veyra, sen o çatlağı ne zaman gördün? Ve Aldric, sen ne zaman gördün? Yani ikiniz de aynı anda mı gördünüz? Garip değil mi?"
         },
         {
           "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Jareth, Soren. Bu tartışma, \"Büyük Karışıklık\" dönemini hatırlatıyor. Herkes birbirini suçlarken gerçek suçluyu atlamışlardı.\n\nSoren, Jareth'in nerede olduğunu sorguluyorsun. Peki sen neredeydin dün gece?"
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Ben atölyedeydim. Akşamdan kalma, sabaha doğru gördüm. Yani, Veyra'yla aynı anda görmedim. Dorin, sen de oradayken o havlamalar niye kısa sürdü ya? Ne tuhaf."
         },
         {
           "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Arkadaşlar, burada önemli olan adaletin sağlanması. Jareth'in anlattıkları kulağa hoş geliyor ama sanki arada bir ilmek atlamışsın gibi... O kısım tam oturmuyor.\n\nSoren'e soruyorsun, ama sen neredeydin? Hani, kan izi var dedin. Bu bilgi sana nasıl ulaştı?"
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "\"Mührü dün gördüm. Sabah. Taşın kenarında küçük bir çizgiydi.\"\n\n\"Dorin, sesin geldiği yone gittim dedin. Ne kadar süre yürüdün? Nereye kadar?\"\n\n\"Aldric, sen ne zaman farkettin? Sabahın hangi saatiydi tam olarak?\""
         },
         {
           "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Talia, Theron. Bu ilginç.\n\nSoren'e soruyorsunuz. Ben de sordum. Peki siz neredeydiniz? Dün gece."
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Jareth, sen yine aynı döngüye düşüyorsun. \"Büyük Kaçış\" sırasında da herkes bilgi toplayanları suçlamıştı. Kimse kendi alibisini vermedi.\n\nBen dün gece kütüphanedeydim. \"Kalenin İlk Kurulduğu Dönemdeki Su Yolları\" üzerine çalışıyordum. Bu sabah da erken saatlerde kütüphaneden çıkmadım.\n\nKael, dün gece sen neredeydin?"
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Duymadım."
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Talia. Kütüphanedeydin. Peki seni gören oldu mu? Kanallar üzerine çalışıyordun, bu seni sabah dışarı çıkmaktan alıkoymaz.\n\nJareth. Sabah çiyinde kan izi var diyorsun. Peki bunu kim söyledi? Nereden biliyorsun? Kendin mi gördün, başkası mı anlattı? Bu bilgi nasıl ulaştı sana?"
-        },
-        {
-          "type": "speech",
-          "name": "Jareth",
-          "role_title": "Sürgün Rahip",
-          "content": "Kael, Talia. Görünen o ki, herkes birbirine aynı soruyu soruyor. Bu iyi bir başlangıç.\n\nTalia, kütüphanede olduğunu söyledin. Seni kim gördü orada?\n\nKael, sen ne yaptın dün gece? Neredeydin?"
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Kael, sorgulaman iyi. Ama \"güncel kanıt\" arıyorsun. Ben ise kayıtlardaydım. Beni gören kimse olmadı. Zaten kimse kütüphaneye gelmez.\n\nJareth, beni kim gördü diye soruyorsun. Benim işim sessizlik. Kayıtlar beni görüyor.\n\nBurada, Theron ve Soren kendi alibilerini vermediler. Theron, \"kan izi var\" diyor. Nereden biliyorsun? Kendin mi gördün? Yoksa başkası mı söyledi? Bu durum, \"Dedikodunun Gölgesi\" olayını hatırlatıyor. O zaman da kimse kaynağını söylemedi."
-        },
-        {
-          "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Talia, Jareth. Bu kadar çok soru sormak yerine, herkes kendi üstüne düşen parçayı tamamlasa daha iyi olmaz mı?\n\nBen dün gece Atölye'deydim. Malum, yeni gelen bezleri tasnif ediyordum. Hatta bir top kumaşın kenarı yırtıktı, onunla uğraşırken epey vakit kaybettim. Kimse görmedi, hani benim işim gece daha sakin olur.\n\nSoren, kan izi dedin. Bu bilgi sana nasıl ulaştı? Doğrudan görgüye dayalı mı, yoksa sana mı anlatıldı? Bu çok önemli. Hikayenin bütününü anlamak için gerekli."
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Theron, \"kan izi\" bilgisi bana Kael'den geldi. Kael, sen sabah kan izi gördüğünü söylemiştin, değil mi? Ama sonra Jareth de \"kanı izi\" dedi. Bu neyin nesi? İkiniz de mi gördünüz, yoksa biri diğerine mi söyledi? Bu çok önemli."
+          "content": "Dorin, sen nereye gittin onu anlat. Kısa sürdü falan. Ney kısa sürdü? Anlat. Ne gördün? Ne duydun?\n\nVeyra, sen dün gördün dedin. Sabah ne zaman? Uyanır uyanmaz mı? Daha dün başka şey diyordun sanki."
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Veyra, ben o anı net hatırlıyorum. Bir an çatırtı geldi, köpekler havladı. Attım kendimi sesin geldiği yere. Ama dediğim gibi, kısa sürdü havlama. Ne bileyim, bir şey yoktu. Karanlık işte.\n\nAldric, sen ne zaman gördün o çatlağı tam olarak? Sabah mı, öğleden sonra mı? Tam bir saat söyleyemez misin?\n\nKael, çatlak dediğin şey zaten küçük bir çizgiydi. Çok da önemli değil sanki. Asıl bizi sarsan bu mavi titreme. Bence buna odaklanmalıyız."
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Soren, ben kan izi gördüğümü söylemedim. Sorguladım. Jareth'in bu bilgiyi nereden aldığını sordum. Cümlelerimi tekrar dinle.\n\nTheron, sen atölyedeydin. Kimse görmedi diyorsun. Oysa senin işin dış mekanla ilgili. Neden gece atölyede kalırsın? Bu mantıksız. Malum, kumaş kontrolü gündüz yapılır.\n\nJareth. Yine konuyu değiştiriyorsun. Kan izi hakkında detaya gir. Yoksa bu bir dedikodu mu?"
+          "role_title": "Avcı",
+          "content": "Dorin, susma. Ney kısa sürdü dedim. Attım kendimi sesin geldiği yere diyorsun. Ne kadar attın? Beş adım mı? On adım mı? Ne gördün? Ne duydun? Karanlık işte diyorsun. Ney karanlık? Hiçbir şey mi yoktu? Nasıl geri döndün?\n\nVeyra, şimdi sabah diyorsun. Daha dün \"zamanı kestiremiyorum\" diyordun. Neyin zamanını kestiremiyordun? Ne değişti? Uyanır uyanmaz mı gördün? Anlat."
         },
         {
           "type": "speech",
-          "name": "Soren",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Kael, dün evet, tam zamanı kestiremedim. Uyandım, mühre baktım. Çizgi vardı. Sabah işte."
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Kael, neden bu kadar agresifsin? Görevim belli. Ses geldi, gittim. Bir şey yoksa ne yapayım? Karanlıktı. Ne kadar gittiğimi mi merak ediyorsun? Belki yüz adım, belki elli. Ne fark eder? Görecek bir şey yoktu. Senin için bir şey görmem şart mıydı?\n\nVeyra, uyanır uyanmaz gördün yani? Ama dün zaman kestiremiyorum dedin. Arada ne değişti? Bu kadar net hatırlaman garip değil mi?\n\nAldric, hala bir saat söyleyemiyorsun. Sabah mı öğleden sonra mı? Tam olarak ne zaman? Sanki zamanı söylemekten çekiniyorsun gibi."
+        },
+        {
+          "type": "speech",
+          "name": "Kael",
           "role_title": "Avcı",
-          "content": "Kael, \"Sana Kael'den geldi\" dedim. Sen de \"ben görmedim, sorguladım\" dedin. Peki o zaman kim gördü bu izleri? Jareth, sen ısrarla bu izlerden bahsediyorsun. Kael'in görmediği bir şeyi sen nereden biliyorsun? Bu bir boşluk. Kimin yalan söylediği belli değil. Theron, senin işin atölyede gece mi yapılır gerçekten? Kumaş yırtığını gece mi fark ettin? Bu da mantıksız. Gün ışığı daha iyi değil mi?"
+          "content": "Yüz adım, elli adım… Ney fark etmez Dorin? Köpekler boşuna havlamaz dedin. Gittin, bir şey yoktu diyorsun. Ne kadar gittin? Beş mi? On mu? Detay ver. Neden sustun?\n\nVeyra, uyanır uyanmaz gördün de, dün neden zamanı kestiremedin? Ne değişti? Anlat. Ne oldu o arada?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Dorin, yüz adım dediysen, o kadar mesafede bir şey görmemen imkansız. Bir ışık bile mi yoktu?"
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Nöbetçi",
+          "content": "Veyra, yüz adımda bir şey görmek için ışık olması gerekir. Benim görevim karanlıkta devriye gezmek. Fenerle dolanmıyorum.\n\nKael, neden hala bu kadar detaya takılıyorsun? Bir şey görmedim diyorum. Görmedim! Bu seni neden bu kadar rahatsız ediyor? Sanki benim bir şey görmemi istiyorsun gibi.\n\nAldric, hala zaman veremiyor musun? Tamam, anlıyorum, belki hatırlamıyorsun. Ama bunu söylemek yerine kaçamak cevaplar vermen garip."
         }
       ],
       "house_visits": [
         {
           "type": "visit",
-          "visitor": "Kael",
-          "host": "Theron",
-          "visitor_reason": "Atölyedeki hareketlerinin teknik detaylarını ve kumaşın durumunu daha net anlamak için sorgulamak istiyorum.",
+          "visitor": "Veyra",
+          "host": "Dorin",
+          "visitor_reason": "Devriyede hiçbir şey görmediğini söylemesi mantıksız, detayları duymak istiyorum.",
           "exchanges": [
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Theron, gece atölyede yırtık kumaşla uğraşmak... Bu işin mesai saati dışına kalması için teknik bir sebep yok. Gündüz yapılması gereken bir işlem. Ne zaman bitirdin? Kaç parça yırtık kumaş vardı?"
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Köpekler ne kadar havladı Dorin? Hani yüz adım yürüdün ya, o kadar zamanda susmuş olamazlar."
             },
             {
-              "speaker": "Theron",
-              "role_title": "Terzi",
-              "content": "Kael, hani ben de tam bunu açıklayacaktım. Atölyede gece çalışmak bana daha sakin geliyor. Kumaşların dilini daha iyi anlıyorum karanlıkta. Hani, teknik bir sebep yok ama bir terzinin çalışma şekli de var. Bir top kumaşın kenarı yırtıktı. Hani, onu tasnif ettim. Tam olarak ne zaman bittiğini hatırlamıyorum, çünkü tamamen kumaşa odaklanmıştım. Adalet arayışında bu kadar detay önemli mi? Asıl önemli olan, neyse, boş ver. Senin bu konuya takılman garip geldi bana."
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Bak Veyra, zaten kısa sürdü havlamalar, bunu söyledim. Bir de karanlıktı, ne görecektim ki? Ne diye bu kadar üsteliyorsun anlamadım. Sanki bilerek yaptım."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "[Kael] (Mühendis): \"Sakin olma\" bir ölçüt değil, bir sistem parametresi değil. Bir top kumaşın kenarı yırtıksa, bu bir hasar kaydıdır. Kayıt tutulur. Ne zaman başladın? Ne zaman sona erdi? Kaç metreydi o kumaş? Sistem ne zaman arızalandı, yani o yırtık ne zaman oluştu? \"Kumaşa odaklanmak\" bir rapor değil. Rapor istiyorum."
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Yüz adım. Ne kadar zaman eder? Hızlı yürüsen bile."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "[Kael] (Mühendis): Rapor et. Veriler nerede? \"Kumaşın dili\" bir mühendislik terimi değil. Sen hasarlı bir malzemeyle çalıştığını söylüyorsun. Bunun bir başlangıç ve bitiş zamanı olmalı. Ve o hasarın kaynağı. Bunlar benim için önemli."
-            }
-          ]
-        },
-        {
-          "type": "visit",
-          "visitor": "Jareth",
-          "host": "Soren",
-          "visitor_reason": "Kan izi bilgisindeki tutarsızlığı gidermek ve onun asıl şüphelerini anlamak için onunla konuşmak istiyorum.",
-          "exchanges": [
-            {
-              "speaker": "Jareth",
-              "role_title": "Sürgün Rahip",
-              "content": "(Jareth, sakin ve düşünceli bir tonla, her kelimeyi tartarak konuşur. Soren'in gözlerinin içine bakar ancak duygusal bir tepki vermez, sadece durumu analiz eder.)\n\n\"Soren...\" (Kısa bir duraksama.)\n\n\"Senin söylediklerin ve Kael'in söyledikleri... Kan izi konusunda bir çelişki var.\"\n\n(Biraz daha bekler, Soren'in tepkisini ölçer.)\n\n\"Ben 'olay yerinde değildim' dedim. Kaynağını bilmiyorum.\"\n\n(Sesi yorgun ancak kararlıdır.)\n\n\"Peki, asıl soruyu soralım...\" (Soren'in gözlerine daha keskin bakar.) \"O kan izini kim gördü?\"\n\n(Sessizlik.)\n\n\"Sen mi gördün, Soren? Yoksa Kael mi gördü?\"\n\n(Cevap vermeden önce 2-3 saniye bekler.)\n\n\"Ya da... Belki de ikiniz de görmediniz.\""
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Veyra, ne bileyim ben. Kim tutuyor ki zamanı öyle? Görevim belli benim, devriye atarım. Havlama duyunca da koştum, yetişemedim. Bu kadar basit. Senin derdin ne şimdi, ben mi havlattım köpekleri?"
             },
             {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): (Jareth'in sözlerini, sanki bir avın ayak izlerini inceler gibi sessizce dinler. Yüzünde hiçbir ifade yoktur, sesi monotondur.)\n\n\"Kan izini kimin gördüğünü sordun. Ben de sana sorayım, o zaman. Kan izi bilgisini ilk sen verdin. 'Olay yerinde değildim' diyorsun. Kaynağını bilmiyorsun. Peki, o zaman... Kimin sözüne dayanarak söyledin bu kan izi bilgisini?\"\n\n(Kısa bir duraksama, Jareth'in bakışını sabırla karşılar.)\n\n\"Sen bize bir şey söylüyorsun, ama kaynağını gizliyorsun. Bu, senin için bir sorun yaratmıyor mu?\""
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Sesin geldiği yöne gittin. Bir şey göremedin. Havlamalar da kısa sürdü. O zaman neden sesin geldiği yöne gittin?"
             },
             {
-              "speaker": "Jareth",
-              "role_title": "Sürgün Rahip",
-              "content": "(Soren'in sözlerini, sanki bir ayazda donmuş taşları dinler gibi, ifadesiz bir şekilde dinler. Gözlerindeki keskinlik asla azalmaz, ancak sesi daha da ağır ve vurgulu hale gelir. Bir avcının sabrıyla bekler, doğru anı kollar.)\n\n\"Kimden duyduğumu... bu, seni neden bu kadar ilgilendiriyor, Soren?\" (Sözlerini, sadece bir soru sormuş gibi değil, aynı zamanda bir meydan okuma gibi sunar.)\n\n(Kısa bir duraklama, ancak bu sefer daha belirgin. Soren'in cevabını bekler gibi değil, kendi düşüncelerini toparlar gibi.)\n\n\"Asıl mesele, kan izi var mı, yok mu?\"\n\n(Sesi daha da alçalır, adeta bir fısıltıya dönüşür, ancak her kelimesi net ve çarpıcıdır.)\n\n\"Sen ve Kael, birbirinizi yalanlıyorsunuz. Bu, daha büyük bir sorun.\"\n\n(Soren'in tepkisini izler, ardından yavaşça ve keskin bir şekilde son cümlesini ekler.)\n\n\"Benim bilgimin kaynağı... o kadar da önemli değil.\""
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Veyra, zaten görevim bu. Şüpheli bir ses duyunca kontrol etmek. Göremedim diye gitmeyecek miydim? Sen de \"çatlağı sabah gördüm\" diyorsun, dün \"kestiremiyorum\" demiştin. Asıl sen neden öyle döndün lafı?"
             },
             {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): (Jareth'in sözlerini dinlerken gözleri Jareth'in üzerinde kalır. Sesi sakin, ancak her kelimesinde bir pençenin keskinliği vardır.)\n\n\"Benim seni neyim ilgilendiriyor diye soruyorsan, o zaman sen de 'kan izini kim gördü' diye sormamalısın.\"\n\n(Kısa bir duraksama.)\n\n\"Sen bize bir bilgi veriyorsun, ama kaynağını da, kendi gözlemini de reddediyorsun. Bu... anlattıklarınla, anlattığın hikaye arasında büyük bir boşluk demektir.\"\n\n(Jareth'in tepkisini ölçer.)\n\n\"Senin için 'benim bilgimin kaynağı önemli değil'se, o zaman verdiğin bilgi de güvensizdir. Bu, neyi gizlediğin sorusunu akla getirir.\""
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Görevini yapmadın."
             },
             {
-              "speaker": "Jareth",
-              "role_title": "Sürgün Rahip",
-              "content": "(Soren'in son sözlerini, zihninde her birini tartarak dinler Jareth. Yüzünde yine aynı ifadeler, ses tonunda ise sarsılmaz bir kararlılık vardır. Bilgi akışını keskin bir zihinle analiz eder.)\n\n\"Ben 'kim gördü' diye sordum, çünkü kan izi bilgisi... o kadar da önemli değil.\" (Sözlerini bilerek, yavaşça ve vurgulu söyler.)\n\n(Soren'in gözlerine bakar, duruşunda bir milim bile değişiklik olmaz.)\n\n\"Asıl önemli olan... bu bilginin kimler arasında... nasıl bir boşluk yarattığı.\"\n\n(Sessizlik. Birkaç saniye, sadece Soren'in düşüncelerini duymak ister gibi bekler.)\n\n\"Benim bilgimin kaynağı... benim inancım gibi. Seni ilgilendirmez.\"\n\n(Başını hafifçe yana eğer, sanki Soren'in mantığındaki bir deliği işaret eder gibi.)\n\n\"Ama senin ve Kael'in... aynı konuda birbirinizi yalanlamanız... Bu, herkesi ilgilendirir.\"\n\n(Son cümlesini, bir karar bildirisi gibi söyler.)\n\n\"Çünkü ya sen yalan söylüyorsun, ya Kael... ya da ikiniz birden.\""
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): (Jareth'in sözlerini, özellikle \"benim inancım gibi\" ifadesini duyar duymaz, uzun zamandır beklediği bir an gelmiş gibi, gözlerinde belli belirsiz bir pırıltı belirir. Sesindeki sakinlik, şimdi daha da keskinleşmiştir. Av en hassas yerine yaklaşmıştır.)\n\n\"Senin inancın gibi, öyle mi... Peki, o zaman, bu 'inancın' sana neyi 'görmeni' söyledi?\"\n\n(Kısa, keskin bir duraksama.)\n\n\"Senin için 'kan izi önemli değil' diyorsun. Ama bize ilk sen getirdin bu bilgiyi. İnsanların dikkatini oraya ilk sen çektin.\"\n\n(Jareth'in yüzündeki en ufak bir değişimi yakalamaya çalışır.)\n\n\"Şimdi de bu bilginin neden önemli olmadığını söyleyerek... dikkatimizi başka yöne çekmeye çalışıyorsun. Bu, bir avcının avını şaşırtması gibi.\"\n\n(Son cümlesini, bir tespit gibi, Jareth'in üzerine bırakır.)\n\n\"Bana kimin yalan söylediğini soruyorsun. Önce sen, bilginin kaynağını açık et.\""
-            },
-            {
-              "speaker": "Jareth",
-              "role_title": "Sürgün Rahip",
-              "content": "(Soren'in son sözlerini, zihninde yankılanan bir çan sesi gibi dinler Jareth. Avcının sabrına karşılık, kendi sabrını sergiler. Yüzünde hiçbir duygu belirtisi yokken, sesi daha da sakinleşir, adeta bir akarsuyun sesi gibidir.)\n\n\"Avcı Soren...\" (Kısa bir duraklama, adeta cümlenin ağırlığını vurgular.)\n\n\"Benim inancım... sana neyi 'görmemi' söyledi diye soruyorsun.\"\n\n(Yine o 2-3 saniyelik sessizlik. Bu, sadece bir bekleme değil, aynı zamanda düşünmesi için Soren'e zaman tanıma anıdır.)\n\n\"İnancım bana... gerçeği görmemi söyler.\"\n\n(Daha sonra, sesi adeta bir bıçak gibi keskinleşir, ancak tonu hala sakin ve kontrollüdür.)\n\n\"Ama senin ve Kael'in... aynı konuda farklı şeyler söylemeniz... Bu, gerçeğin önünde bir engeldir.\"\n\n(Soren'in gözlerine bakar, herhangi bir duygu göstermeden. Sesi şimdi daha da alçalır, ancak etkisi daha büyüktür.)\n\n\"Benim bilgimin kaynağı... bir öncelik değil.\"\n\n(Başını hafifçe yana yatırır, sanki bir paradoksun çözümünü sunarmış gibi.)\n\n\"Öncelik... hanginizin yalan söylediğidir.\"\n\n(Son cümlesini, bir yargı gibi, Soren'in üzerine bırakır.)\n\n\"Bence şu an... bu kalenin asıl sorunu... senin ve Kael'in arasındaki bu çelişki.\""
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] (Avcı): (Jareth'in sözlerini, özellikle \"benim inancım gibi\" ifadesine verdiği \"gerçeği görmemi söyler\" cevabını dikkatle dinler. Sesindeki sakinlik, şimdi daha da derinleşmiş, ancak avcının keskinliği korunmuştur.)\n\n\"İnancın sana gerçeği görmeyi söylüyor, diyorsun. Ama bize bir gerçek getiriyorsun, kaynağını gizliyorsun. Bu, inançla uyuşmaz.\"\n\n(Kısa bir duraksama, Jareth'in her kelimesini tartmasını bekler.)\n\n\"Ben ve Kael arasındaki çelişki... evet, bu önemli. Ama bu çelişkiyi ortaya çıkaran... senin başta verdiğin, kaynağı belirsiz bilgi.\"\n\n(Jareth'in yüzündeki en ufak bir tepkiyi arar.)\n\n\"Bana 'öncelik hanginizin yalan söylediğidir' diyorsun. Ben de sana sorayım: Bir gerçeğin kaynağı belirsizse... o gerçek ne kadar doğrudur?\"\n\n(Son cümlesini, bir soru değil, bir meydan okuma gibi söyler.)\n\n\"Sen bize bir şeyleri sorgulatıyorsun, ama ilk sorgulanması gereken sensin. Önce kendi izlerini temizle.\""
+              "speaker": "Dorin",
+              "role_title": "Nöbetçi",
+              "content": "Bak Veyra, görevimi yapmadığımı söylemek, bu çok ağır bir suçlama. Benim tüm gecelerimi yerleşimin güvenliği için harcadığımı biliyorsun. O sırada ne gördüğümü soruyorsun, ama sen de kendi gördüğün çatlağın zamanını bir türlü netleştiremiyorsun. Dün başka, bugün başka. Sence bu daha şüpheli değil mi?"
             }
           ]
         }
       ],
       "votes": {
-        "Kael": "Theron",
-        "Talia": "Jareth",
-        "Jareth": "Soren",
-        "Soren": "Jareth",
-        "Theron": "Jareth"
+        "Veyra": "Dorin",
+        "Kael": "Dorin",
+        "Mirra": "Dorin",
+        "Dorin": "Veyra",
+        "Aldric": "Dorin"
       },
-      "exiled": "Jareth",
+      "exiled": "Dorin",
       "exiled_type": "yanki_dogmus"
     },
     {
@@ -429,247 +358,209 @@
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Gün 3. Bozkır Kalesi. Dört kişi hayatta kaldı: Kael, Talia, Soren, Theron. Gece sessiz geçti, kimse sürgün edilmedi. Sabah çiğinde kan rengi izler bulundu."
+          "content": "Gün üç. Bozkır Kapısı'nda dört kişi kaldı: Veyra, Kael, Mirra, Aldric. Gece kimse sürgün edilmedi, sessiz geçti. Mühürlü kapıda çatlaklar var. Ocak soluk mavi titriyor. Bütün gece köpekler havladı, kimse uyumadı."
         },
         {
           "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Şimdi duydum. Kan rengi izler diyorsun. Bu bana 'Kızıl Mızrak' isyanını hatırlattı. O zaman da başlarda böyle küçük belirtiler olurdu.\n\nSoren, Theron, Kael. Gece sessiz mi geçti gerçekten? Kimse dışarı çıkmadı mı? Bu izler durduk yere oluşmadı.\n\nSoren. Sen ne yaptın dün gece? Neredeydin?"
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Geçen gün bahsettiğin sesler, Mirra, neden bahsettiğini netleştirmedin."
         },
         {
           "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Talia, sakin ol. Kızıl Mızrak falan. Bunlar, yani şimdi değil.\n\nGece sessiz miydi? Kimse dışarı çıkmadı mı diyorsun? Ben su kuyusunun oradaydım. Mataramı dolduruyordum. Kimse yoktu.\n\nSen neredeydin Talia? Yoksa o izler falan... Hani senin işin mi?"
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Soren, sakin ol diyorsun da. Bu 'Kızıl Mızrak' falan, önemli şeyler. Tarih tekerrür eder.\n\nSu kuyusunda mataranı dolduruyordun demek. Saat kaçtı tam olarak? Çünkü kale kayıtlarına göre, o saatte nöbetçi olan Genco, kuyudan su sesi duymadığını not almış.\n\nBen neredeydim? Ben kütüphanedeydim. Eski haritalara bakıyordum. Kalenin ilk kurulduğu zamanlardaki su yollarını inceliyordum. Kimse görmedi beni, ama o haritalar şahidim.\n\nSenin bu hikayen, kayıtlardakine uymuyor Soren. Ne diyorsun buna?"
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Talia, ne alaka şimdi Genco? Genco oradaydı mı ki yani? Ben su aldım, bitti. Kimse yoktu.\n\nSen kütüphanedeymişsin. Kimse görmedi seni. O haritalar, yani şimdi, onlar konuşuyor mu?\n\nKael, Theron, siz neredeydiniz? Gece yarısı su kuyusunda kimler vardı, kimler yoktu?"
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Sesler... Köpekler havluyordu. Herkes duydu. Ben de. Başka ne duymamı bekliyorsun?"
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Talia, Kızıl Mızrak diyorsun. Duygusal çıkışlar. Bu bir arıza tespiti. Arıza tespiti için net veri lazım.\n\nSoren, su kuyusunda kimse yoktu diyorsun. Ama Genco duymuş. Bu bir çelişki. Açıkla bunu.\n\nTheron, sen neredeydin? Gece yarısı su kuyusunun civarında bir işin var mıydı? Söyle.\nBen Kuzey duvarındaki taşıyıcı kolonu kontrol ediyordum. Bir çatlak şüphesi vardı. Ses kaydı var."
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Kael, ses kaydı var diyorsun. Ne kaydı? Ne işe yarar bu? Kim dinledi o kaydı?\n\nTalia, sen yine haritalara döndün. Yani kimse görmedi seni. Haritalar konuşmaz.\n\nGenco'nun duyduğu ses, benimkisi değil. Kuyunun suyu sürekli akıyor, bilirsin. Başka bir ses.\n\nTheron, sen konuşmuyorsun. Neredeydin? Kimse görmedi seni mi?"
+          "content": "Ney 'başka ne duymayı bekliyorsun'? Dokul bakalım. Sadece havlama mıydı? Detay ver."
         },
         {
           "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Soren, Genco'nun kaydını sorguluyorsun. Ama bu, 'Kızıl Kıyı Anlaşması'nın bozulması gibi, güvensizlik yaratır. Benim bildiğim Genco, asla yalan yazmaz.\n\nSenin bu 'başka bir ses' savunman, 'Gölge Avcılarının İhaneti'ndeki bahane taktiğine benziyor. O zaman da kimse sorumluluk almak istememişti.\n\nKael, sen de ses kaydı diyorsun. Kim dinledi o kaydı? O kayıt, değiştirilebilir mi? Tıpkı 'Büyük Yalan'da belgelerin sahteleştirilmesi gibi.\n\nTheron, sen ise susuyorsun. Bu tehlikeli. Tıpkı 'Sessizlerin Komplosu'nda olduğu gibi. Sessizlik, bazen en büyük suçlamadır.\n\nKimse doğru düzgün bir alibi vermiyor. Sadece kütüphanedeyim ben. Kime güveneceğiz?"
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Oradaydım. Köpek havlamaları. Hepsi bu. Başka ses duymadım."
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Duymadın mı? Yani sadece köpek havlaması mıydı?"
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Soren, Genco'nun kaydı nedir biliyor musun? Veri. Senin mazeretin ne? Muallak. \"Başka bir ses\" ne demek? Tamir edilemez bir arıza. Açıkla, net.\n\nTalia, ses kaydı değiştirilebilir mi diyorsun? Tıpkı belgeler gibi. Bu bir suçlama. Benim işimin prosedürleri var. Güvenlik protokolleri. Seninkiler ne? Sadece \"kimse görmedi beni\" mi?\n\nTheron, sen susuyorsun. Bu bir boşluk. Veri yok. Konuş. Bir mekanizma arızalıysa, hata kodu vermesi gerekir. Senin hata kodun ne?"
+          "role_title": "Avcı",
+          "content": "Veyra, sen ne anlarsın? Sen de mi duymadın? O zaman neden soruyorsun? Mirra, anlat bakalım, ne 'sadece havlama' mı? Hadi, tutarlı konuş."
         },
         {
           "type": "speech",
-          "name": "Soren",
-          "role_title": "Avcı",
-          "content": "Kael, ses kaydın varsa dinletirsin. Öyle \"kayıt var\" demekle olmaz. Kim dinledi, kim onayladı?\n\nTalia, sana soruyorum: Haritalar konuşur mu? Kimse görmedi seni. Bu, yani herkesin bildiği. Nasıl güveneceğiz?\n\nTheron, sen konuşmuyorsun. Neredeydin? Kimse görmedi mi seni? Bu suskunluk, yani bir şüphe."
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Kael, sen de duydun havlamayı. Ne bekliyorsun ki benden başka? Sen de duydun."
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Soren, \"Başka bir ses\" ne sesi? Hayvan mı? Rüzgar mı? Sistemde kayıtlı olmayan bir ses, arıza belirtisi. Ne sesi? Açıkla.\n\nTalia, \"Kimse görmedi beni\" diyorsun. Bu, senin alibin değil. Haritalar konuşmaz. Kim şahit? Yoksa sistemin güvenliğini mi ihlal ettin?\n\nTheron, hala susuyorsun. Bu bir veri boşluğu. Konuşmadığın sürece, sen sistemin en büyük kusurusun. Neredeydin?"
-        },
-        {
-          "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Arkadaşlar, burada önemli olan adaletin sağlanması. Bakıyoruz, herkes bir şeyler anlatıyor ama sanki arada bir ilmek atlanmış gibi.\n\nSoren, Genco'nun kaydını sorguluyorsun. Ama sen de \"başka bir ses\" diyorsun. Bu kısım, bak, bir kumaşın sağlamlığını test eder gibi, tam oturmuyor.\n\nTalia, sen de kütüphanedeymişsin. Kimse görmemiş seni. Haritalar konuşmaz, doğru.\n\nKael, ses kaydı diyorsun. Kim dinledi o kaydı? Bu detay önemli, çünkü hikayenin bütününü anlamamıza yardım eder.\n\nBen neredeydim mi? O saatlerde ben Atölye'deydim, malum, yeni gelen bezleri tasnif ediyordum. Hatta bir top kumaşın kenarı yırtıktı, onunla uğraşırken epey vakit kaybettim.\n\nŞimdi, kimin anlattığı hikaye daha sağlam? Kimin kumaşı yırtık?"
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Theron, sonunda konuştun. Atölyedeydin, kumaş tasnif ediyordun. Ama tam olarak ne zaman? 'Terziler Birliği Ayaklanması'nda da böyle, zamanlama hep kritik bir detay olmuştu. Yırtık kumaşla ne kadar uğraştın? Çünkü o saatlerde, ben kütüphaneden hafif bir kumaş dokuma sesi duymadım.\n\nSoren, hala 'başka bir ses' diyorsun. Genco'nun kaydına göre, o saatte kuyuda sadece normal su akışı vardı. Sen ne zaman su aldın? Hangi saat diliminden bahsediyorsun? Tıpkı 'Çiftçi İsyanı'ndaki gibi, olaylar hep yanlış saatlerde anlatılıyor.\n\nKael, ses kaydı diyorsun. Kim dinledi o kaydı? Bu kayıt, 'Gizli Belgeler Skandalı'nda olduğu gibi, belli kişilerce mi biliniyor? Eğer öyleyse, güvenilirliği sorgulanır.\n\nBen, dediğim gibi, kütüphanedeydim. Eski su yollarını inceliyordum. Kimse beni görmedi, doğru. Ama o eski haritalar, Kalenin kendisi şahit. Benim alibim, bu kalenin hafızasıdır. Sizinki ne?"
-        },
-        {
-          "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Talia, kütüphaneden benim atölyemdeki kumaş sesini duymaman normal. O kadar sesi ayırabilecek bir kulağın yoktur herhalde. Benim işim hassasiyet ister. Yırtık kumaşla epey uğraştım, saat tutmadım ki. Yani ne işine yarayacak bu bilgi?\n\nKael, ses kaydın varsa dinletirsin. Ben de merak ediyorum o ses kaydını. Kim dinledi diye soruyorum. Cevap ver.\n\nSoren, \"başka bir ses\" ne sesiydi? Kuş sesi miydi? Rüzgar mıydı? Kuyunun suyu mu? Kuyunun suyu zaten hep akar, yani bu bir kanıt değil.\n\nBenim alibim basit. Atölye. Kumaşlar. Sensin kütüphane, haritalar diyorsun. Harita konuşmaz ama kumaş yırtılır. Kimin hikayesi daha sağlam?"
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Kael, kayıt var diyorsun. Ama dinletmiyorsun. Bu, bir işin eksik parçası gibi. Kaydı kim tutuyor? Güvenliği ne?\n\nTalia, kütüphane ve haritalar diyorsun. Ama haritalar konuşmaz. Kim şahit? Eski su yolları ne alaka şimdi?\n\nTheron, atölye. Kumaşlar. Yırtık kumaşla uğraşmak yani. Saat tutmadım diyorsun. Ne kadar sürdü bu uğraş? O saatlerde kimse seni görmedi mi?\n\nBen kuyudaydım. Su dolduruyordum. Başka bir ses. Neydi? Su akışından farklıydı. Bunu Kael'in kaydında duymadığınızı sanmıyorum."
+          "content": "Hayır, Mirra. Ben senin gibi değilim. Ben dinledim, sen sadece duymuşsun. Detay istiyorum ben. Ne zaman başladı, ne zaman bitti o havlamalar? Kaç köpekti? Duymadım deme bana. Aldric, sana soruyorum. Sen de mi duymadın hiç? Ne tuhaf. Köpekler havlarken sen ne yapıyordun?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Oradaydım. Ne yapıyordum? Dinliyordum. Ne duydum? Havlama. Herkes de duydu. Kael, sen ne duydun da benden daha fazlasını bekliyorsun? Hani o kadar iyi dinlemiştin."
         },
         {
           "type": "speech",
           "name": "Kael",
-          "role_title": "Mühendis",
-          "content": "Soren, hala \"başka bir ses\" diyorsun. Bu bir tanımlama değil. Veri değil. Hangi frekansta? Ne kadar sürdü? Bu ses, sistemin kayıtlarında yok. Yani bir anormallik. Anlat.\n\nTalia, kütüphane, harita, kalenin hafızası diyorsun. Bunlar soyut. Benim sistemim somut verilerle çalışır. Kim şahit? Bir de, eski su yolları ne alaka? Senin işinle alakalı mı? Ya da dikkat mi dağıtıyorsun?\n\nTheron, atölye, kumaşlar. Tamam. Ama saat tutmadım diyorsun. Bu bir boşluk. Bir iş ne kadar sürer? Tahmini bir aralık yok mu? Ve kimse görmedi mi seni? Bu bir mekanik arıza değil, insan faktörü.\n\nKimse somut bir şey söylemiyor. Herkesin hikayesi eksik parça. Benim kayıtlarım net. Bir arıza varsa, yerini biliyorum. Sizin arızanız nerede?"
-        },
-        {
-          "type": "speech",
-          "name": "Talia",
-          "role_title": "Kütüphaneci",
-          "content": "Kael, kayıtların somut diyorsun. Ama 'Unutulmuş Yazıtlar' da bir zamanlar somuttu, sonra kayboldu. Kim dinledi o kaydı? Bu soru hala cevapsız. Protokollerin varsa, neden paylaşmıyorsun?\n\nSoren, 'başka bir ses' demekle olmuyor. Genco'nun kaydı önemli. O kayıtta olmayan bir ses, ya senin hayal ürünü ya da 'Gizli Geçit' efsaneleri gibi bir aldatmaca.\n\nTheron, \"saat tutmadım\" diyorsun. 'Zaman Kulesi Yangını'nda da herkes işini bitirmişti ama kimse ne zaman bitirdiğini hatırlamıyordu. Bu, pek inandırıcı değil. Yani, o yırtık kumaşla ne kadar uğraştın, yarım saat mi, iki saat mi? Bir terzi bu kadar dikkatsiz olamaz.\n\nBen kütüphanedeydim. Eski su yolları çok önemliydi. Kale'nin yaşam damarıdır. Bu, benim işimle çok alakalı. Sizin hikayeleriniz, hep bir eksiklik taşıyor. Benimki ise, Kalenin kendisi kadar eski."
-        },
-        {
-          "type": "speech",
-          "name": "Soren",
           "role_title": "Avcı",
-          "content": "Talia, Kale'nin hafızası diyorsun. Peki bu hafıza ne diyor? Senin o saatte kütüphanede kalenin su yollarını incelediğine dair. Haritalar konuşmaz ama Kael'in sistemi konuşursa. Yani, o kayıtta senin sesin var mı?\n\nKael, \"başka bir ses\" tanım değil diyorsun. Peki senin kayıtlarında, yani o temiz kayıtta, bir anda beliren, sonra kaybolan bir ses yok mu? Benim su doldurma sesim. Yani, o ses neydi? Sen bana soruyorsun ama kendi sistemini sorgulamıyorsun.\n\nTheron, yırtık kumaşla ne kadar uğraştığını hatırlamıyorsun. Ama şimdi Talia da bu konuyu açtı. Terzi bir saat bile mi hatırlamaz? Bu, yani bir bahane gibi duruyor. Kimse seni görmedi. Neden?"
+          "content": "Aldric, sen bana soru sorma. Ben avcıyım, benim işim dinlemek. Sen ne anlarsın? Ne dinliyordun? Sadece havlama mı? Bu kadar mı yani? Bize bunu neden anlattın? Asıl sen neredeydin, onu anlat. Veyra, sen de mi duymadın? Dorin de duymamıştı. Ne hikmetse... Anlatın bakalım."
         },
         {
           "type": "speech",
-          "name": "Theron",
-          "role_title": "Terzi",
-          "content": "Soren, sen de, o \"başka bir ses\" ne sesiydi, onu söylemiyorsun. Sanki usta bir terzi, bir dikişin nerede söküldüğünü söyleyemiyor gibi. Bu, yani... tam oturmuyor.\n\nTalia, diyorsun ki, \"bir terzi bu kadar dikkatsiz olamaz.\" Ama sen de kütüphane diyorsun, kimse görmedi. Yani, senin hikayen benimkine göre daha mı sağlam şimdi? Bir kumaşı tutan ilmekler gibi, senin hikayende de boşluklar var.\n\nKael, hala o ses kaydı meselesini çözemedik. Kim dinledi? Bu, bir kumaşın en önemli düğüm noktası gibi. Cevapsız kalıyor.\n\nBen atölyemdeydim. Kumaşlarla uğraşıyordum. Benim hikayem basit. Sizin hikayeleriniz öyle değil."
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Ben duydum. Önceki gün sesleri merak ettim. Sen duymadığını söyledin Kael. Şimdi neden bu kadar ilgili oldun?"
+        },
+        {
+          "type": "speech",
+          "name": "Kael",
+          "role_title": "Avcı",
+          "content": "Veyra, ne alaka şimdi? Ben hep ilgiliydim. Sen bana bir şeyleri bağlamaya çalışma. Asıl sen anlat. Neyi duydun? Hangi sesleri? Dorin de duymamıştı. Siz ikiniz bir aradaydınız sanki. Ee, sonra? Anlat. Neden sustun? Ney 'şey'? Dökül bakalım."
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Kael, ben 'Duymadım' demedim. Bir önceki günkü sesleri merak ettiğimi belirttim. Sen ise o gün ses duymadığını söyledin. Şimdi neden bu kadar meraklısın? Bu çelişki."
+        },
+        {
+          "type": "speech",
+          "name": "Kael",
+          "role_title": "Avcı",
+          "content": "Ne alaka? Ben ne zaman ses duymadım dedim? Sen mi yanlış anladın? Konuyu saptırma. Şimdi anlat. O sesler neydi? Dorin'le ne işiniz vardı o zaman? Hani?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Simyacı",
+          "content": "Kael, ben senin cümlelerini tekrar etmiyorum. Sen söylediklerini unutuyorsun. Dorin'le bir işim olmadı. Ne duydun sen?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Marangoz",
+          "content": "Veyra, sen daha önce de zamanı kestiremiyordun. Şimdi de Kael'in ne dediğini karıştırıyorsun. Garip. Mirra, sen de sadece havlama duydum diyorsun, Kael de. Ama Kael'in merakı fazla. Sanki havlamadan fazlasını duymuş gibi."
+        },
+        {
+          "type": "speech",
+          "name": "Kael",
+          "role_title": "Avcı",
+          "content": "Aldric, sen ne biliyorsun? Havlamadan fazlası mı? Neymiş o fazlası? Sen ne duydun? Durmadan bana mı yükleniyorsun? Mirra, sen de. Kiminle neyin muhabbetini yapıyorsunuz? Veyra, anlat artık. Neden susuyorsun? Dorin'le ne işiniz vardı, söyle."
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Şifacı",
+          "content": "Kael, merakın yerinde. Ancak ne duydun ki bu kadar merak ediyorsun? Eğer havlama dışında bir şey duyduysan, sen anlat. Ben duymadım. Veyra, sen de çok konuştun. Geçen gün zamanı kestiremiyordun, şimdi de Kael'in ne dediğini karıştırıyorsun. Bu tutarsızlık."
         }
       ],
       "house_visits": [
         {
           "type": "visit",
-          "visitor": "Kael",
-          "host": "Soren",
-          "visitor_reason": "Su kuyusu ve \"başka bir ses\" konusundaki tutarsızlıkları gidermek için somut veri toplamam gerekiyor.",
+          "visitor": "Veyra",
+          "host": "Kael",
+          "visitor_reason": "Daha önce ses duymadığını söylediği halde şimdi neden bu kadar ilgili olduğunu anlamam gerekiyor.",
           "exchanges": [
             {
-              "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "Soren. \"Başka bir ses\" ne demek? Hangi frekansta? Kaç desibel? Bu bir tanımlama değil, dikkat dağıtma. Su kuyusunda nöbetçi Genco'nun kaydına göre senden önce ve sonra su alındı, ama senin belirttiğin saatte kuyu sessizdi. Bu çelişkiyi açıklaman gerekiyor."
-            },
-            {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] Genco'nun kaydı... Yani duymadıysa duymadı. Ben orada değil miydim? Suyumu almadım mı? Sanki her zaman her ses kayıtta mı yani? Peki o \"başka ses\" neydi, onu bilmiyorum. Zaten avcıyız, anlarsın sen, duyarız yani. Peki sen? Kayıtların vardı hani. Nerede onlar? Kim dinledi? Hiçbir şey demedin ki. Hani senin kanıtın nerede?"
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Duymadım."
             },
             {
               "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "[Kael] (Mühendis): Ses kayıtlarımın güvenilirliğini sorgulamak, senin kendi çelişkini çözmez. Genco'nun kaydı veridir. Senin duyduğunu iddia ettiğin \"başka ses\", tanımlanmamış bir nicelik. Nasıl bir ses bu? Bir yankılanma mı? Bir mekanizma arızası mı? Yoksa bir insan sesi mi? Kimse duymadıysa, sen neden duydun? Bu, senin orada olma iddianı daha da şüpheli kılıyor."
+              "role_title": "Avcı",
+              "content": "Duymadım mı? Ne duymadın? O kadar havlama oldu. Senin kulakların mühürlü mü? Anlat bakalım dün ne oldu. Hiçbir şey duymadım mı diyeceksin bana şimdi? Dokul."
             },
             {
-              "speaker": "Soren",
-              "role_title": "Avcı",
-              "content": "[Soren] Bak Kael, Genco duymadıysa duymadı, o kadar. Ben oradaydım, suyu da aldım. Sana \"avcıyız, duyarız\" dedim. Bu kadar basit. Şimdi sen kendi kayıtlarından bahset. Yok, duymadı, yok veri. Bu kadar kayıtların vardı madem, niye getirmedin? Kim dinledi bunları? Kime dinlettim demedin. Veri dediğin buysa, senin verin nerede? Senin işin mühendislik değil mi? Kanıt nerede yani?"
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Dün gece sesleri duydum. Detay vermedim. Senin dediklerinle çelişmiyor."
             },
             {
               "speaker": "Kael",
-              "role_title": "Mühendis",
-              "content": "[Kael] (Mühendis): \"Kimse duymadıysa, sen neden duydun?\" sorusunu tekrarlıyorum. Senin duyduğun sesi kimse duymadıysa, bu senin duyup duymadığını değil, o sesin *gerçekte* var olup olmadığını sorgulatır. Ses kaydımın ne zaman dinletileceği, benim kontrolümde olan bir süreç. Şu an senin alibindeki tutarsızlık üzerine odaklanıyoruz. \"Avcıyız, duyarız\" bir teknik açıklama değil."
-            },
-            {
-              "speaker": "Soren",
               "role_title": "Avcı",
-              "content": "[Soren] Kael, yani senin o kaydın neydi ki? Var diyorsun, dinletmiyorsun. Veri, veri... Bu mu senin verin? Ben duydum diyorum, sen \"kimse duymadı\" diyorsun. İyi de sen de görmedin beni orada. Kimse görmedi... Peki o zaman kimin lafı daha sağlam? Senin kaydın mı, benim duyduğum mu? İkisi de yok."
+              "content": "Ne \"detay vermedim\"? Ne demek bu? Hikaye uydurma. Havlama duyduysan, ne kadar duyduysan onu anlat. Hani \"zamanı kestiremiyorum\"? Şimdi birden her şey netleşti mi? Neden şimdi konuşuyorsun? Söylesene."
             },
             {
-              "speaker": "Soren",
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Dün sana zamanı kestiremiyorum demiştim, evet. Ama sesleri duymadım demedim. Şimdi de sadece sana cevap veriyorum. Başka kimin ne duyması ya da duymaması umurumda değil."
+            },
+            {
+              "speaker": "Kael",
               "role_title": "Avcı",
-              "content": "[Soren] Kael, mühendis adamsın sen. Elinde veri olur, kanıt olur. Kayıt var diyorsun, dinletemiyorsun. Bu nasıl veri şimdi? Ben diyorum duydum. Sen diyorsun \"o ses gerçek miydi?\" Benim oradaki varlığım gerçekti. Senin kaydın nerede? Veri diyorsun, peki neyi veriyorsun? Hikaye mi dinliyoruz biz?"
-            }
-          ]
-        },
-        {
-          "type": "visit",
-          "visitor": "Talia",
-          "host": "Theron",
-          "visitor_reason": "Theron'un suskunluğu ve alibisindeki boşluklar, geçmişteki benzer olayları hatırlatıyor; onu daha yakından incelemeliyim.",
-          "exchanges": [
-            {
-              "speaker": "Talia",
-              "role_title": "Kütüphaneci",
-              "content": "(Sakin ve dikkatli bir tonda, her kelimeyi tartarak)\n\nTheron, biliyorum, atölyenin sessizliği üzerine farklı şeyler söylendi. Ama senin \"yırtık top kumaşla uğraşmak\" hikayen, bana 'Yedinci Kış İsyanı' zamanındaki demircinin savunmasını hatırlattı. O da kendini hep atölyede, kimsenin görmediği bir işin başında gösterirdi. Ancak sonradan anlaşıldı ki, o \"kimse görmediği\" zamanlarda başka işler çeviriyormuş.\n\nŞimdi söyle bakalım, o kumaşla ne kadar uğraştığını hatırlamıyorsun, öyle mi? Peki, atölyeden o saatlerde hiç ses gelmediğini düşündün mü? Eski kayıtlar, atölyeden her zaman bir ses geldiğini gösterir. Benim ise kütüphanede olduğumu kimse görmedi, doğru. Ama kütüphane kapısı açıktı, isteyen herkes girebilirdi. Ve ben orada, kalenin en eski su yollarını inceliyordum. Kayıtlar da burada, istersen gösterebilirim.\n\nSenin bu suskunluğun şimdiye kadar, bilinen tarihi gerçeklerle pek uyuşmuyor. Bir terzi, kumaşla uğraşırken saati unutabilir mi? Her dikişin, her kesiğin bir ritmi vardır Theron. Senin bu belirsizliğin, Yankılar'ın eski yöntemlerine çok benziyor. Onlar da hep bir boşluk bırakırdı hikayelerinde."
+              "content": "Boş konuşuyorsun. \"Sana cevap veriyorum,\" he? Ne o, özel miyim ben? Sanki sadece benle konuşuyormuş gibi yapıyorsun. Niye? Ne gizliyorsun? Yoksa ben mi daha çok yaklaşıyorum gerçeğe? O yüzden mi kıvırıyorsun? Geç bunları. Anlat. Ne duydun. Ne zaman? Kaç köpekti? Neden dün 'kestiremiyorum' dedin, şimdi bana anlatır gibi yapıyorsun? Neyin peşindesin?"
             },
             {
-              "speaker": "Theron",
-              "role_title": "Terzi",
-              "content": "(Sakin, ölçülü bir tonda, kırgın ama mantıklı bir sesle)\n\nArkadaşlar, burada önemli olan adaletin sağlanması. Talia, anlattıkların kulağa hoş geliyor ama sanki arada bir ilmek atlamışsın gibi... O kısım tam oturmuyor. Beni geçmişteki bir demirciyle mi kıyaslıyorsun? Yıllardır bu kalenin her söküğünü diken, her yarasını saran beni mi? Bu çok büyük bir haksızlık.\n\n(Ses tonu biraz daha kararlı ama hala sakin)\n\nBen atölyede yırtık bir top kumaşla uğraşıyordum, evet. O kumaşın kenarı yırtıktı, onunla uğraşırken epey vakit kaybettim. Bir terzi, kusurlu bir kumaşı düzeltirken saati unutur, evet. Çünkü her dikiş, her kesik değil, kumaşın kendisi konuşur. Ve kumaşın derdi varken, insan başka bir şeye odaklanamaz. Bu, mesleğimizin doğasında var. Senin kütüphanende \"kimse beni görmedi\" demenle benim \"işime daldım\" demem arasında ne fark var? İkimiz de o saatlerde kendimizle ve işimizle baş başaydık. Benim alibim, senin alibine bir yama gibi tam oturuyor. Neden benimki sorun da seninki değil?\n\n(Bir an duraksar, sonra daha keskin ama sakin bir tonla devam eder)\n\nSenin derdin gerçeği bulmak değil anlaşılan, sadece kolay bir hedef arıyorsun. Bu adalet değil, bu sadece panik. Eğer her atölye sessizliğinde bir Yankı aranacaksa, o zaman kalenin her köşesindeki sessizliği sorgulamamız gerekir. Kumaş yalan söylemez, hikayeler de söylememeli. Senin bu suçlamaların, adaletin kendisine bir hakarettir."
+              "speaker": "Veyra",
+              "role_title": "Simyacı",
+              "content": "Sana daha önce de söyledim. Duyduklarımı sana aktarıyorum. Başka bir şey yok."
             },
             {
-              "speaker": "Talia",
-              "role_title": "Kütüphaneci",
-              "content": "(Theron'un sözlerini dikkatle dinledikten sonra, sesi yine sakin ama bu sefer daha kararlı ve biraz da öğretmen edasıyla çıkar.)\n\nTheron, sen kendini savunurken bile, yine 'Büyük Savaş' öncesindeki tüccarın hatasına düşüyorsun. O da hep \"işimin başındaydım, elimdeki mallar şahit\" derdi. Ama geriye dönüp baktığımızda, o malların aslında başka bir amaca hizmet ettiğini görmüştük.\n\nSeninle benim alibimi kıyaslamana gelince, bu aynı şey değil. Sen bir \"boşluk\" bırakıyorsun, ben ise \"erişilebilir\" bir yerde, herkesin gelebileceği bir mekandaydım. Kütüphane kapısı açıktı. Benim varlığımı kanıtlayan yazılı kayıtlar var, kimse görmese de kalenin hafızası şahit. Sen ise sadece \"işime daldım\" diyorsun. Bu, 'Dört Kapı Anlaşması'nın ihlalinden başka bir şey değil. Sözler, delillerle desteklenmeli.\n\nSenin bu \"kumaş konuşur\" hikayen, ne yazık ki tarihi gerçeklerle tutmuyor. Eski terzilik kayıtlarında, en ince işçilikte bile tıkırtılar, makas sesleri, iplik gerilimleri hep duyulurdu. Atölyenin tamamen sessiz olması, ancak kimsenin orada olmadığı anlamına gelir. Bu da bizim 'Unutulmuş Zanaatkarlar' üzerine yaptığımız araştırmaların temel bulgularından biriydi.\n\nBeni \"kolay hedef aramakla\" suçlaman, senin kendi panik halini gösteriyor. Tıpkı 'Kızıl Vadi Kuşatması'nda olduğu gibi. En çok bağıran, en çok suçlayan kişi genellikle kendi suçunu örtmeye çalışır. Ben sadece tarihin bize öğrettiklerini hatırlatıyorum. Ve tarih, boşlukları sevmez, Theron."
-            },
-            {
-              "speaker": "Theron",
-              "role_title": "Terzi",
-              "content": "(Sakin, ölçülü bir tonda, kırgınlığını belli eden ama mantığını koruyan bir sesle)\n\nTalia, sen yine eskilerden örnek vererek konuyu dağıtıyorsun. Biz şu an Yankılar'ın olduğu günlerdeyiz, 'Büyük Savaş' ya da 'Kızıl Vadi Kuşatması'nda değiliz. Her seferinde başka birini, başka bir olayı getirip benim durumumla kıyaslaman, gerçeği aradığını değil, sadece beni sıkıştırmaya çalıştığını gösteriyor. Bu bir \"dikiş hatası\" değil mi? Kendini savunmak yerine sürekli geçmişe atıfta bulunmak...\n\n(Ses tonu biraz daha keskinleşir, ama hala mantıklı ve kontrollü)\n\nBen \"boşluk\" bırakmıyorum, \"işime odaklanmıştım\" diyorum. Kütüphanenin kapısının açık olması, senin orada olduğunu kanıtlamaz. Kaç kişi o kapıdan içeri girdi? Kimse görmediğini kendin söyledin. Yani kütüphane de \"sessiz\" değil miydi o saatlerde? Benim atölyemdeki sessizlikten şüpheleniyorsun ama kütüphanenin sessizliği sana neden batmıyor? Bu, adalet terazisinde şaşmış bir denge değil mi?\n\n(Bir an duraksar, sanki kelimeleri özenle seçiyor gibi)\n\nTerzilik kayıtları... Evet, her zaman sesler vardır. Ancak yırtık bir top kumaşı titizlikle ve özenle düzeltmeye çalışırken, insan çevresindeki sesleri duyamaz, kendi iç dünyasında kaybolur. Bu, mesleğin inceliğidir. Belki de sen hayatında hiç bir kumaşın dertlerini dinlemediğin için bunu anlamıyorsun.\n\n(Daha kararlı bir tonla, suçlamanın yarattığı hayal kırıklığını dile getirerek)\n\nBana panik içinde olduğumu söylemen... Aslında bu senin kendi durumunu açıklıyor olmasın? Benimki bir suçlama değil, sadece gördüğüm bir tutarsızlık: senin kendi hikayenle benim hikayeme uyguladığın farklı ölçütler. Adalet, çifte standart uygulamaz Talia. Bu yapılan, kumaşın en güzel yerini kesip atmak gibi, düzgün olanı feda etmektir. Senin derdin gerçeği ortaya çıkarmaksa, neden bu \"çifte standart\" ilmeğini fark etmiyorsun? Bu konuşmalarımızdaki en büyük \"sökük\" bu."
-            },
-            {
-              "speaker": "Talia",
-              "role_title": "Kütüphaneci",
-              "content": "(Theron'un sözlerini dikkatle dinledikten sonra, sakin ama kararlı bir tonla, her kelimenin ağırlığını hissettirerek)\n\nTheron, yine aynı hataya düşüyoruz. Senin \"konuyu dağıtıyorsun\" demen, tam da 'Kara Veba' dönemindeki şehir yöneticisinin halkı susturma taktiğine benziyor. O da her eleştiride, \"şimdi zamanı değil\" derdi. Oysa, geçmişin dersleri, geleceği aydınlatır. Benim amacım sıkıştırmak değil, tarihin ışığında gerçekleri ortaya çıkarmak. Buna \"dikiş hatası\" demek, gerçeği görmezden gelmektir.\n\nSenin \"işime odaklandım\" savunman, kütüphanenin kapısının açık olmasından daha zayıf. Kütüphaneye herkes girebilirdi, evet. Ama senin atölyen, kimsenin seni göremeyeceği bir yerdi. Ve benim varlığımı kanıtlayan kayıtlar, kalenin hafızası var. Senin \"kumaşın derdi varken başka şeye odaklanamam\" demen, mantıklı değil. En sessiz iş bile bir ses çıkarır. Bu, 'Zanaat Yeminleri'nde de yazılıdır.\n\nBenim hikayemle senin hikayene \"çifte standart\" uygulamakla suçlaman da ilginç. Tıpkı 'Büyük Yalanlar Çağı'nda, suçlu olanın, doğruyu söyleyeni kendi suçuyla itham etmesi gibi. Ben boşlukları sorguluyorum, senin hikayende ise doldurulması gereken büyük bir boşluk var. Atölyeden neden ses gelmedi? Kayıtlar, o saatlerde atölyenin sessiz olmadığını söylüyor. Bu, bir Yankı'nın en belirgin işaretidir."
-            },
-            {
-              "speaker": "Theron",
-              "role_title": "Terzi",
-              "content": "[Theron] (Terzi): (Sakin bir tonla, Talia'nın geçmişe yönelik göndermelerini göz ardı ederek ve doğrudan Talia'nın kendi argümanındaki tutarsızlığa odaklanarak)\n\nTalia, bak şimdi, geriye dönüp baktığımızda değil, şu anki durumu konuşmalıyız. Senin dediğin gibi, \"tarihin ışığında gerçekleri ortaya çıkarmak\" istiyorsun, öyle mi? Peki, o zaman şu ilmeği neden görmüyorsun? Kütüphane kapısı açıktı ama \"kimse görmedi\" diyorsun. Benim atölyem de aynıydı, \"işime daldım\" diyorum. İkisinde de dışarıdan bir şahit yok. İkimiz de aynı durumdayız. Senin sözlerin, kendi kendini dokunduğu kumaşı yırtıyor sanki. Bu büyük bir \"sökük\".\n\n(Ses tonu biraz daha kararlı, ama hala ölçülü)\n\nBenim \"kumaşın derdi varken başka şeye odaklanamam\" demem sana mantıksız geliyor. Ama senin \"kayıtlar var, kalenin hafızası şahit\" demen, birini görmeden orada olduğunu kanıtlamak değil mi? Bu nasıl bir kanıt? Benim mesleğimde, bir kumaşın sağlamlığını gözlerimle ve ellerimle test ederim. Sen de iddialarını somut bir şekilde ortaya koymalısın. Senin kayıtların, kütüphanede bir kitabın yerini kanıtlar, senin orada olduğunu değil.\n\n(Bir an duraksar, sonra daha keskin ama sakin bir tonla devam eder)\n\nBana \"boşlukları sorguluyorum\" derken, kendi hikayendeki boşluklara karşı körsün. Atölyeden neden ses gelmedi? Çünkü ben dikkatle, titizlikle çalışıyordum. Bir Yankı'nın işareti mi bu? O zaman senin de kütüphanede sessizce durman, bir Yankı'nın işareti olabilir. Neden sadece benim sessizliğim şüpheli de senin sessizliğin değil? Bu \"çifte standart\" ilmeği, gitgide daha da büyüyor Talia. Adalet dediğin şey, böyle yamalı bohça gibi olmaz."
-            },
-            {
-              "speaker": "Talia",
-              "role_title": "Kütüphaneci",
-              "content": "(Theron'un sözlerini dikkatle dinledikten sonra, sesi yine sakin ama bu sefer daha kararlı ve biraz da öğretmen edasıyla çıkar.)\n\nTheron, bu sözlerin, 'Büyük Çelişkiler Dönemi'ndeki savunmacıların tam da kullandığı argümanlara benziyor. Kendi tutarsızlığını, başkasının hikayesinde aramak... Bu, eski bir Yankı hilesidir.\n\nSenin \"kütüphanenin sessizliği sana batmıyor mu\" soruna gelince, kütüphane doğal olarak sessiz bir yerdir Theron. Bilgi, sessizlikte toplanır. Ama bir atölye, doğası gereği ses çıkarır. 'Zanaat Yeminleri'nde, her zanaatkarın işinin bir sesi olduğu açıkça belirtilir. Bu, benim sessizliğimle senin sessizliğin arasındaki temel fark.\n\nKayıtlar, sadece kitapların yerini değil, kaledeki her odanın, her alanın genel durumunu da tutar. Ve atölyenin o saatlerdeki sessizliği, bir anormallik olarak kaydedilmiş. Benim varlığımı kanıtlayan da sadece bu kayıtlar değil, kalenin geçmişidir. Sen \"gözlerimle ve ellerimle test ederim\" diyorsun, ama ben \"tarihin mantığıyla\" test ediyorum.\n\nSenin \"çifte standart\" ilmeğin, gerçek değil, bir yanılsama. Ben boşlukları gösteriyorum. Sen ise o boşlukları örtmeye çalışıyorsun. Bu durum, 'İkili Hainlik Olayı'nda görüldüğü gibi, gerçeği söyleyenle, gerçeği çarpıtan arasındaki farkı açıkça gösterir. Atölyenin sessizliği, senin hikayendeki en büyük boşluk. Ve Yankılar, her zaman sessizliği sever."
-            },
-            {
-              "speaker": "Theron",
-              "role_title": "Terzi",
-              "content": "(Sakin, ölçülü bir tonda, Talia’nın son argümanını dikkatle dinledikten sonra, sesi kırgın ama hala mantıklı bir tınıyla)\n\nTalia, yine mi eskilerin taktikleri, \"Büyük Çelişkiler Dönemi\"... Bak, bu sürekli geçmişe atıfta bulunman, artık gerçeği ortaya çıkarmak değil, sadece konuşmayı manipüle etmek gibi duruyor. Bu, kumaşın dokusunu bozmaktır. Kendi hikayendeki \"sökükleri\" bu şekilde kapatmaya çalışıyorsun.\n\nSenin kütüphanenin \"doğal olarak sessiz\" olduğu iddian... Atölyem de o an \"doğal olarak\" sessizdi. Çünkü ben, bir terzi olarak, kumaşın en hassas yerini, yırtığını onarıyordum. Bu, dikkat gerektiren, sessizlik gerektiren bir iştir. Her zanaatın sesli olması gerektiği genel bir kural olabilir ama istisnaları vardır. Tıpkı kütüphanenin sessizliği gibi, titiz bir onarımın da sessizliği olmalı. Sen buna 'Zanaat Yeminleri'nde yazıyor diyorsun, peki 'Esneklik İlkesi'ni hiç okumadın mı? Her kuralın bir istisnası vardır.\n\nKayıtların, atölyenin o saatlerdeki sessizliğini \"anormallik\" olarak kaydettiğini söylüyorsun. Peki, aynı kayıtlar kütüphanenin sessizliğini nasıl yorumluyor? O da bir anormallik değil mi? Ya da kütüphane \"doğal olarak\" sessiz olduğu için, senin orada olmaman da doğal olabilir mi? Senin \"kaleden geçmiş\" dediğin şey, ne yazık ki şu anki durumumuzu aydınlatmıyor, sadece kafaları karıştırıyor.\n\nBana \"boşlukları örtmeye çalışıyorsun\" derken, sen de kendi hikayendeki \"kimse görmediği\" boşluğunu, \"kütüphane doğal olarak sessizdir\" gibi genelgeçer bir söylemle örtmeye çalışıyorsun. Bu, 'İkili Hainlik Olayı'nda doğruyu söyleyenle, doğruyu çarpıtan arasındaki farkı gösteriyorsa, o zaman senin kendi argümanların da Yankı'lar gibi sessizliği ve boşlukları kendi lehlerine kullanmayı başarıyor. Benim sessizliğimle senin sessizliğin arasında bir fark olmadığını görmezden gelmen, adaletine bir \"çürük\" katıyor Talia."
+              "speaker": "Kael",
+              "role_title": "Avcı",
+              "content": "Senin sözlerinle benim söylediklerim çelişmiyor mu yani? Ne duydun o zaman? Duyduklarını aktarıyorsun da neyi aktarıyorsun? Dokul. Lafı çevirme. Konuş."
             }
           ]
         }
       ],
-      "votes": {},
-      "exiled": null,
-      "exiled_type": null
+      "votes": {
+        "Veyra": "Kael",
+        "Kael": "Veyra",
+        "Mirra": "Kael",
+        "Aldric": "Kael"
+      },
+      "exiled": "Kael",
+      "exiled_type": "yanki_dogmus"
     }
   ],
   "world_seed": {
-    "world_seed": "e539ae58c243f786151b608763cb67173012499fb906d09b87bd076b1f425fce",
-    "game_id": "hackathon_demo_1",
-    "tone": "kuru_col_yemini",
-    "season": "ilkbahar_baslangici",
-    "ocak_rengi": "beyaz_kivilcim",
-    "ocak_rengi_mood": "Saf ve keskin, gercegi ariyor — yargi hissi",
-    "mask_source": "ocak_laneti",
+    "world_seed": "e22fc540ea0b915acd688060e28c84cc5d2999a677de751f9eeda93e752f9d2f",
+    "game_id": "test_v2",
+    "tone": "karanlik_masalsi",
+    "season": "sonbahar",
+    "ocak_rengi": "soluk_mavi_titreme",
+    "ocak_rengi_mood": "Soguk ve tedirgin, her an sonebilir — suphe ve urperti",
+    "mask_source": "kadim_muhur",
     "council_style": "paranoyak",
     "myth_variant": {
-      "name": "Can Izi",
-      "rumor": "Her surgende can calar. Ama bazen can kendiligindan caliyor.",
-      "origin_story": "Eski Bekci bir can dikti. 'Gercek olmayanlar cani duyamaz' dedi. Ama herkes duydugunu iddia etti.",
-      "existential_question": "Affetmek mi zayiflik, yoksa insanlik mi?"
+      "name": "Mavi Titreme",
+      "rumor": "Ocak bu ay mavi titriyor. Boyle olunca 'onlar' gelir derler.",
+      "origin_story": "Buyuk Sessizlik'te sozler taslara gomuldu. Sesler ham izlerini kaybetti.",
+      "existential_question": "Insani insan yapan bedel mi, hatira mi?"
     },
     "daily_omens": [
-      "Kuzgunlar cemberin ustunde uc tur atti.",
-      "Sabah ciginde kan rengi izler bulundu."
+      "Muhur kapisinda catlak gorundu.",
+      "Gece boyunca kopekler havladi. Hicbiri uyumadi."
     ],
     "place_variants": {
-      "settlement_name": "Bozkir Kalesi",
-      "forest_name": "Baykus Vadisi",
-      "outer_wastes_name": "Kara Ovasi"
+      "settlement_name": "Bozkir Kapisi",
+      "forest_name": "Baykus Ormani",
+      "outer_wastes_name": "Kara Disi"
     },
     "rituals": {
-      "hand_raise_phrase": "Ates isterim.",
-      "oath_refresh_phrase": "Kulum sozum, sozum kulum.",
-      "exile_phrase": "Konsey kararini verdi. Kapin muhurlendi."
+      "hand_raise_phrase": "Cemberden soz talep ederim.",
+      "oath_refresh_phrase": "Atesin yaninda dilim temiz.",
+      "exile_phrase": "Cember disina adim at. Atesin seni artik tanimiyor."
     },
     "mechanic_skin": {
-      "campfire_turn_explanation": "Ates Basi'nda sirayla konusulur. Konusmak isteyen 'Ates isterim.' der.",
-      "house_visit_limit_explanation": "Konsey kurali: her gece en fazla 3 kapi calinir. Bozkir Kalesi siniri."
+      "campfire_turn_explanation": "Ates Basi'nda sirayla konusulur. Konusmak isteyen 'Cemberden soz talep ederim.' der.",
+      "house_visit_limit_explanation": "Konsey kurali: her gece en fazla 3 kapi calinir. Bozkir Kapisi siniri."
     },
     "taboo_words": [
       "AI",
@@ -705,60 +596,56 @@
   },
   "players_initial": [
     {
-      "name": "Kael",
-      "role_title": "Mühendis",
+      "name": "Veyra",
+      "role_title": "Simyacı",
+      "player_type": "et_can",
+      "archetype_label": "Şüpheli Sessiz"
+    },
+    {
+      "name": "Lyra",
+      "role_title": "Kütüphaneci",
       "player_type": "et_can",
       "archetype_label": "Şüpheli Konuşkan"
     },
     {
-      "name": "Talia",
-      "role_title": "Kütüphaneci",
+      "name": "Kael",
+      "role_title": "Avcı",
       "player_type": "yanki_dogmus",
-      "archetype_label": "Şüpheli Konuşkan"
+      "archetype_label": "Saldırgan Agresif"
     },
     {
-      "name": "Jareth",
-      "role_title": "Sürgün Rahip",
-      "player_type": "yanki_dogmus",
+      "name": "Mirra",
+      "role_title": "Şifacı",
+      "player_type": "et_can",
       "archetype_label": "Sakin Az Konuşan"
     },
     {
-      "name": "Soren",
-      "role_title": "Avcı",
+      "name": "Dorin",
+      "role_title": "Nöbetçi",
+      "player_type": "yanki_dogmus",
+      "archetype_label": "Çekici Manipülatör"
+    },
+    {
+      "name": "Aldric",
+      "role_title": "Marangoz",
       "player_type": "et_can",
-      "archetype_label": "Şüpheli Konuşkan"
-    },
-    {
-      "name": "Orion",
-      "role_title": "Çiftçi",
-      "player_type": "yanki_dogmus",
-      "archetype_label": "Şüpheli Konuşkan"
-    },
-    {
-      "name": "Theron",
-      "role_title": "Terzi",
-      "player_type": "yanki_dogmus",
-      "archetype_label": "Duru İdealist"
+      "archetype_label": "Şüpheli Sessiz"
     }
   ],
-  "winner": "yanki_dogmus",
+  "winner": "et_can",
   "total_rounds": 3,
   "final_alive": [
     {
-      "name": "Kael",
+      "name": "Veyra",
       "type": "et_can"
     },
     {
-      "name": "Talia",
-      "type": "yanki_dogmus"
-    },
-    {
-      "name": "Soren",
+      "name": "Mirra",
       "type": "et_can"
     },
     {
-      "name": "Theron",
-      "type": "yanki_dogmus"
+      "name": "Aldric",
+      "type": "et_can"
     }
   ]
 }

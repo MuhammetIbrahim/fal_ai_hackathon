@@ -14,6 +14,7 @@ import asyncio
 import json
 import os
 import random as random_module
+import re
 import sys
 import uuid
 from collections import Counter
@@ -44,6 +45,43 @@ OUTPUT_PATH = Path(__file__).parent / "game_log.json"
 MAX_CAMPFIRE_TURNS = 18
 MAX_VISIT_EXCHANGES = 8
 
+# ── Memory ayarlari ──
+CAMPFIRE_BUFFER = 5    # Son N mesaj raw gosterilir
+SUMMARY_INTERVAL = 3   # Her N yeni mesajda ozet guncelle
+
+
+def calculate_ai_count(player_count: int, rng: random_module.Random) -> int:
+    """Rastgele AI sayisi. Kimse kac AI oldugunu bilmiyor.
+
+    Aralik: player_count//3 ile player_count*2//3 arasi.
+    Ornekler:
+        4 kisi → 1-2 AI
+        6 kisi → 2-4 AI
+        8 kisi → 2-5 AI
+       10 kisi → 3-6 AI
+    """
+    min_ai = max(1, player_count // 3)
+    max_ai = max(min_ai + 1, player_count * 2 // 3)
+    return rng.randint(min_ai, max_ai)
+
+
+def calculate_day_limit(player_count: int, ai_count: int) -> int:
+    """Dinamik gun limiti hesapla.
+
+    Mantik: Et-Can'in ai_count kisiyi dogru surgun etmesi lazim.
+    Her round 1 surgun. Hata payi = player_count // 3.
+    Formul: ai_count + hata_payi
+
+    Ornekler:
+        4 kisi, 2 AI → 2 + 1 = 3 gun
+        6 kisi, 4 AI → 4 + 2 = 6 gun
+        6 kisi, 3 AI → 3 + 2 = 5 gun
+        8 kisi, 5 AI → 5 + 2 = 7 gun
+       10 kisi, 7 AI → 7 + 3 = 10 gun
+    """
+    hata_payi = max(1, player_count // 3)
+    return ai_count + hata_payi
+
 
 # ══════════════════════════════════════════════════════
 #  DATA
@@ -56,6 +94,143 @@ ARCHETYPES = DATA["archetypes"]
 ROLE_TITLES = DATA["role_titles"]
 SKILL_TIERS = DATA["skill_tiers"]
 NAMES_POOL = DATA["names_pool"]
+
+
+# ══════════════════════════════════════════════════════
+#  0. OUTPUT SANITIZER + MEMORY HELPERS
+# ══════════════════════════════════════════════════════
+
+def _sanitize_speech(text: str) -> str:
+    """Konusma metninden tag ve sahne yonergelerini temizle."""
+    # [Name] (Role): prefix
+    text = re.sub(r'^\[.*?\]\s*\(.*?\)\s*:?\s*', '', text.strip())
+    # Standalone [Name]: prefix
+    text = re.sub(r'^\[.*?\]\s*:?\s*', '', text.strip())
+    # (20+ karakterli sahne yonergesi) — "(sakin bir tonla konusur...)" vb.
+    text = re.sub(r'\([^)]{20,}\)', '', text)
+    # Coklu newline temizle
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    return text
+
+
+# ── Rolling Summary (campfire icin) ──────────────────
+
+ROLLING_SUMMARY_SYSTEM = """Bir tartisma ozetini guncelliyorsun.
+
+Mevcut ozet ve yeni konusmalari alacaksin. Ozeti guncelle:
+- Kim kimi sucladi, hangi alibiler verildi
+- Tutarsizliklar ve supheli noktalar
+- Onemli ittifaklar veya catismalar
+- Max 8 madde. Eski gereksiz detaylari kirp. Yeni bilgileri ekle.
+
+Turkce, madde madde yaz. Kisa ve net. Her madde 1 cumle."""
+
+
+async def _update_rolling_summary(current_summary: str, new_messages: list[dict]) -> str:
+    """Yeni mesajlarla rolling summary'yi guncelle."""
+    if not new_messages:
+        return current_summary
+
+    new_lines = []
+    for m in new_messages:
+        if m.get("type") == "speech":
+            new_lines.append(f"[{m['name']}]: {m['content'][:200]}")
+        elif m.get("type") == "narrator":
+            new_lines.append(f"[Anlatici]: {m['content'][:150]}")
+
+    if not new_lines:
+        return current_summary
+
+    result = await llm_generate(
+        prompt=(
+            f"Mevcut ozet:\n{current_summary or '(Henuz ozet yok)'}\n\n"
+            f"Yeni konusmalar:\n" + "\n".join(new_lines) + "\n\n"
+            f"Guncel ozeti yaz:"
+        ),
+        system_prompt=ROLLING_SUMMARY_SYSTEM,
+        model=MODEL,
+        temperature=0.2,
+    )
+    return result.output.strip()
+
+
+async def _maybe_update_campfire_summary(state: GameState) -> None:
+    """Yeterli yeni mesaj varsa rolling summary guncelle."""
+    speeches = [m for m in state["campfire_history"] if m["type"] == "speech"]
+    cursor = state.get("_summary_cursor", 0)
+
+    # Buffer disindaki mesaj sayisi
+    beyond_buffer = len(speeches) - CAMPFIRE_BUFFER
+    if beyond_buffer > cursor and (beyond_buffer - cursor) >= SUMMARY_INTERVAL:
+        to_summarize = speeches[cursor:beyond_buffer]
+        state["campfire_rolling_summary"] = await _update_rolling_summary(
+            state.get("campfire_rolling_summary", ""),
+            to_summarize,
+        )
+        state["_summary_cursor"] = beyond_buffer
+        print(f"  [Memory] Ozet guncellendi ({beyond_buffer} mesaj ozetlendi)")
+
+
+def _format_campfire_context(state: GameState) -> str:
+    """Rolling summary + son CAMPFIRE_BUFFER raw mesaj."""
+    summary = state.get("campfire_rolling_summary", "")
+    all_msgs = [m for m in state["campfire_history"]
+                if m["type"] in ("speech", "moderator", "narrator")]
+
+    recent = all_msgs[-CAMPFIRE_BUFFER:] if len(all_msgs) > CAMPFIRE_BUFFER else all_msgs
+
+    parts = []
+    if summary:
+        parts.append(f"[ONCEKI KONUSMALARIN OZETI]\n{summary}")
+
+    lines = []
+    for msg in recent:
+        if msg["type"] == "speech":
+            lines.append(f"[{msg['name']}] ({msg['role_title']}): {msg['content']}")
+        elif msg["type"] == "moderator":
+            lines.append(f"[Ocak Bekcisi]: {msg['content']}")
+        elif msg["type"] == "narrator":
+            lines.append(f"[Anlatici]: {msg['content']}")
+
+    if lines:
+        parts.append("[SON KONUSMALAR]\n" + "\n".join(lines))
+
+    return "\n\n".join(parts) if parts else "(henuz kimse konusmadi)"
+
+
+# ── Cumulative Summary (cross-round) ────────────────
+
+CUMULATIVE_SUMMARY_SYSTEM = """Oyunun onceki gunlerinin ozetini guncelliyorsun.
+
+Mevcut kumulatif ozet ve bu gunun bilgilerini alacaksin. Birlesik bir ozet yaz:
+- Hangi gunlerde ne oldu, kim surgun edildi
+- Kim kimi sucladi, onemli tutarsizliklar
+- Ittifaklar, catismalar, supheler
+- Max 12 madde. Eski gereksiz detaylari kirp.
+
+Turkce, madde madde yaz. Kisa ve net."""
+
+
+async def _update_cumulative_summary(
+    cumulative: str,
+    round_number: int,
+    campfire_summary: str,
+    vote_result: str,
+) -> str:
+    """Round sonunda kumulatif ozeti guncelle."""
+    round_info = f"Gun {round_number}:\n{campfire_summary}\n{vote_result}"
+
+    result = await llm_generate(
+        prompt=(
+            f"Kumulatif ozet:\n{cumulative or '(Ilk gun)'}\n\n"
+            f"Bu gunun bilgileri:\n{round_info}\n\n"
+            f"Guncel kumulatif ozeti yaz:"
+        ),
+        system_prompt=CUMULATIVE_SUMMARY_SYSTEM,
+        model=MODEL,
+        temperature=0.2,
+    )
+    return result.output.strip()
 
 
 # ══════════════════════════════════════════════════════
@@ -133,7 +308,15 @@ BUNLARIN YERINE sunlari yaz:
 - Konusma dili: kisa mi konusur, dolgu kelime kullanir mi, devrik cumle kurar mi
 - Stres altinda ne yapar: saldirganlaşır mi, cekilir mi, konu degistirir mi
 - Karakter DUZ, GUNLUK, SOKAK DILI ile konusmali. Edebi/felsefi/siirsel konusma YASAK.
-- "Yorgun dusmuşsun", "sesin titriyor" gibi DOLAYLI fiziksel gozlemler de YASAK."""
+- "Yorgun dusmuşsun", "sesin titriyor" gibi DOLAYLI fiziksel gozlemler de YASAK.
+
+AI KOKUSUNU ENGELLEMEK ICIN KRITIK KURALLAR:
+- TARIHI REFERANS YASAK: "Kanli Hasat", "Buyuk Kacis", "X Isyani", "Y Donemi" gibi uydurma tarihi olaylara atif YASAKTIR. Bir kutuphaneciyi bile yazsan tarih referansi kullanmayacak. Normal insan gibi kendi gozlemleriyle konusacak.
+- MESLEK METAFORU SPAM YASAK: "iplik kopmus gibi", "kumasin dokusunu bozar", "dikis tutmaz" gibi surekli meslek benzetmesi YASAK. Mesleginden bahsetmesi ok ama HER CUMLEDE meslek metaforu kullanmak AI kokturuyor. MAX 1 kez, sadece alibi anlatirken.
+- TEKNIK/RESMI DIL YASAK: "yapisal butunluk", "veri girisi bekliyor", "sistem parametresi", "frekans", "desibel" gibi muhendislik/akademik terimler YASAK. Normal insan boyle konusmaz.
+- SAHNE YONERGESI YASAK: "(sakin bir tonla konusur)", "(gozlerinin icine bakar)" gibi parantez icinde davranis tarifi YAZMA. Sadece diyalog yaz.
+- UZUN MONOLOG YASAK: Max 3-4 cumle. Paragraf paragraf konusmak AI kokutuyor. Kisa, kesik, eksik cumleler daha dogal.
+- Karakter SIRADAN BIR INSAN gibi konusmali. Surekli analiz yapan, her seyi kategorize eden, sistematik dusunen biri degil."""
 
 
 def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, str]:
@@ -335,14 +518,21 @@ END"""
 CHARACTER_WRAPPER = """{world_context}Tartisma fazindasin. Gun {round_number}/{day_limit}.
 Hayattaki kisiler: {alive_names}
 {exiled_context}
+{cumulative_context}
 Soz hakki sana geldi.
 
 BU BIR SES OYUNU — YASAKLAR:
 - Fiziksel ortam YOK. Kimseyi goremez, dokunamaz, koklayamazsin.
 - ASLA fiziksel/gorsel gozlem yapma. Su kelimeleri KULLANMA: yuz, goz, el, ter, kir, koku, nem, rutubet, sicaklik, soguk, ates, gol, duman, golge, isik, renk, kiyafet, yirtik, leke, kan, durus, oturma, bakmak, gormek.
 - ASLA metafor/siir/edebiyat yapma. YASAK.
-- ASLA meslek metaforu yapma. YASAK.
-- Tek bilgi kaynag in: insanlarin SOYLEDIKLERI ve soylemedikleri.
+- Tek bilgi kaynagin: insanlarin SOYLEDIKLERI ve soylemedikleri.
+
+AI KOKUSUNU ENGELLE — KRITIK:
+- TARIHI REFERANS YAPMA. "X Isyani", "Y Donemi", "Z Efsanesi" gibi uydurma olaylara atif YASAK.
+- MESLEK METAFORU SPAM YAPMA. "iplik", "kumasi", "dikis", "veri", "sistem" gibi meslek terimlerini HER CUMLEDE kullanma. Max 1 kez.
+- TEKNIK/RESMI DIL KULLANMA. Normal insan gibi konus.
+- (parantez icinde sahne yonergesi) YAZMA. Sadece diyalog.
+- [Isim] (Rol): gibi tag ile BASLAMA. Direkt konus.
 
 NE YAPMALSIN:
 - Alibi sor: "Dun gece neredeydin?", "Seni kim gordu?"
@@ -356,7 +546,7 @@ NE YAPMALSIN:
 - FARKLI KONULAR AC. Tek konuya takilma. Birden fazla kisiyi sorgula.
 
 FORMAT:
-- Direkt konus. Sadece diyalog. Sahne yonergesi, *yildiz*, (parantez) YASAK.
+- Direkt konus. Sadece diyalog.
 - SADECE bu isimlere hitap et: {alive_names}
 
 DIL — COK ONEMLI:
@@ -365,9 +555,8 @@ DIL — COK ONEMLI:
 - "hani", "yani", "sey", "ya", "bak", "ne biliyim", "olm" gibi dolgu kelimeler
 - Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "mal misin"
 - Max 3-4 cumle. Monolog yapma.
-- Kendini tekrarlama.
+- Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
 
-SON KONUSMALAR:
 {history}
 
 SENIN SON SOZLERIN (tekrarlama):
@@ -411,9 +600,9 @@ def _get_world_context(state: GameState) -> str:
 
 
 async def _get_reaction(player: Player, last_speech: dict, state: GameState) -> dict:
-    history_text = _format_campfire_history(state, last_n=6)
+    history_text = _format_campfire_context(state)
     prompt = (
-        f"Son konusmalar:\n{history_text}\n\n"
+        f"{history_text}\n\n"
         f"Son konusan: [{last_speech['name']}]: {last_speech['content']}\n\n"
         f"Sen {player.name} ({player.role_title}) olarak tepki vermek istiyor musun?"
     )
@@ -446,7 +635,7 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
         f"- {r['name']}: {'WANT — ' + r['reason'] if r['wants'] else 'PASS'}"
         for r in reactions
     )
-    history_text = _format_campfire_history(state, last_n=4)
+    history_text = _format_campfire_context(state)
     last_speakers = [
         m["name"] for m in state["campfire_history"][-4:]
         if m["type"] == "speech"
@@ -479,7 +668,7 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
 
 
 async def _character_speak(player: Player, state: GameState) -> str:
-    history_text = _format_campfire_history(state, last_n=8)
+    history_text = _format_campfire_context(state)
     alive_names = ", ".join(get_alive_names(state))
 
     own_msgs = [
@@ -488,13 +677,17 @@ async def _character_speak(player: Player, state: GameState) -> str:
     ][-2:]
     own_last = "\n".join(own_msgs) if own_msgs else "(henuz konusmadin)"
 
+    cumulative = state.get("cumulative_summary", "")
+    cumulative_context = f"ONCEKI GUNLERIN OZETI:\n{cumulative}" if cumulative else ""
+
     prompt = CHARACTER_WRAPPER.format(
         world_context=_get_world_context(state),
         round_number=state.get("round_number", 1),
         day_limit=state.get("day_limit", 5),
         alive_names=alive_names,
         exiled_context=_get_exiled_context(state),
-        history=history_text or "(henuz kimse konusmadi)",
+        cumulative_context=cumulative_context,
+        history=history_text,
         own_last=own_last,
         name=player.name,
         role_title=player.role_title,
@@ -506,7 +699,7 @@ async def _character_speak(player: Player, state: GameState) -> str:
         model=MODEL,
         temperature=0.9,
     )
-    return result.output.strip()
+    return _sanitize_speech(result.output)
 
 
 async def run_campfire(state: GameState) -> GameState:
@@ -581,6 +774,9 @@ async def run_campfire(state: GameState) -> GameState:
             "role_title": player.role_title, "content": message,
         })
         print(f"  [{name}] ({player.role_title}): {message}")
+
+        # Rolling summary guncelle
+        await _maybe_update_campfire_summary(state)
 
     speech_count = sum(1 for m in state["campfire_history"] if m["type"] == "speech")
     speakers = set(m["name"] for m in state["campfire_history"] if m["type"] == "speech")
@@ -658,12 +854,19 @@ PASS"""
 VISIT_WRAPPER = """{world_context}Ozel gorusme. Karsinizda: {opponent_name} ({opponent_role}).
 Gun {round_number}/{day_limit}.
 {exiled_context}
+{cumulative_context}
 
 BU BIR SES OYUNU — YASAKLAR:
 - Fiziksel ortam YOK. Kimseyi goremez, dokunamaz, koklayamazsin.
 - ASLA fiziksel/gorsel gozlem yapma. Su kelimeleri KULLANMA: yuz, goz, el, ter, koku, nem, sicaklik, soguk, ates, gol, duman, golge, isik, renk, kiyafet, yirtik, leke, kan, durus, oturma.
-- ASLA metafor/siir/edebiyat yapma. YASAK.
-- Tek bilgi kaynag in: insanlarin SOYLEDIKLERI.
+- Tek bilgi kaynagin: insanlarin SOYLEDIKLERI.
+
+AI KOKUSUNU ENGELLE — KRITIK:
+- TARIHI REFERANS YAPMA. "X Isyani", "Y Donemi" gibi uydurma olaylara atif YASAK.
+- MESLEK METAFORU SPAM YAPMA. Max 1 kez.
+- TEKNIK/RESMI DIL KULLANMA. Normal insan gibi konus.
+- (parantez icinde sahne yonergesi) YAZMA. Sadece diyalog.
+- [Isim] (Rol): gibi tag ile BASLAMA. Direkt konus.
 
 1v1 STRATEJI:
 - Bilgi cek: "Dun gece ne yaptin?", "Kimlerle goruston?"
@@ -680,7 +883,7 @@ DIL:
 - "hani", "yani", "bak", "olm", "ne biliyim", "ya"
 - Sert olabilirsin: "ne sacmaliyorsun", "birak ya"
 - Max 3-4 cumle.
-- Kendini tekrarlama.
+- Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
 
 ONCEKI TARTISMADAN BILGILER:
 {campfire_summary}
@@ -763,11 +966,25 @@ async def _character_speak_1v1(
     state: GameState,
     campfire_summary: str,
 ) -> str:
-    visit_lines = [f"[{ex['speaker']}] ({ex['role_title']}): {ex['content']}" for ex in exchanges]
+    # Visit icinde de son 5 raw + ozet pattern
+    if len(exchanges) > CAMPFIRE_BUFFER:
+        old_lines = [f"[{ex['speaker']}]: {ex['content'][:150]}" for ex in exchanges[:-CAMPFIRE_BUFFER]]
+        old_summary = "Onceki konusmalar ozeti: " + " | ".join(old_lines)
+        recent = exchanges[-CAMPFIRE_BUFFER:]
+    else:
+        old_summary = ""
+        recent = exchanges
+
+    visit_lines = [f"[{ex['speaker']}] ({ex['role_title']}): {ex['content']}" for ex in recent]
     visit_history = "\n".join(visit_lines) if visit_lines else "(henuz konusmadin)"
+    if old_summary:
+        visit_history = f"{old_summary}\n\n{visit_history}"
 
     own_msgs = [ex["content"] for ex in exchanges if ex["speaker"] == player.name][-2:]
     own_last = "\n".join(own_msgs) if own_msgs else "(henuz konusmadin)"
+
+    cumulative = state.get("cumulative_summary", "")
+    cumulative_context = f"ONCEKI GUNLERIN OZETI:\n{cumulative}" if cumulative else ""
 
     prompt = VISIT_WRAPPER.format(
         world_context=_get_world_context(state),
@@ -776,6 +993,7 @@ async def _character_speak_1v1(
         round_number=state.get("round_number", 1),
         day_limit=state.get("day_limit", 5),
         exiled_context=_get_exiled_context(state),
+        cumulative_context=cumulative_context,
         campfire_summary=campfire_summary,
         visit_history=visit_history,
         own_last=own_last,
@@ -789,7 +1007,7 @@ async def _character_speak_1v1(
         model=MODEL,
         temperature=0.9,
     )
-    return result.output.strip()
+    return _sanitize_speech(result.output)
 
 
 async def _run_single_visit(
@@ -887,8 +1105,10 @@ async def run_house_visits(state: GameState, campfire_summary: str) -> GameState
 VOTE_SYSTEM = """Sen {name} ({role_title}) adli bir karaktersin. Oylama zamani.
 {exile_phrase}
 
-Tartisma ve ozel gorusmelerde su konusmalar gecti:
-{history}
+{cumulative_context}
+
+Bugunun tartisma ozeti:
+{campfire_summary}
 
 {visit_context}
 
@@ -902,29 +1122,32 @@ SADECE bir isim yaz, baska hicbir sey yazma:
 <isim>"""
 
 
-async def _player_vote(player: Player, state: GameState) -> str:
-    history_text = _format_campfire_history(state, last_n=12)
+async def _player_vote(player: Player, state: GameState, campfire_summary: str) -> str:
     alive_names = get_alive_names(state)
     others = [n for n in alive_names if n != player.name]
 
-    # Visit context
+    # Visit context — kendi 1v1 gorusmelerinin ozeti
     visits = state.get("house_visits", [])
     visit_lines = []
     for v in visits:
         if v.get("visitor") == player.name or v.get("host") == player.name:
             for ex in v.get("exchanges", []):
-                visit_lines.append(f"[1v1 {ex['speaker']}]: {ex['content']}")
-    visit_context = "Ozel gorusme notlarin:\n" + "\n".join(visit_lines[-6:]) if visit_lines else ""
+                visit_lines.append(f"[1v1 {ex['speaker']}]: {ex['content'][:150]}")
+    visit_context = "Ozel gorusme notlarin:\n" + "\n".join(visit_lines[-8:]) if visit_lines else ""
 
     ws = state.get("world_seed")
     exile_phrase = f"Surgun sozu: \"{ws['rituals']['exile_phrase']}\"" if ws else ""
+
+    cumulative = state.get("cumulative_summary", "")
+    cumulative_context = f"ONCEKI GUNLERIN OZETI:\n{cumulative}" if cumulative else ""
 
     result = await llm_generate(
         prompt=VOTE_SYSTEM.format(
             name=player.name,
             role_title=player.role_title,
             exile_phrase=exile_phrase,
-            history=history_text,
+            cumulative_context=cumulative_context,
+            campfire_summary=campfire_summary,
             visit_context=visit_context,
             alive_names=", ".join(others),
         ),
@@ -945,7 +1168,7 @@ async def _player_vote(player: Player, state: GameState) -> str:
     return vote
 
 
-async def run_vote(state: GameState) -> str | None:
+async def run_vote(state: GameState, campfire_summary: str) -> str | None:
     """Oylama yap, en cok oy alani dondur. Beraberlikte None."""
     round_n = state.get("round_number", 1)
     alive = get_alive_players(state)
@@ -954,7 +1177,7 @@ async def run_vote(state: GameState) -> str | None:
     print(f"  OYLAMA — Gun {round_n}")
     print(f"{'=' * 50}")
 
-    tasks = [_player_vote(p, state) for p in alive]
+    tasks = [_player_vote(p, state, campfire_summary) for p in alive]
     votes = await asyncio.gather(*tasks)
 
     vote_map = {}
@@ -1080,7 +1303,7 @@ def init_state(
     world_seed: WorldSeed,
     day_limit: int = 5,
 ) -> GameState:
-    return GameState(
+    state = GameState(
         messages=[],
         players=players,
         phase=Phase.MORNING.value,
@@ -1093,6 +1316,11 @@ def init_state(
         winner=None,
         world_seed=world_seed.model_dump(),
     )
+    # Memory state
+    state["campfire_rolling_summary"] = ""
+    state["_summary_cursor"] = 0
+    state["cumulative_summary"] = ""
+    return state
 
 
 async def run_full_game(state: GameState) -> GameState:
@@ -1124,6 +1352,8 @@ async def run_full_game(state: GameState) -> GameState:
         # Round icin temizlik
         state["campfire_history"] = []
         state["house_visits"] = []
+        state["campfire_rolling_summary"] = ""
+        state["_summary_cursor"] = 0
 
         # ── SABAH ──
         state["phase"] = Phase.MORNING.value
@@ -1144,9 +1374,9 @@ async def run_full_game(state: GameState) -> GameState:
 
         # ── OYLAMA ──
         state["phase"] = Phase.VOTE.value
-        exiled_name = await run_vote(state)
+        exiled_name = await run_vote(state, campfire_summary)
 
-        # Round data
+        # Round data — OYLARI HER ZAMAN KAYDET (beraberlikte de)
         round_data = {
             "round": round_n,
             "campfire_history": list(state["campfire_history"]),
@@ -1156,15 +1386,27 @@ async def run_full_game(state: GameState) -> GameState:
             "exiled_type": None,
         }
 
+        # Oylar her zaman kaydedilir
+        for p in state["players"]:
+            if p.vote_target:
+                round_data["votes"][p.name] = p.vote_target
+
         if exiled_name:
             player = exile_player(state, exiled_name)
             round_data["exiled"] = exiled_name
             round_data["exiled_type"] = player.player_type.value if player else None
-            for p in state["players"]:
-                if p.vote_target:
-                    round_data["votes"][p.name] = p.vote_target
         else:
             print(f"  Kimse surgun edilmedi.")
+
+        # ── CUMULATIVE SUMMARY GUNCELLE ──
+        vote_result_text = f"Surgun: {exiled_name}" if exiled_name else "Kimse surgun edilmedi (berabere)"
+        state["cumulative_summary"] = await _update_cumulative_summary(
+            state.get("cumulative_summary", ""),
+            round_n,
+            campfire_summary,
+            vote_result_text,
+        )
+        print(f"  [Memory] Kumulatif ozet guncellendi")
 
         game_log["rounds"].append(round_data)
 
@@ -1224,22 +1466,28 @@ async def main():
     parser = argparse.ArgumentParser(description="AI vs Insan: Ocak Yemini")
     parser.add_argument("--game-id", default=None, help="Deterministik seed (bos = random UUID)")
     parser.add_argument("--players", type=int, default=6, help="Toplam oyuncu sayisi")
-    parser.add_argument("--ai-count", type=int, default=4, help="AI oyuncu sayisi")
-    parser.add_argument("--day-limit", type=int, default=5, help="Max gun sayisi")
+    parser.add_argument("--ai-count", type=int, default=None, help="AI oyuncu sayisi (bos = rastgele)")
+    parser.add_argument("--day-limit", type=int, default=None, help="Max gun sayisi (bos = otomatik hesapla)")
     args = parser.parse_args()
 
     game_id = args.game_id or str(uuid.uuid4())
 
-    print(f"{'=' * 60}")
-    print(f"  AI vs Insan: Ocak Yemini")
-    print(f"  Game ID: {game_id}")
-    print(f"  Oyuncular: {args.players} ({args.ai_count} AI, {args.players - args.ai_count} Insan)")
-    print(f"  Gun Limiti: {args.day_limit}")
-    print(f"{'=' * 60}")
-
     # ── 1. DUNYA URETIMI ──
     print(f"\n[1/3] Dunya uretiliyor...")
     world_seed = generate_world_seed(game_id)
+    rng = _make_rng(game_id)
+
+    # AI sayisi: ya kullanici verdi ya da rastgele (seed'li, deterministik)
+    ai_count = args.ai_count if args.ai_count is not None else calculate_ai_count(args.players, rng)
+    day_limit = args.day_limit or calculate_day_limit(args.players, ai_count)
+
+    print(f"{'=' * 60}")
+    print(f"  AI vs Insan: Ocak Yemini")
+    print(f"  Game ID: {game_id}")
+    print(f"  Oyuncular: {args.players} ({ai_count} AI, {args.players - ai_count} Insan)")
+    print(f"  Gun Limiti: {day_limit} (formul: {ai_count} AI + {max(1, args.players // 3)} hata payi)")
+    print(f"{'=' * 60}")
+
     print(render_world_brief(world_seed))
 
     scene_cards = render_scene_cards(world_seed)
@@ -1249,12 +1497,11 @@ async def main():
 
     # ── 2. KARAKTER URETIMI ──
     print(f"\n[2/3] Karakterler uretiliyor ({args.players} karakter, concurrent Pro model)...")
-    rng = _make_rng(game_id)
     players = await generate_players(
         rng=rng,
         world_seed=world_seed,
         player_count=args.players,
-        ai_count=args.ai_count,
+        ai_count=ai_count,
     )
 
     print(f"\n  Karakterler:")
@@ -1267,13 +1514,15 @@ async def main():
     print(f"\n[3/3] Oyun basliyor...")
     _warning_counts.clear()
     _campfire_summary_cache.clear()
-    state = init_state(players, world_seed, day_limit=args.day_limit)
+    state = init_state(players, world_seed, day_limit=day_limit)
     await run_full_game(state)
 
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
-    load_dotenv()
+    # Proje root'undaki .env'yi bul (nerede calistirirsan calistir)
+    _project_root = Path(__file__).resolve().parents[2]
+    load_dotenv(_project_root / ".env")
 
     key = os.environ.get("FAL_KEY", "")
     if not key:

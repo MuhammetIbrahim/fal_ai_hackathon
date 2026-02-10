@@ -80,6 +80,11 @@ class GameState(TypedDict, total=False):
     house_visits: list[dict]        # bu rounddaki ev ziyaretleri
     exiled_today: str | None        # bugün sürgün edilen
     winner: str | None              # "et_can" veya "yanki_dogmus" veya None
+    # Memory state
+    world_seed: dict                # WorldSeed.model_dump()
+    campfire_rolling_summary: str   # bu round icin rolling ozet
+    _summary_cursor: int            # ozetlenen mesaj index'i
+    cumulative_summary: str         # cross-round kumulatif ozet
 
 
 # ── Helper'lar ────────────────────────────────────────────
