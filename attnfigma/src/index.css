@@ -823,3 +823,30 @@ body {
     transform: translateX(0);
   }
 }
+
+/* ── Yeni Animasyonlar ─────────────────────────── */
+
+.animate-fade-in {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Exile kirmizi glow */
+.exile-glow {
+  text-shadow: 0 0 20px rgba(211, 47, 47, 0.6), 0 0 60px rgba(211, 47, 47, 0.3);
+}
+
+/* Game Over altin glow */
+.game-over-glow {
+  text-shadow: 0 0 20px rgba(255, 191, 0, 0.5), 0 0 60px rgba(255, 191, 0, 0.2);
+}
