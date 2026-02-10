@@ -167,14 +167,14 @@ def create_app() -> FastAPI:
     # Router'ları Dahil Et
     # ═══════════════════════════════════════════════════
     from src.apps.game.router import router as game_router
+    from src.apps.ws.router import router as ws_router
     
     app.include_router(game_router)
+    app.include_router(ws_router)
     
     # İleride eklenecekler:
     # from src.apps.lobby.router import router as lobby_router
-    # from src.apps.ws.router import router as ws_router
     # app.include_router(lobby_router)
-    # app.include_router(ws_router)
     
     return app
 
