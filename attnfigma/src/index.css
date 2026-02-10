@@ -1,3 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #FFBF00;
+  --color-bg-dark: #1a1512;
+  --color-bg-panel: #2d2420;
+  --color-warden-alert: #D32F2F;
+  --color-success: #43A047;
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #a0a0a0;
+  --font-primary: 'Inter', system-ui, sans-serif;
+}
+
 :root {
   /* Seed Palette - Default (will be overridden by JS) */
   --color-accent: #FFBF00;
