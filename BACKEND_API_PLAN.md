@@ -13,8 +13,9 @@ Modular monolith yaklasim: her feature kendi app'inde, tek process'te calisir.
 src/
   core/                         ← Paylasilan is mantigi (game engine burada)
     __init__.py
-    config.py                   ← Env vars, FAL_KEY, Redis config
-    dependencies.py             ← FastAPI dependency injection
+    config.py                   ← Env vars, FAL_KEY, Redis config (HAZIR)
+    database.py                 ← In-memory mock DB (HAZIR)
+    dependencies.py             ← FastAPI dependency injection (HAZIR)
     game_engine.py              ← game.py'den import edilen fonksiyonlar (wrapper)
     world_gen.py                ← Dunya uretimi (mevcut — kopyalanacak)
     game_state.py               ← Player, GameState (mevcut — kopyalanacak)
@@ -51,8 +52,7 @@ src/
 
 - **FastAPI** — REST + WebSocket
 - **Pydantic v2** — Schema validation (zaten projede var)
-- **Redis** — Game state store + pub/sub (lobby, WS broadcast)
-  - Alternatif: in-memory dict (hackathon icin yeterli)
+- **In-Memory DB** — `src/core/database.py` (HAZIR, asagida detay)
 - **uvicorn** — ASGI server
 
 ### pyproject.toml'a eklenecekler
@@ -60,10 +60,77 @@ src/
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
-    "redis>=5.0",       # opsiyonel, in-memory ile de olur
     "python-dotenv",
 ]
 ```
+
+---
+
+## In-Memory Database (`src/core/database.py` — HAZIR)
+
+Thread-safe, singleton, collection-based mock DB. Tum app'ler bunu kullanir.
+Production icin Redis/PostgreSQL'e geciste sadece bu dosya degisir.
+
+### Kullanim
+
+```python
+from src.core.database import db, GAMES, LOBBIES, PLAYERS, GAME_LOGS
+
+# Kayit ekle
+db.insert(GAMES, "game_123", {"status": "waiting", "world_seed": {...}})
+
+# Getir
+game = db.get(GAMES, "game_123")
+
+# Guncelle (merge)
+db.update(GAMES, "game_123", {"status": "running", "round": 2})
+
+# Filtreli listele
+running = db.list(GAMES, filter_fn=lambda g: g["status"] == "running")
+
+# Sayim
+count = db.count(LOBBIES)
+
+# Sil
+db.delete(GAMES, "game_123")
+
+# Temizle
+db.clear(GAMES)       # tek collection
+db.clear()             # tum DB
+```
+
+### Collection Sabitleri
+
+| Sabit | Kullanim |
+|-------|----------|
+| `GAMES` | Oyun kayitlari (world_seed, state, status, winner) |
+| `LOBBIES` | Lobi kayitlari (code, host, players, status) |
+| `PLAYERS` | Oyuncu session kayitlari (slot_id, game_id, ws_connected) |
+| `GAME_LOGS` | Bitmis oyun loglari (rounds, votes, exiles) |
+
+### Otomatik meta alanlar
+
+Her kayitta otomatik eklenir:
+- `_id` — kayit ID'si
+- `_created_at` — olusturulma zamani (ISO)
+- `_updated_at` — son guncelleme zamani (ISO)
+
+### ONEMLI: models.py yerine database.py kullan
+
+App'lerdeki `models.py` dosyalarina dataclass/SQLModel yazmak yerine,
+direkt `database.py`'yi kullan. Ornek:
+
+```python
+# YANLIS — kendi store'unu yazma:
+_games: dict[str, dict] = {}
+
+# DOGRU — merkezi DB kullan:
+from src.core.database import db, GAMES
+db.insert(GAMES, game_id, {"status": "waiting", ...})
+game = db.get(GAMES, game_id)
+```
+
+Bu sayede tum data tek yerde, debug kolay, production gecisi temiz.
 
 ---
 
@@ -135,54 +202,63 @@ class GameLogResponse(BaseModel):
 ### service.py
 
 ```python
-from core.game_engine import generate_world_seed, generate_players, run_full_game, init_state
-
-# In-memory store (hackathon icin)
-_games: dict[str, dict] = {}
+from src.core.database import db, GAMES
+from src.core.game_engine import generate_world_seed, generate_players, init_state, _make_rng
 
 async def create_game(game_id: str, player_count: int, ai_count: int, day_limit: int) -> dict:
     world_seed = generate_world_seed(game_id)
-    _games[game_id] = {
-        "world_seed": world_seed,
+    return db.insert(GAMES, game_id, {
+        "world_seed": world_seed.model_dump(),
         "status": "waiting",
         "state": None,
         "config": {"player_count": player_count, "ai_count": ai_count, "day_limit": day_limit},
-    }
-    return _games[game_id]
+    })
 
-async def start_game(game_id: str) -> None:
-    game = _games[game_id]
+async def start_game(game_id: str) -> dict:
+    game = db.get(GAMES, game_id)
+    if not game:
+        raise ValueError(f"Game {game_id} not found")
+
+    config = game["config"]
+    world_seed = generate_world_seed(game_id)
+    rng = _make_rng(game_id)
+
     # Karakter uret
-    players = await generate_players(rng, game["world_seed"], ...)
-    state = init_state(players, game["world_seed"], ...)
-    game["state"] = state
-    game["status"] = "running"
+    players = await generate_players(rng, world_seed, config["player_count"], config["ai_count"])
+    state = init_state(players, world_seed, config["day_limit"])
+
+    db.update(GAMES, game_id, {"status": "running", "state": state})
+
     # Background task olarak game loop baslat
     asyncio.create_task(_run_game_loop(game_id))
+    return db.get(GAMES, game_id)
+
+async def get_game(game_id: str) -> dict:
+    game = db.get(GAMES, game_id)
+    if not game:
+        raise ValueError(f"Game {game_id} not found")
+    return game
 
 async def _run_game_loop(game_id: str):
-    """Game loop — her fazda WS event broadcast eder."""
-    # Bu fonksiyon game.py'deki run_full_game'i ADIM ADIM calistirir
-    # Her adimda WS broadcast yapar
+    """Game loop — her fazda WS event broadcast + DB update eder."""
+    game = db.get(GAMES, game_id)
+    state = game["state"]
+    # run_full_game'i ADIM ADIM calistir, her fazda:
+    #   1. db.update(GAMES, game_id, {"state": state})
+    #   2. ws manager.broadcast(...)
     pass
 ```
 
 ### models.py
 
 ```python
-# Hackathon icin in-memory yeterli.
-# Production icin SQLAlchemy/SQLModel:
-
-from sqlmodel import SQLModel, Field
-from datetime import datetime
-
-class GameModel(SQLModel, table=True):
-    id: str = Field(primary_key=True)
-    status: str = "waiting"
-    world_seed_json: str            # WorldSeed.model_dump_json()
-    state_json: str | None = None
-    winner: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+# models.py'ye dataclass/SQLModel YAZMA.
+# Tum data src/core/database.py uzerinden yonetilir.
+# Bu dosya bos kalabilir veya sadece type hint'ler icin kullanilir.
+#
+# Ornek type hint:
+# GameData = dict  # db.get(GAMES, id) donen tip
+# LobbyData = dict
 ```
 
 ---
@@ -245,30 +321,38 @@ class JoinResponse(BaseModel):
 ```python
 import random
 import string
-
-_lobbies: dict[str, dict] = {}
+from src.core.database import db, LOBBIES
 
 def _generate_code() -> str:
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 async def create_lobby(host_name: str, max_players: int) -> dict:
     code = _generate_code()
-    _lobbies[code] = {
+    return db.insert(LOBBIES, code, {
         "code": code,
         "host": host_name,
         "max_players": max_players,
         "players": [{"slot_id": "P0", "name": host_name, "is_host": True, "is_human": True, "ready": True}],
         "status": "waiting",
-    }
-    return _lobbies[code]
+    })
 
 async def join_lobby(code: str, player_name: str) -> dict:
-    lobby = _lobbies[code]
+    lobby = db.get(LOBBIES, code)
+    if not lobby:
+        raise ValueError(f"Lobby {code} not found")
+
     slot_id = f"P{len(lobby['players'])}"
     player = {"slot_id": slot_id, "name": player_name, "is_host": False, "is_human": True, "ready": False}
     lobby["players"].append(player)
+    db.update(LOBBIES, code, {"players": lobby["players"]})
     # Kalan slotlar AI ile doldurulacak (oyun baslarken)
     return player
+
+async def get_lobby(code: str) -> dict:
+    lobby = db.get(LOBBIES, code)
+    if not lobby:
+        raise ValueError(f"Lobby {code} not found")
+    return lobby
 ```
 
 ---
@@ -532,5 +616,7 @@ websocat ws://localhost:8000/ws/{game_id}/P0
 - Game engine `asyncio` tabanli, FastAPI ile dogal uyumlu
 - `fal_services.py` zaten async — direkt kullanilabilir
 - WorldSeed Pydantic model — schema.py'da direkt kullanilabilir
-- Hackathon icin Redis yerine in-memory dict yeterli
-- Production icin: Redis pub/sub (multi-instance), PostgreSQL (persistence)
+- **Tum data `src/core/database.py` uzerinden** — kendi dict/store yazma
+- `database.py` thread-safe (Lock), singleton (`db` instance), collection bazli
+- Production gecisi: sadece `database.py` icini Redis/PostgreSQL'e cevir, API ayni kalir
+- `models.py` dosyalari bos kalabilir veya sadece type hint icin kullanilir
