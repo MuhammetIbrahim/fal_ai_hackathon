@@ -42,7 +42,9 @@ async def lifespan(app: FastAPI):
     
     # FAL AI servisini başlat (gerekirse)
     if settings.FAL_KEY:
-        print("✅ FAL_KEY configured")
+        from src.core.dependencies import init_fal
+        init_fal()
+        print("✅ FAL_KEY configured and initialized")
     else:
         print("⚠️  FAL_KEY not set - AI features will be limited")
     
