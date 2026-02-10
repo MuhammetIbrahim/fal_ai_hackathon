@@ -91,6 +91,15 @@ class InMemoryDB:
 db = InMemoryDB()
 
 
+def init_memory_db():
+    """
+    In-memory database'i başlatır (collections oluşturur).
+    Application startup'ta çağrılır.
+    """
+    db.clear()  # Temiz başlat
+    print("📦 In-memory DB collections initialized: games, lobbies, players, game_logs")
+
+
 # ── Collection Isimleri (sabitler) ───────────────────
 
 GAMES = "games"
