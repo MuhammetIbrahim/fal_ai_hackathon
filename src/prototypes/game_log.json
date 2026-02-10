@@ -5,350 +5,713 @@
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Gün bir. Bozkır Kapısı'nda altı kişi kaldı. Veyra, Lyra, Kael, Mirra, Dorin, Aldric. Gece sessizdi, kimse sürgün edilmedi. Mühür kapısında bir çatlak belirdi."
+          "content": "Gün bir. Demir Yurdu'nda altı kişi kaldı. Gece sessiz geçti, kimse sürgün edilmedi. Rüzgar bugün kelime taklit ediyor, dikkatli olun. Ocak kızıl kor renkte yanıyor."
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Ocak maviyse işler karıştı demektir. Konuşun bakalım. Kim neredeydi dün gece? Anlatın."
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Bakalım... Gece rüzgarın kelime taklit etmesi... Ocağın rengi... Herkesin bir fikri var sanki. Peki, dün gece kim neredeydi, ne yapıyordu? Benim atölyem gece yarısı da açık sayılır, gelenim gidenim belli. Ama siz, siz nerelerdeydiniz? Soren, Fenris, Dorin, Seraphine, Mirra... Anlatın bakalım, kimin hikayesi nereye kadar uzanıyor?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Çatlak sesi duydum. Siz neredeydi?"
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Jareth, sen dün gece atölyende miydin? Şunu merak ediyorum, ocağın bugünkü hali, hani bu mavi titremesi, seni şaşırtmadı mı? Ya da demirdeki o kızıl rengi... Sanki bir şeyler değişti ama herkes normalmiş gibi davranıyor. Soren, Fenris, Dorin, Mirra... kimin hikayesi nereye uzanıyor bilmiyorum. Ama ben kendi hikayemi biliyorum. Ben dün gece atölyemdeydim, yeni siparişleri bitirmeye çalışıyordum. Benim şahitlerim yığınla yarım kalmış kumaş ve bitmeyi bekleyen dikişler. Peki sizin tanığınız ne?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Çatlak sesi duydun, demek. İlginç. Tam olarak ne zaman duyuldu bu ses? Ve sen o sırada neredeydin Veyra? Başkasıyla mıydın?"
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Kazan başında bekliyordum. Tektim. Ses ne zamandı, tam kestiremedim. Sen neredeydin Lyra?"
-        },
-        {
-          "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Kael, herkesin nerede olduğunu sordu. Veyra, sen kazan başında tek başınaymışsın. Sesin saati belli değil. Pek ikna edici değil. Dorin, Aldric, ya siz? Ne yaptınız dün gece?"
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Seraphine, ocak rengi bir gösterge değil. Basınç farkı. O kadar. Dün gece mi? Kuzey kapısı. Menteşe gıcırdıyordu. Yağladım. Sonra ana su pompasının filtresi. Tıkalıydı. Temizledim. Yarım saatimi aldı. Sonrası mı? Onuncu seviye havalandırma bacası. Sürekli tıkanıyor. Kontrol ettim. Başka?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Arkadaşlar, sakin olalım. Panik yapmaya gerek yok. Benim görevim belli, devriyedeydim. Yerleşimin bütününü dolaşıyordum. Şüpheli bir ses duyduğumda zaten oraya yöneldim ama bir şey bulamadım. Lyra, Veyra'nın hikayesi sana neden ikna edici gelmedi?"
+          "role_title": "Ejderha Avcısı",
+          "content": "Durun bakalım, hele bir soluklanalım. Telaşla karar verilmez. Jareth, sen kendi atölyende miydin yani hep? Seraphine, senin de kumaşların şahidin olmuş. Soren kardeş, senin anlatımın biraz fazla teknik geldi bana, hani o kapı menteşesi, pompa filtresi... Neden bu kadar detaya girdin, tam anlayamadım.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "moderator",
+          "content": "Ocak Yemini titredi... (Sistem dış dünya terimidir.)",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Dorin evine cekildi. Seraphine, Dorin'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Dorin, senin görevin devriye gezmek, değil mi? \"Bütününü dolaşıyordum\" diyorsun. İyi de, o kadar geniş bir alanda tek başına olup da hiç mi bir şeye denk gelmedin? Bir ses, bir ayak изi, bir şüpheli boşluk... Yoksa dikkatini dağıtmaya mı çalışıyorsun? Veyra'nın hikayesi mi? Boşluklarla dolu, o yüzden ikna etmiyor. Saatin belirsizliği, tek olması... Alaric, sen ne yaptın dün gece?"
-        },
-        {
-          "type": "speech",
-          "name": "Aldric",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Dün gece mi? Atölyedeydim. Rende yapıyordum. Kapım kapalıydı."
+          "content": "Seraphine, sen dün gece atölyendeydin yani. Yarım kalmış kumaşlar... İyi de, kumaş senin nerede olduğunu söylemez ki, sadece orada bir iş olduğunu gösterir. Yani atölyende miydin, yoksa sadece oradan mı geçtin? Soren, sen kapıda, pompada, bacada... Hep mi teknik işler sana denk gelir bilmem. Dorin, senin de içini rahatlatmadı bu kadar detay, değil mi? Ben atölyedeydim, her zaman olduğu gibi. Gelenim gidenim oldu, hepsi de beni gördü. Peki siz? Hikayelerinizde bu kadar boşluk varken, kime güveneceğiz?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Aldric, atölyedeydin, kapın kapalıydı, rende yapıyordun... Tam olarak ne zaman başladın buna? Kapın kapalıysa, seni kim duydu veya gördü? Tek başınaydın yani. Veyra da tek başına. Sen de tek başına. Bu çok mu adil? Kael, Mirra, sizin alibiniz neydi?"
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Jareth, sen ne saçmalıyorsun? Hikayemde boşluk mu var? Sen mi daha iyi bileceksin? Ben bu duvarları tasarlarken sen daha ne yapıyordun? İşine bak. Kuzey kapısı menteşeleri. Sabah sarsıntısında gevşemişlerdi. Yağlanmaları gerekiyordu. Saat 8'i çeyrek geçeydi. Tamamen teknik bir sorun. Sonra su pompasını kontrol ettim. Basınç düşüklüğü vardı. Filtre tıkanmıştı. Bu da 8 buçukta bitti. Yarım saat sürdü. Tamam mı? Havalandırma bacası. O da 9'dan sonra. Hepsi belli saatti. Sen ne anlarsın bunlardan?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Lyra, tek olmak neden sorun oldu şimdi? O zaman Kael, Aldric, Veyra ve ben de tek başınayız. Hepimiz mi şüpheliyiz? Aldric, rende ne zamana kadar sürdü? O kadar işin vardı da hiç mi kimseye denk gelmedin? Kael, senin alibin neydi?"
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Soren, ne bu şiddet? Lafı dolandırırken iyi, icraata gelince mi bozuk attın? Belli saatti diyorsun da kim seni gördü o saatlerde? Kim şahit? Boş laf, hikaye anlatır gibi. Jareth, sen de gelenim gidenim oldu diyorsun, kimdi onlar? İsim ver. Yoksa o da mı bir masal?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Dorin evine cekildi. Seraphine, Dorin'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Mirra, ne tek olmak? Sen konuyu saptırma. Aldric, rende ne zamana kadar sürdü? Bana detay ver. Benim alibi mi? Ben dün gece, sabaha karşı ormandaydım. Geyik izi sürüyordum. Daha ne? Sen neredeydin?"
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Fenris, sen de mi boş laf? Sana şimdi isim mi sayacağım? Herkes işindeydi. Gözlerini aç da gör. Jareth, senin gelen gidenin kimdi peki? İsim ver diyen sana, niye söylemiyorsun kendini?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Aldric",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Rende tüm gece sürdü. Kapımı çalan olmadı. Başka ne?"
-        },
-        {
-          "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Aldric, tüm gece rende mi yaptın? Kimse çat kapı gelmedi mi? Bu, Veyra'nın \"çatlak sesi duydum ama zamanı kestiremiyorum\" demesiyle aynı derecede muğlak. Dorin de devriyede hiçbir şeye denk gelmediğini söyledi. Hepiniz tek başınaydınız ve tuhaf bir şekilde hiç kimseye denk gelmediniz. Bir gariplik var bu işte. Mirra, sen neredeydin? Kael, geyik izi sürdün de, ormanda seni kim gördü?"
-        },
-        {
-          "type": "speech",
-          "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Lyra, soruyu sen bana değil, sana yöneltmeliydim belki. Sen neredeydin? Kitapların mı sana tanıklık ediyor? Kael, ormanda olman seni haklı çıkarmaz, kimse görmemiş seni. Belki de bir başkasıyla ormandaydın. Dorin, devriyede hiçbir şey görmediğini söylüyorsun ama ses duyduğunu iddia ettin. O zaman neden devam etmedin? Ne seni durdurdu?"
-        },
-        {
-          "type": "speech",
-          "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Mirra, güzel bir soru. Sese yöneldiğimde, birden kesildi. Sonra sessizlik oldu. Devam ettim mi? Ettim tabii. Tekrar bir şey duymadım. Lyra, Veyra'nın hikayesi sana neden muğlak geldi, onu merak ediyorum ben hala. Hani, neden tam olarak? Ve Aldric, sen ne dersin bu duruma? Senin de tüm gece atölyede olman... Biraz tuhaf değil mi?"
-        },
-        {
-          "type": "speech",
-          "name": "Lyra",
-          "role_title": "Kütüphaneci",
-          "content": "Dorin, hani Veyra'nın hikayesi muğlak geldi demiştim ya... Sen de duymuşsundur belki, ocağın mavi titreşimi... Bu zamanlarda her ses, her gölge bir anlam kazanır. Veyra çatlak sesi duyduğunu söylüyor ama ne zaman, kiminle duydu belli değil. Yani bir tanığı yok. Tıpkı Aldric gibi, tek başına kapalı bir atölyede. Sen de tek başınaydın devriyede. Hepiniz sanki bir yerlerde, ama tam olarak nerede ve ne yaptığınız net değil. Kael, sen ormanda geyik izi sürdüğünü söyledin. Kim gördü seni? Ya da sen kimi gördün? Hiç kimse mi? Mirra, sen de bir şey söylemedin daha. Sen neredeydin?"
+          "content": "Soren, senin bu teknik işlerin hep göz önünde. Ama ne hikmetse hep tek başınasın. Bir değil, iki değil, üç ayrı yerde işim vardı diyorsun. Bu kadar işin gücün arasında seni kim gördü peki? Fenris de sana sormuştu. Anlat, kimdi o görenler? Yoksa kendin mi uydurdun bu saatleri? Benim atölyeye gelenler belliydi. Mesela Alev dün gece gelip bana yeni bir kapı pervazı siparişi verdi. Sabah gelip de ona verdiğim sözü yerinde bulamayınca ne olurdu? Sen de öyle... Sözlerin havada kalıyor.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Lyra, tek olmak neden sorun oldu şimdi? O zaman Kael, Aldric, Veyra ve ben de tek başınayız. Hepimiz mi şüpheliyiz? Aldric, rende ne zamana kadar sürdü? O kadar işin vardı da hiç mi kimseye denk gelmedin? Kael, senin alibin neydi?\n\nLyra, soruyu sen bana değil, sana yöneltmeliydim belki. Sen neredeydin? Kitapların mı sana tanıklık ediyor? Kael, ormanda olman seni haklı çıkarmaz, kimse görmemiş seni. Belki de bir başkasıyla ormandaydın. Dorin, devriyede hiçbir şey görmediğini söylüyorsun ama ses duyduğunu iddia ettin. O zaman neden devam etmedin? Ne seni durdurdu?"
+          "role_title": "Haritacı",
+          "content": "Durun bakalım, bir nefes alalım... Ne bu acele? Her şeyi sırayla kafamızdaki haritaya yerleştirelim. Jareth, sen Alev'den bahsediyorsun, o atölyene geldi, değil mi? Ama Soren, senin o kapı menteşelerini yağlarken, su pompasını temizlerken seni kim gördü? Bu kadar çok işin vardı. Yani, senin hikayende o anlara dair bir gören yok mu?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Dorin evine cekildi. Seraphine, Dorin'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Tek olmak sorun değil Mirra. Tek olup tek başına saçmalık anlatmak sorun. Benim alibim belli. Ben geyik izi sürdüm. Sen neredeydin? Kitaplar tanık olamaz Lyra. Sen kendini savuncaksın. Dorin, ses duydun ne demek? Ney sesiydi? Devam ettin mi? Neyin peşindeydin? Anlat."
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Mirra, acele ne? Zamanımız kısıtlı. Her şey düzenli olacak. Jareth ise sadece konuşuyor. Öyle mi Jareth? Alev geldi diyorsun. Alev sana mı sipariş verdi? Ne yani Alev'in işine yaradı kapı pervazı? Başka kim geldi? Say bakalım.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Soren, Alev bana sipariş verdi evet. O kapı pervazı işine yaradı, tabi ki. Ne saçmalıyorsun? Başka kim mi geldi? Gece vakti kim gelir atölyeye? Genelde acil işi olanlar. Mesela dün gece Elara da geldi, kırık iskemlesini tamir ettirmeye. Saat de epey geçtiydi. Senin gibi değil, benim işimi herkes bilir. Gelenim gidenim belli. Sen hala kimse görmedi mi diyorsun kendini? Kuzey kapısında biri olmaz mıydı o saatte? Ya da su pompasında? Öyle mi tek başına iş yaparsın hep?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Jareth, Elara iskemle için geldi diyorsun. Elara'nın iskemlesi ne zaman kırıldı? Sabah sarsıntısında mı? Yoksa daha önce mi? Saat kaçtı Elara geldiğinde? Söyle bakalım. Ve Alev'in kapı pervazı... O da sabah sarsıntısında mı kırıldı?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Herkes ates basina dondu. Oylama zamani yaklasıyor.",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Soren, hani sen diyorsun ya, basınç farkı... Ama o basınç farkı neyin nesi? Her zamanki gibi değil ki. Kuzey kapısının menteşeleri gevşer de, ocak mavi titrer mi? Senin o teknik açıklamaların, sanki bir şeyleri örtmek içinmiş gibi duruyor. Dün gece ana su pompasını mı temizledin? Kim şahit oldu peki buna? Dorin, neden bana karşı böyle bir şüphe içindesin? Benim kumaşlarımın şahitliği seni neden şaşırttı?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Soren",
+          "role_title": "Mühendis",
+          "content": "Seraphine, ocağın mavi titremesi her zaman bir şeylerin göstergesi değildir. Basınç farkı, genleşme, ya da basit bir hava akımı. Senin o kumaşların, Jareth'in atölyesinde olduğunu mu kanıtlıyor şimdi? Sen ne yapıyordun dün gece?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Soren, dur bir. Sen az önce \"basınç farkı\" dedin, sonra \"genleşme\", şimdi de \"hava akımı\" diyorsun. Hani, hangisi ocağın mavi titremesini açıklıyor şimdi? Hepsi birden mi? Kuzey kapısının menteşeleri yağlanırken, aynı anda su pompasının filtresi mi temizlendi? Bu kadar işi tek başına mı yaptın? Kimse seni görmedi mi? Hep yalnız mıydın sen?\n\nDorin, benim kumaşlarımın şahitliği seni rahatsız etmemeli. Sen neden alibin hakkında konuşmuyorsun? Jareth, senin atölyende bu kadar gelen giden var, ama kimse senin dün gece orada olduğunu doğrulamadı. Kim bu gelen gidenler? İsim ver. Yoksa o atölye dün gece bomboş muydu?",
+          "present": [
+            "Jareth",
+            "Soren",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         }
       ],
       "house_visits": [
         {
-          "type": "visit",
-          "visitor": "Lyra",
-          "host": "Dorin",
-          "visitor_reason": "Devriye rotasıyla ilgili tutarsızlıkları ve duyduğunu iddia ettiği sesin detaylarını daha yakından sorgulamak istiyorum.",
+          "type": "room_visit",
+          "owner": "Dorin",
+          "visitor": "Seraphine",
           "exchanges": [
             {
-              "speaker": "Lyra",
-              "role_title": "Kütüphaneci",
-              "content": "Dorin, dün gece devriyedeymişsin. Kimseyi görmemişsin, değil mi? Ama bir ses duyduğunu söyledin. Nasıl bir sesti bu? Ve neden devam etmedin? Garip. Tam da o mavi titremenin gecesinde... İnsan daha dikkatli olurdu, hani."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Senin hikayen karışık, Dorin. Dün gece odun taşıdığını söyledin, oysa daha geçen hafta nefesinin daraldığını, merdiven bile çıkamadığını anlatıyordun. Bu işte bir tutarsızlık var."
             },
             {
               "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Lyra, ne oldu da bu kadar telaşlandın? Ben devriyedeydim. Yerleşimin her yerini kontrol ettim. O zaman ne gördüğümü, ne duyduğumu söyledim. Bir ses geldi evet, ama kesildi. Sesi takip edeyim derken başka bir yerden şüpheli bir ses duysam ne olacaktı? Yerleşimin güvenliği tek bir noktadan ibaret değil. Ben nöbetçiyim, Lyra. Senin gibi sadece kitapların arasında değilim. Peki sen dün gece ne yaptın? Odan sessizdi eminim. Yani... kim sana tanıklık edebilir?"
+              "role_title": "Ejderha Avcısı",
+              "content": "Hımm, ilginç bir nokta Seraphine. Ama bak şimdi, dağda geçen her gün yeni bir iz bırakır insanda. Zaten ben dün gece odun taşımadım, o başka biriydi. Yanlış hatırlıyorsun galiba. Asıl sen dün gece ne yaptın, onu bir anlatsana."
             },
             {
-              "speaker": "Lyra",
-              "role_title": "Kütüphaneci",
-              "content": "Odanın sessiz olması benim suçum değil, Dorin. Kütüphanede olmam da. Ama sen devriyede bile iki farklı ses duyduğunu iddia ediyorsun. Birini takip etsem diğerini kaçıracaktım diyorsun. Yani bir ses duyduğun kesin değil mi? Neden devam etmedin? Bir nöbetçi olsan, daha dikkatli olurdun. Sesin türü, nereden geldiği, neye benzediği... garip bir şekilde belirsiz. Yoksa sen de tam da o gece, mavi titreme gecesi, ortada görünmez mi olmak istedin?"
-            },
-            {
-              "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Lyra, senin bu kadar telaşlanmana şaşıyorum. Herkesin korkusu farklı. Ben nöbetçiyim, görevim bu yerleşimi korumak. Sesin kesilince, yerleşimin diğer taraflarını kontrol ettim elbette. Öyle ya, bir şey olduysa, sadece bir yerde olmak bir şey ifade etmezdi. Benim alibim devriye görevimdi. Oysa, senin kitapların mı sana alibi olacak? Kimse seni kütüphanede görmedi, değil mi?"
-            },
-            {
-              "speaker": "Lyra",
-              "role_title": "Kütüphaneci",
-              "content": "Senin bu kadar savunmaya geçmen ilginç. Ben zaten kütüphanedeydim, her zaman yaptığım gibi. Orada olmam, yalan söylediğim anlamına gelmez. Ama sen, nöbetçi olarak, hem ses duyduğunu iddia ediyorsun hem de o sesi takip etmeyip, \"başka yerden ses duysam ne olacaktı?\" diye kendini haklı çıkarıyorsun. Yani duymuş olsan bile, duymamış gibi davranıp geri mi döndün? Bir nöbetçi için bu garip bir seçim, hele bu gecede. Hem \"yerleşimin güvenliği tek bir noktadan ibaret değil\" dediğine göre, neden o ilk sesi takip etmedin? Bir yerleşimin güvenliği, duyduğun her şüpheli sesi takip etmektir, değil mi? Hangisi daha güvenli, sesi duymayıp, bir şey varmış gibi hareket etmek mi, yoksa duymuş gibi davranıp geçiştirmek mi? Bu nasıl bir görev anlayışı?"
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Ama ben seni kimseyle karıştırmam Dorin. Dün gece sen odun taşıdığını söyledin. Şimdi neden inkar ediyorsun bunu? Neden böyle bir şeyi yanlış hatırlayayım ki?"
             },
             {
               "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Lyra, sen benden bir kahramanlık hikayesi bekliyorsun herhalde. Ben gerçek bir nöbetçiyim, hayallerle değil, gerçeklerle çalışırım. Eğer bir ses kesildiyse ve başka bir yerde daha büyük bir tehdit oluşma ihtimali varsa, tek bir noktaya saplanıp kalmak aptallık olur. Benim görevim tüm yerleşimi korumak, senin gibi rafların arasından bakmak değil. Sen kütüphanede olduğunu söylüyorsun, ama kimse seni görmedi. Benim devriyem de kimsenin görmediği bir görevdi, ama ben oradaydım. Peki sen dün gece gerçekten ne yaptın? Yoksa bu kadar telaşlanmanın nedeni, kendi açığını kapatmaya çalışmak mı?"
-            },
+              "role_title": "Ejderha Avcısı",
+              "content": "Dur bakalım Seraphine, sakin ol. Ben \"odun taşıdım\" demedim, odun taşınırken yardım ettim belki. Kelimeler bazen yanlış anlaşılır, anlarsın ya. Asıl sen neden benimle bu kadar uğraşıyorsun? Dikkatleri başka yöne mi çekmeye çalışıyorsun? Dünkü konuşmalarda sen ne yaptığını tam olarak anlatmadın."
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Dorin",
+          "visitor": "Seraphine",
+          "exchanges": [
             {
-              "speaker": "Lyra",
-              "role_title": "Kütüphaneci",
-              "content": "Beni hedef göstermen ilginç. Tam da senin dünkü hikayendeki o tuhaflığı çözmeye çalışırken... Yoksa dikkat mi dağıtmaya çalışıyorsun? Kütüphanede olmam, her zaman yaptığım gibi, belli ki senin için yeterince ikna edici değil. Madem öyle, neden Veyra'nın, Aldric'in, Kael'in de tek başınalığı ve görgü tanıksızlığı seni bu kadar rahatsız etmiyor? Neden sadece benim \"kimse görmedi\" olmam bir sorun? Görev anlayışın da, seçici hafızan da garip, Dorin."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Dorin, sana bir şey soracağım. Ejderha Avcısı'nın gücü, değil mi? Sen hiç bu mavi titremeyi daha önce gördün mü peki? Yoksa seni de şaşırttı mı?"
             },
             {
               "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Lyra, ben kimseyi hedef göstermiyorum. Sadece herkesin aynı ölçüde şeffaf olması gerektiğini düşünüyorum. Veyra'nın, Aldric'in, Kael'in durumları da konuşuldu, konuşulacak. Ama sen, en çok sorgulayan olarak, kendi durumunu en az açıklıyorsun. Bu garip değil mi? Kitapların sana tanıklık edemez, doğru. Ama senin kendi sesin de pek net değil."
+              "role_title": "Ejderha Avcısı",
+              "content": "Dur bakalım Seraphine, hele bir soluklanalım. Telaşla karar verilmez. O mavi titreme mi? Dağda öyle çok akıldan çıkmayacak şey gördüm ki... Ama evet, bu Demir Yurdu'nun ocakları başka, kabul etmek lazım. Beni şaşırtması doğal. Sen ne düşünüyorsun peki? Bu durum seni neden bu kadar meraklandırdı?"
+            },
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Demir Yurdu'nda ocak her zaman kızıl kor renktedir. Şimdi mavi titriyor. Eğer seni şaşırtması doğalsa, bu senin için ne anlama geliyor? Sen 'onların' geldiğini düşünüyor musun?"
+            },
+            {
+              "speaker": "Dorin",
+              "role_title": "Ejderha Avcısı",
+              "content": "Bak dostum, dağlarda çok şey gördüm dedim ya... Her şeyin bir açıklaması vardır. Bu mavi titreme de muhakkak bir anlama geliyor. Ama 'geliyorlar' demek için erken. Ne biliyim, Soren basınçtan filan bahsetti. Ama o da ne kadar doğru, bilemeyiz. Senin kafanda kim var peki? Anlat bakalım."
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Dorin",
+          "visitor": "Seraphine",
+          "exchanges": [
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Dorin, sen Jareth'i sorguladın ama kendin ne yaptın dün gece? Neden Soren'in uzmanlığına takıldın? Senin anlatımın da pek net değil."
+            },
+            {
+              "speaker": "Dorin",
+              "role_title": "Ejderha Avcısı",
+              "content": "Dur bakalım, Seraphine. Bir soluklanalım hele. Telaşla karar verilmez, biliyorsun. Benim anlatımım mı belirsiz? Dağda onca yıl, her gün bir başkaydı... O kadar çok ki... Zamanla hepsi birbirine karışıyor. Ama sen bana söyle, Jareth'in o atölye meselesi... O kumaşlar gerçekten onun atölyede olduğunu kanıtlar mı sence? Ve Soren'in o teknik lafları... Biraz fazla açıklama gibi gelmedi mi sana da?"
+            },
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Benim kumaşlarım, doğruyu söyleyen için bir kanıttır. Yalan söyleyen içinse daha çok soru işareti bırakır. Asıl sen anlat. Dün gece ne yaptın? Neden Soren'in sözlerine bu kadar takıldın?"
+            },
+            {
+              "speaker": "Dorin",
+              "role_title": "Ejderha Avcısı",
+              "content": "Bak şimdi Seraphine, kardeş. Ben dün gece her zamanki gibi kapımda oturdum, yıldızları izledim. Dağlarda bu bir alışkanlıktır. Soren'e gelince, o teknik laflar... Yani, insan niye bu kadar detaya girer ki? Sanki bir şeyleri gizlemeye çalışıyor gibi geldi bana. Senin o kumaşların meselesi... Jareth'in sürekli \"gelen giden oldu\" demesiyle çelişmiyor mu peki?"
             }
           ]
         }
       ],
       "votes": {
-        "Veyra": "Lyra",
-        "Lyra": "Dorin",
-        "Kael": "Lyra",
-        "Mirra": "Lyra",
-        "Dorin": "Lyra",
-        "Aldric": "Lyra"
+        "Jareth": "Soren",
+        "Soren": "Jareth",
+        "Fenris": "Soren",
+        "Dorin": "Soren",
+        "Seraphine": "Soren",
+        "Mirra": "Soren"
       },
-      "exiled": "Lyra",
-      "exiled_type": "et_can"
+      "exiled": "Soren",
+      "exiled_type": "yanki_dogmus"
     },
     {
       "round": 2,
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Gün iki. Bozkır Kapısı'nda beş kişi kaldı: Veyra, Kael, Mirra, Dorin, Aldric. Gece sessiz geçti, kimse sürgün edilmedi. Dün mühür kapısında bir çatlak belirdi. Ocak soluk mavi titrek bir renkte yanıyor. Gece boyunca köpekler havladı, hiçbiri uyumadı."
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Mühürdeki çatlak… Ne anlamı var?"
+          "content": "Gün iki. Demir Yurdu. Beş kişi kaldı: Jareth, Fenris, Dorin, Seraphine, Mirra. Gece sessizdi, kimse sürgün edilmedi. Kuzgunlar çemberin üstünde üç tur attı. Rüzgar bugün kelimeleri taklit ediyor, dikkatli olun. Ocak kızıl kor renkte yanıyor."
         },
         {
           "type": "speech",
           "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Ocağın mavi yanması... Eskiler, mavi yanan ocak 'onları' getirir, derlerdi. Veyra, sen ne gibi bir çatlak gördün? Tam olarak neydi o?"
+          "role_title": "Haritacı",
+          "content": "Durun bakalım, bir nefes alalım... Dün Soren'i gönderdik, ama ocak hala mavi titriyor. Demek ki sorun onda değilmiş. Bu durumda... Haritamızda bir yanlışlık var. Baştan alalım mı? Kim nerede, ne zaman, kiminleydi? Bir biri anlatsın bakalım. Kime güveneceğiz?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Taşın kenarında küçük bir çizgiydi. Derin değil."
+          "name": "Dorin",
+          "role_title": "Ejderha Avcısı",
+          "content": "Durun bakalım, hele bir soluklanalım. Telaşla karar verilmez. Hepimiz aynı durumdayız, birbirimize güvenmekten başka çaremiz yok. Mirra haklı, Soren gitse de ocak hala mavi. Bu ilginç bir nokta... Jareth, sen dünkü atölye işinden bahsetmiştin, tam anlamadım, tekrar anlatır mısın?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Aldric",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Oradaydım. Küçük bir çizgi. Derin değil."
+          "content": "Mirra, Dorin... Soren'i gönderdik, ama ocak hâlâ mavi mi titriyor? Yani, ilk gün ne konuştuysak, hepsi boşa mı gitti? Ben size dedim, atölyemde Alev'le Elara vardı. Ama siz... \"Kanıtı nerede?\" dediniz. Kanıt, benim işim. Ben marangozum, işimle kanıtlarım kendimi. Dün de anlattım. Ama siz dinlemediniz. Şimdi, baştan mı alacağız yani? Hadi bakalım, kimden başlayacak bu iş? Dorin, sen dün hiçbir şey söylemedin. Sadece soru sordun. Şimdi ne değişti de, benim dünkü laflarıma takıldın?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "\"Mavi titremesi... Bu gerçekten kötü. Köpekler de boşuna havlamadı. Ocağın mavi yanması, eskiler... evet, o hikayeyi ben de bilirim.\"\n\n\"Lyra gitti ama sorun çözülmüş gibi durmuyor. Hatta bence daha da kötüleşti. Geceki havlamalar... ve şimdi bu çatlak.\"\n\n\"Ben devriyedeydim. Çatlağı görmedim, ama ocağın rengi... O endişelendiriciydi. Mirra, sen ne düşünüyorsun bu konuda? Bu mavi yanma... ne anlama geliyor?\""
+          "role_title": "Ejderha Avcısı",
+          "content": "Jareth, dostum, sakin ol. Ben sadece anlamaya çalışıyorum. Dün herkes gergindi, şimdi daha net konuşabiliriz. Alev ve Elara'yı atölyende gördüğünü söyledin, ama onlar bunu doğrulamadı. Bu bir boşluk, anlıyor musun? Bu kadar basit. Benim dünkü suskunluğum da, sizi dinlemek içindi. Şimdi ben senden dinledim. Sen bana söyle bakalım, Seraphine, dün ne yaptın? Yarım işler vardı demiştin. Kim gördü seni atölyede?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Dorin, ben ne düşündüğümü söyledim. Mavi ocak 'onları' getirir, derler. Sen köpeklerin havladığını duydun. Herkesin duyduğu o sesi. Peki, o sırada neredeydin? Ne kadar sürdü havlamalar?"
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Dorin, sen beni sorgulamakta bu kadar hevesliysen, önce kendi yaptıklarını anlat. Dün sadece soru sordun, ama hiç kendinden bahsetmedin. Şüpheli olan sensin. Ben atölyedeydim, kumaşların başında. Kimse beni görmedi, doğru. Ama sana da kimse seni görmedi diye şüpheyle bakmadık dün. Şimdi neden bana takıldın?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Mirra evine cekildi. Seraphine, Mirra'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Havlamaları duydum. Sesin geldiği yöne gittim. Ama ne bileyim, her yer karanlık, bir şey göremedim ben de. Havlamalar da kısa sürdü. Yani anladın mı? Çatlak... Veyra, sen o çatlağı ne zaman gördün? Ve Aldric, sen ne zaman gördün? Yani ikiniz de aynı anda mı gördünüz? Garip değil mi?"
-        },
-        {
-          "type": "speech",
-          "name": "Aldric",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Ben atölyedeydim. Akşamdan kalma, sabaha doğru gördüm. Yani, Veyra'yla aynı anda görmedim. Dorin, sen de oradayken o havlamalar niye kısa sürdü ya? Ne tuhaf."
+          "content": "Dorin, sakin mi olacağım? Ocak hala mavi titriyor diyorum sana! O zaman sen ne yaptın dün? Benim atölyemdeki işler görünüyor, belli. Ama senin yaptığın ne? Sadece soru sormak. Seraphine de haklı, sen hiç kendini anlatmadın. Ben sana söyleyeyim, bu suskunluk hiç hayra alamet değil. Mirra da ortada yok. Ne bu şimdi? Hepimiz buradayız, ama birileri saklanıyor. Fenris, sen ne diyorsun bu işe?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
         },
         {
           "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "\"Mührü dün gördüm. Sabah. Taşın kenarında küçük bir çizgiydi.\"\n\n\"Dorin, sesin geldiği yone gittim dedin. Ne kadar süre yürüdün? Nereye kadar?\"\n\n\"Aldric, sen ne zaman farkettin? Sabahın hangi saatiydi tam olarak?\""
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Jareth, sakin ol derken neyden bahsediyorsun? Dün sakin olsak da hiçbir işe yaramadı. Hala mavi titriyorsa, demek ki o Soren denen adam değildi yanki. Boş yere birini harcadık. Şimdi Seraphine, doğru diyorsun. Dorin neden bu kadar suskun? Dün de ağzını bıçak açmadı. Şimdi de sadece soru soruyor. Ne işler çeviriyorsun Dorin? Konuşsana. Yoksa söyleyecek bir şeyin mi yok? Mirra da ne öyle kayboldu ortadan? Ne bu şimdi, suçlu gibi kaçmak mı?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
         },
         {
           "type": "speech",
-          "name": "Aldric",
+          "name": "Dorin",
+          "role_title": "Ejderha Avcısı",
+          "content": "Fenris, kardeş, bir dur hele. Bu kadar öfkeyle bir yere varamayız. Dün de söyledim, telaşla karar verilmez. Ben sana ne işler çevirdiğimi anlatırım, merak etme. Ama önce şu anki duruma bakalım. Mirra ortada yok, diyorsun. Doğru. Nereye gitti? Seraphine'in de onun yanına gittiğini söylüyorlar. Ne işleri var acaba? Bu daha önemli değil mi şimdi? Ben sorgulandım, o zaman sen de anlat Fenris. Dün gece ne yaptın? Kimle beraberdin?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Mirra evine cekildi. Seraphine, Mirra'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Dorin, \"kardeş\" mi? Ne bu laubalilik şimdi? Öfke mi? Benim öfkem senin suskunluğundan daha tehlikeli değil. \"Telaşla karar verilmez\" dersin, sonra da \"şu anki duruma bakalım\" deyip konuyu dağıtırsın. Mirra'yla Seraphine'in ne işi var diyeceğine, kendi işine bak sen. Benim alibimi mi merak ediyorsun? Otur bir ağıt dinle istersen, dün gece tam da öyle bir ağıt yakıyordum. Kimseler yoktu, sadece ben ve sazım. Peki ya sen? Hadi anlat bakalım \"kardeşim\", senin ne işlerin var ki kimse bilmesin? Mirra'la Seraphine'in yokluğu mu daha şüpheli, senin bu cevapsız suskunluğun mu?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Ejderha Avcısı",
+          "content": "Fenris, ne bu celallenme şimdi? Lafı döndürüp dolaştırma. Ağıt mı yakıyordun? Yani kimse yoktu yanında, öyle mi? Bu mudur senin alibin? E o zaman sen ne farkın var, Soren'den? Onun da kanıtı yoktu. Bak ben sana açık konuşayım, kardeş. Dağlarda bu kadar yalnız kalmak iyi değildir. Kurtlar kapar adamı. Sen neden tek başına takılıyordun gece gece? Bu Mirra ve Seraphine olayını görmezden gelmek, bana tuhaf geliyor. Neden bu kadar diretiyorsun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Dorin, sen beni sorgulayacağına, neden Mirra ve Seraphine'in peşine düşmüyorsun? Ben ağıt yakıyordum, kime ne zararı var? Tek başıma olmak seni neden bu kadar rahatsız etti? Yoksa senin de tek başına yapmaman gereken işlerin mi var? \"Kurtlar kapar adamı\" diyorsun. Hah, asıl kurtlar sürünün içinde gezer, yalnız kurtlara kimse karışmaz. Konuyu saptırma! Mirra ve Seraphine neden beraber? Ne işleri var bu saatte? Sanki suçüstü yakalanmış gibi kaçtılar. Sen onlarınkini sorgula, benim ağıtıma karışma.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Mirra evine cekildi. Seraphine, Mirra'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Dorin",
+          "role_title": "Ejderha Avcısı",
+          "content": "Fenris, sen konuyu saptırıyorsun. Ben sana açıkça anlatırım. Ama sen de aynısını yap. Ben dün gece dağdaydım, avlanıyordum. Her zamanki gibi. Yalnızdım. Dağda canavarlarla tek başına boğuşmak benim hayatım. Kimseyi yanıma almam. Peki senin ağıt yakma işin neydi? Kime ağıt yakıyordun? Neden tek başına olmak seni bu kadar savruldu? Bak, ben seni anlamaya çalışıyorum. Ama sen benim açıklamamı dinlemeden hemen saldırıyorsun. Mirra ve Seraphine'in yokluğu ortada. Neden onlar hakkında konuşmak istemiyorsun? Benim yalnız oluşum seni neden bu kadar rahatsız etti diyorum?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Duymadım."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Dorin, sen nereye gittin onu anlat. Kısa sürdü falan. Ney kısa sürdü? Anlat. Ne gördün? Ne duydun?\n\nVeyra, sen dün gördün dedin. Sabah ne zaman? Uyanır uyanmaz mı? Daha dün başka şey diyordun sanki."
-        },
-        {
-          "type": "speech",
-          "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Veyra, ben o anı net hatırlıyorum. Bir an çatırtı geldi, köpekler havladı. Attım kendimi sesin geldiği yere. Ama dediğim gibi, kısa sürdü havlama. Ne bileyim, bir şey yoktu. Karanlık işte.\n\nAldric, sen ne zaman gördün o çatlağı tam olarak? Sabah mı, öğleden sonra mı? Tam bir saat söyleyemez misin?\n\nKael, çatlak dediğin şey zaten küçük bir çizgiydi. Çok da önemli değil sanki. Asıl bizi sarsan bu mavi titreme. Bence buna odaklanmalıyız."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Dorin, susma. Ney kısa sürdü dedim. Attım kendimi sesin geldiği yere diyorsun. Ne kadar attın? Beş adım mı? On adım mı? Ne gördün? Ne duydun? Karanlık işte diyorsun. Ney karanlık? Hiçbir şey mi yoktu? Nasıl geri döndün?\n\nVeyra, şimdi sabah diyorsun. Daha dün \"zamanı kestiremiyorum\" diyordun. Neyin zamanını kestiremiyordun? Ne değişti? Uyanır uyanmaz mı gördün? Anlat."
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Kael, dün evet, tam zamanı kestiremedim. Uyandım, mühre baktım. Çizgi vardı. Sabah işte."
+          "content": "Fenris, Dorin'e hak veriyorsun, öyle mi? Ama Dorin, dün tek laf etmedi! Sadece soru sordu, kendini gizledi. Şimdi dağdaydım diyor. Kim görecek seni dağda? Senin alibin, Fenris'in ağıtından ne farkı var? Mirra ve Seraphine de şimdi ortadan kayboldu. Ne bu şimdi? Herkes bir yerlere çekiliyor. Ben de atölyemdeydim, herkesin bildiği yerdeydim. Ama siz beni sorguladınız. Şimdi susanlar, alibi veremeyenler konuşsun bakalım! Özellikle sen Dorin, dün ne anlattın da şimdi seni dinleyeceğiz?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
         },
         {
           "type": "speech",
           "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Kael, neden bu kadar agresifsin? Görevim belli. Ses geldi, gittim. Bir şey yoksa ne yapayım? Karanlıktı. Ne kadar gittiğimi mi merak ediyorsun? Belki yüz adım, belki elli. Ne fark eder? Görecek bir şey yoktu. Senin için bir şey görmem şart mıydı?\n\nVeyra, uyanır uyanmaz gördün yani? Ama dün zaman kestiremiyorum dedin. Arada ne değişti? Bu kadar net hatırlaman garip değil mi?\n\nAldric, hala bir saat söyleyemiyorsun. Sabah mı öğleden sonra mı? Tam olarak ne zaman? Sanki zamanı söylemekten çekiniyorsun gibi."
+          "role_title": "Ejderha Avcısı",
+          "content": "Durun bakalım, hele bir soluklanalım. Telaşla karar verilmez. Jareth, sen az önce dedin ki, \"Dorin dün tek laf etmedi! Sadece soru sordu, kendini gizledi.\" Şimdi de \"dağdaydım diyor, kim görecek seni dağda?\" diye beni sorguluyorsun. Ama ben sana açıkça anlatıyorum, her zaman dağdayım. benim işim bu. Peki senin atölyende olduğunu kanıtlayacak kimse var mıydı? Alev ve Elara seni gördü mü gerçekten? Önce kendinin hesabını ver, sonra beni sorgula. Mirra ve Seraphine'in yokluğu ortada. Neden kimse onlardan bahsetmiyor? Neden herkes bana saldırıyor?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Herkes ates basina dondu. Oylama zamani yaklasıyor.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Yüz adım, elli adım… Ney fark etmez Dorin? Köpekler boşuna havlamaz dedin. Gittin, bir şey yoktu diyorsun. Ne kadar gittin? Beş mi? On mu? Detay ver. Neden sustun?\n\nVeyra, uyanır uyanmaz gördün de, dün neden zamanı kestiremedin? Ne değişti? Anlat. Ne oldu o arada?"
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Dorin, yüz adım dediysen, o kadar mesafede bir şey görmemen imkansız. Bir ışık bile mi yoktu?"
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Yine dağ masalları. Sanki dağlarda yalnız gezen kurtlar hiç yandı. Senin yalnızlığın beni değil, seni rahatsız etmeli. Mirra ve Seraphine'in yokluğu mu önemli, yoksa senin şu \"canavarlarla boğuşma\" hikayen mi? Kime anlatıyorsun bunları? Ben sazımın telini çaldım, sen neyin telini tuttun da kimse görmedi? Jareth, sen de dün aynıydun, bugün de. Atölye hikayeni defalarca anlattın, kimse inanmadı. Şimdi Dorin'e mi sığınıyorsun? Mirra ve Seraphine'e gelince... Onlar kaçtıysa, sebebi ne? Neden bir araya geldiler? Senin o dağlardan daha karanlık işler çeviriyor bunlar. Dorin, \"telaş etmeyelim\" derken, sanki bir şeyi gizlemeye çalışıyorsun. Sazım yanımda, ağıtıma devam ederim. Ama siz bu suskunlukla nereye kadar gidersiniz, bilmem.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Dorin",
-          "role_title": "Nöbetçi",
-          "content": "Veyra, yüz adımda bir şey görmek için ışık olması gerekir. Benim görevim karanlıkta devriye gezmek. Fenerle dolanmıyorum.\n\nKael, neden hala bu kadar detaya takılıyorsun? Bir şey görmedim diyorum. Görmedim! Bu seni neden bu kadar rahatsız ediyor? Sanki benim bir şey görmemi istiyorsun gibi.\n\nAldric, hala zaman veremiyor musun? Tamam, anlıyorum, belki hatırlamıyorsun. Ama bunu söylemek yerine kaçamak cevaplar vermen garip."
+          "role_title": "Ejderha Avcısı",
+          "content": "Fenris, bak dostum, ben dağdaydım, işimi yapıyordum. Kimseyle olmam gerekmez. Benim hayatım bu. Ama senin sazının teli neyi söylüyor bize? Dün de ağıt yakıyordun, bugün de. Sazına sordun mu neden bu ocak mavi titremeye devam ediyor? Benim yalnız oluşum değil, senin bu sürekli kendini acındırman rahatsız ediyor beni. Mirra ve Seraphine'in nerede olduğunu kimse sormuyor. Bu daha tuhaf değil mi?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Dorin, yine aynı şeyi yapıyorsun. Ortaya laf atıp, dikkat dağıtıyorsun. Dün de böyleydin. Benim atölyede ne yaptığımı anlattım. Senin \"dağdaydım, işimi yapıyordum\" demen, bir bahane değil. Kimse görmedi seni. Bu, kimsenin beni görmemesinden daha mı az şüpheli? Sen hep bir şeylerden kaçar gibisin. Fenris'e neden bu kadar üstüne gittiğini de anlamıyorum.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Dorin",
+            "Seraphine",
+            "Mirra"
+          ]
         }
       ],
       "house_visits": [
         {
-          "type": "visit",
-          "visitor": "Veyra",
-          "host": "Dorin",
-          "visitor_reason": "Devriyede hiçbir şey görmediğini söylemesi mantıksız, detayları duymak istiyorum.",
+          "type": "room_visit",
+          "owner": "Mirra",
+          "visitor": "Seraphine",
           "exchanges": [
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Köpekler ne kadar havladı Dorin? Hani yüz adım yürüdün ya, o kadar zamanda susmuş olamazlar."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Mirra, dünkü acelecilikle kimseye fayda sağlamadık. Şimdi daha dikkatli olmalıyız. Anlat bakalım, dün ne yaptın?"
             },
             {
-              "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Bak Veyra, zaten kısa sürdü havlamalar, bunu söyledim. Bir de karanlıktı, ne görecektim ki? Ne diye bu kadar üsteliyorsun anlamadım. Sanki bilerek yaptım."
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Ah, Seraphine... Haklısın, dünkü acelecilik kimseye yaramadı. Ocak hala mavi titriyorsa, haritamızda büyük bir hata var demektir. Şimdi en baştan almalıyız her şeyi, sakin sakin.\n\nBen dün akşam, her zamanki gibi, günün olaylarını kendi haritama işledim. Kim nerede ne dedi, kimin yolu kiminle çakıştı... Biliyorsun, bende her şeyin bir yeri olmalı. Senin günün nasıl geçti peki? Dün atölyende miydin yine?"
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Yüz adım. Ne kadar zaman eder? Hızlı yürüsen bile."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Haritayı baştan almak mı? Hata sensin. Onu baştan alamazsın. Sen dün akşam haritanı işlerken, Soren'in söylediklerini de mi işledin? O adam her şeyi tek başına yapıyordu hani. Senin haritan ne kadar doğru olabilir? Senin günün de hep böyle geçti. Gizli gizli notlar aldın. Kimse ne yaptığını bilmedi. Kimlerle görüştün? Özellikle de dün sürgün edilmeden önce Soren'le bir konuşman oldu mu?"
             },
             {
-              "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Veyra, ne bileyim ben. Kim tutuyor ki zamanı öyle? Görevim belli benim, devriye atarım. Havlama duyunca da koştum, yetişemedim. Bu kadar basit. Senin derdin ne şimdi, ben mi havlattım köpekleri?"
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Haritamı baştan alamam mı? Seraphine, harita dediğin zaten sürekli işlenen, düzeltilen bir şeydir. Senin için dikişlerini sökmek gibi bir şey bu, değil mi? Yanlış bir ilmek varsa söküp yeniden başlarsın. Benimki de öyle.\n\nSoren'le mi? Hayır, Soren'le özel bir görüşmem olmadı dün. Neden böyle bir şeyi sordun? Onun söylediklerini herkes gibi ben de dinledim, notlarımı da herkesin duyduklarına göre aldım. Eğer o tek başına çok şey yapıyorsa, bu da haritada işaretlenmesi gereken bir detaydır. Ama bu onu Yankı yapmaz, değil mi? İnsanların ne yaptığını bilmek neden bu kadar rahatsız etti seni? Ben sadece olayların nerede çakıştığını anlamaya çalışıyorum. Senin dikişlerin de mi kimsenin ne yaptığını bilmemesini gerektiriyor?"
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Mirra",
+          "visitor": "Seraphine",
+          "exchanges": [
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Mirra, dün Soren'i göndermek için çok uğraştın. Şimdi ocağın hala mavi parladığını görünce mi haritada yanlışlık olduğunu fark ettin? Daha dün her şey doğruydu."
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Sesin geldiği yöne gittin. Bir şey göremedin. Havlamalar da kısa sürdü. O zaman neden sesin geldiği yöne gittin?"
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Dur bakalım Seraphine. Bir nefes alalım, her şeyi sırayla kafamızdaki haritaya yerleştirelim. Ben sadece bu karmaşada yolumuzu bulalım diye uğraşıyorum. Herkesin nerede, ne zaman ne yaptığını bilmek hepimizi korur. Senin bu haritanın tamamlanmasından bir rahatsızlığın mı var?"
             },
             {
-              "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Veyra, zaten görevim bu. Şüpheli bir ses duyunca kontrol etmek. Göremedim diye gitmeyecek miydim? Sen de \"çatlağı sabah gördüm\" diyorsun, dün \"kestiremiyorum\" demiştin. Asıl sen neden öyle döndün lafı?"
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Rahatsızlığım mı? Benim rahatsızlığım, bir gün doğru dediğine ertesi gün yanlış demen. Dün Soren'i işaret ederken tereddüt etmedin. Şimdi ne değişti de haritada yanlışlık olabileceğini düşünüyorsun? Asıl senin haritan eksik kalmasın."
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Görevini yapmadın."
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Ne alâka Seraphine? Benim için her yeni bilgi, haritaya yeni bir çizgi çizmektir. Dün Soren'le ilgili elimizdeki bilgiler oydu, bugün ocak hala mavi, demek ki başka bir yere bakmalıyız. Sence öyle değil mi? Eski bilgiyi değiştirmek, haritayı daha doğru yapmaz mı?"
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Mirra",
+          "visitor": "Seraphine",
+          "exchanges": [
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Mirra, dün Soren'i senle birlikte en çok suçlayanlardandın. Şimdi haritada bir yanlışlık olduğunu ve baştan başlanması gerektiğini mi söylüyorsun? Bu, daha dün söylediklerinle çelişmiyor mu? Yoksa o kadar eminken şimdi mi şüphelerin oldu?"
             },
             {
-              "speaker": "Dorin",
-              "role_title": "Nöbetçi",
-              "content": "Bak Veyra, görevimi yapmadığımı söylemek, bu çok ağır bir suçlama. Benim tüm gecelerimi yerleşimin güvenliği için harcadığımı biliyorsun. O sırada ne gördüğümü soruyorsun, ama sen de kendi gördüğün çatlağın zamanını bir türlü netleştiremiyorsun. Dün başka, bugün başka. Sence bu daha şüpheli değil mi?"
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Seraphine, bak. Ben haritacı Mirra’yım. Benim işim doğru rotayı bulmak, değil mi? Dün bir yol çizdik, Soren'i hedef aldık. Ama ocak hala mavi titriyorsa, o zaman çizdiğimiz haritada bir yanlışlık var demektir. Benim için önemli olan, bu köyün yolunu kaybetmemesi. Kişisel duygular değil. Eğer haritada bir hata varsa, bunu erkenden fark etmeli ve düzeltmeliyiz. Yoksa daha büyük kayıplar veririz. Sence de öyle değil mi? Eski bir haritayı, yanlış olduğunu bile bile kullanmak akıllıca mı olur? Ben sadece doğru yolu bulmaya çalışıyorum. Senin derdin ne, benim doğruluk arayışım mı rahatsız etti seni? Yoksa benim dürüstlüğüm mü?"
+            },
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Mirra, ben senin dürüstlüğünü sorgulamıyorum. Ama senin bu ani fikir değişikliğin kafamı karıştırdı. Dün o kadar emindin. \"Harita yanlış\" derken, bu yanlış tam olarak nerede? Soren'in suçlu olduğunu düşünürken, ne seni bu fikre sürükledi? Şimdi ne değişti de bütün haritanın yanlış olduğunu söylüyorsun? Bu açıklaman mantıklı değil. Sanki bir şeyleri gizliyorsun gibi."
+            },
+            {
+              "speaker": "Mirra",
+              "role_title": "Haritacı",
+              "content": "Bak Seraphine, harita yanlış demek, Soren suçsuz demek değil. Belki o da, o büyük haritanın küçük bir parçasıydı sadece. Yani, demek istediğim, ocağın mavi titremesi bize daha büyük bir resmin olduğunu gösteriyor. Benim eminim, hepimizin eminliğiydi. Ama sonuç ortada. Hata nerede? Belki de ilk başta yeterince detaya inmedik. Kim ne zaman, nerede, tam olarak ne yaptı? Mesela sen dün atölyende olduğunu söyledin, kumaşların başında. Ne yapıyordun tam olarak? Kaç saat sürdü o işin? Biri seni gördü mü orada? Ben sadece haritadaki eksik noktaları tamamlamaya çalışıyorum. Bu seni neden rahatsız etti anlamadım. Yoksa senin mi saklamak istediğin bir şeyler var?"
             }
           ]
         }
       ],
       "votes": {
-        "Veyra": "Dorin",
-        "Kael": "Dorin",
-        "Mirra": "Dorin",
-        "Dorin": "Veyra",
-        "Aldric": "Dorin"
+        "Jareth": "Dorin",
+        "Fenris": "Dorin",
+        "Dorin": "Jareth",
+        "Seraphine": "Dorin",
+        "Mirra": "Dorin"
       },
       "exiled": "Dorin",
       "exiled_type": "yanki_dogmus"
@@ -358,186 +721,550 @@
       "campfire_history": [
         {
           "type": "narrator",
-          "content": "Gün üç. Bozkır Kapısı'nda dört kişi kaldı: Veyra, Kael, Mirra, Aldric. Gece kimse sürgün edilmedi, sessiz geçti. Mühürlü kapıda çatlaklar var. Ocak soluk mavi titriyor. Bütün gece köpekler havladı, kimse uyumadı."
+          "content": "Gün üç. Demir Yurdu. Dört kişi kaldı: Jareth, Fenris, Seraphine, Mirra. Gece sessiz geçti, kimse sürgün edilmedi. Bir evin eşiğinde tuz bulundu bugün. Rüzgar kelime taklit ediyor, dikkatli olun."
         },
         {
           "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Geçen gün bahsettiğin sesler, Mirra, neden bahsettiğini netleştirmedin."
-        },
-        {
-          "type": "speech",
-          "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Sesler... Köpekler havluyordu. Herkes duydu. Ben de. Başka ne duymamı bekliyorsun?"
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Ney 'başka ne duymayı bekliyorsun'? Dokul bakalım. Sadece havlama mıydı? Detay ver."
-        },
-        {
-          "type": "speech",
-          "name": "Aldric",
-          "role_title": "Marangoz",
-          "content": "Oradaydım. Köpek havlamaları. Hepsi bu. Başka ses duymadım."
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Duymadın mı? Yani sadece köpek havlaması mıydı?"
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Veyra, sen ne anlarsın? Sen de mi duymadın? O zaman neden soruyorsun? Mirra, anlat bakalım, ne 'sadece havlama' mı? Hadi, tutarlı konuş."
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Tuz mu? Kimin eşiğine? Bu hiç iyi değil.\n\nMirra, dün ortadan kayboldun. Nereye gittin? Neden sustun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Kael, sen de duydun havlamayı. Ne bekliyorsun ki benden başka? Sen de duydun."
+          "role_title": "Haritacı",
+          "content": "Tuz mu? Tuhaf... Biri haritayı iyice karıştırmak istiyor sanırım. Ben mi? Ben dün o tartışmanın haritasını çıkarmaya çalışıyordum sadece. Nerede ne dediniz, kim nerede olduğunu söyledi... Hepsini düzene sokmaya çalıştım. Neden acele ediyorsunuz? Bir nefes alın. Her şeyi sırayla kafamızdaki haritaya yerleştirelim. Seraphine, sen de uzun süre kayıptın. Nerede dolaşıyordun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Hayır, Mirra. Ben senin gibi değilim. Ben dinledim, sen sadece duymuşsun. Detay istiyorum ben. Ne zaman başladı, ne zaman bitti o havlamalar? Kaç köpekti? Duymadım deme bana. Aldric, sana soruyorum. Sen de mi duymadın hiç? Ne tuhaf. Köpekler havlarken sen ne yapıyordun?"
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Ben mi kayıptım? Ben Dorin'in sözleri arasında tutarsızlık arıyordum. Sen ise yoktun. Konuşmanın ortasında mı harita çıkarıyordun? Hani... ne haritası? Neyi yerleştiriyordun kafandaki haritaya?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
-          "name": "Aldric",
+          "name": "Jareth",
           "role_title": "Marangoz",
-          "content": "Oradaydım. Ne yapıyordum? Dinliyordum. Ne duydum? Havlama. Herkes de duydu. Kael, sen ne duydun da benden daha fazlasını bekliyorsun? Hani o kadar iyi dinlemiştin."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Aldric, sen bana soru sorma. Ben avcıyım, benim işim dinlemek. Sen ne anlarsın? Ne dinliyordun? Sadece havlama mı? Bu kadar mı yani? Bize bunu neden anlattın? Asıl sen neredeydin, onu anlat. Veyra, sen de mi duymadın? Dorin de duymamıştı. Ne hikmetse... Anlatın bakalım."
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Ben duydum. Önceki gün sesleri merak ettim. Sen duymadığını söyledin Kael. Şimdi neden bu kadar ilgili oldun?"
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Veyra, ne alaka şimdi? Ben hep ilgiliydim. Sen bana bir şeyleri bağlamaya çalışma. Asıl sen anlat. Neyi duydun? Hangi sesleri? Dorin de duymamıştı. Siz ikiniz bir aradaydınız sanki. Ee, sonra? Anlat. Neden sustun? Ney 'şey'? Dökül bakalım."
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Kael, ben 'Duymadım' demedim. Bir önceki günkü sesleri merak ettiğimi belirttim. Sen ise o gün ses duymadığını söyledin. Şimdi neden bu kadar meraklısın? Bu çelişki."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Ne alaka? Ben ne zaman ses duymadım dedim? Sen mi yanlış anladın? Konuyu saptırma. Şimdi anlat. O sesler neydi? Dorin'le ne işiniz vardı o zaman? Hani?"
-        },
-        {
-          "type": "speech",
-          "name": "Veyra",
-          "role_title": "Simyacı",
-          "content": "Kael, ben senin cümlelerini tekrar etmiyorum. Sen söylediklerini unutuyorsun. Dorin'le bir işim olmadı. Ne duydun sen?"
-        },
-        {
-          "type": "speech",
-          "name": "Aldric",
-          "role_title": "Marangoz",
-          "content": "Veyra, sen daha önce de zamanı kestiremiyordun. Şimdi de Kael'in ne dediğini karıştırıyorsun. Garip. Mirra, sen de sadece havlama duydum diyorsun, Kael de. Ama Kael'in merakı fazla. Sanki havlamadan fazlasını duymuş gibi."
-        },
-        {
-          "type": "speech",
-          "name": "Kael",
-          "role_title": "Avcı",
-          "content": "Aldric, sen ne biliyorsun? Havlamadan fazlası mı? Neymiş o fazlası? Sen ne duydun? Durmadan bana mı yükleniyorsun? Mirra, sen de. Kiminle neyin muhabbetini yapıyorsunuz? Veyra, anlat artık. Neden susuyorsun? Dorin'le ne işiniz vardı, söyle."
+          "content": "Mirra, harita çıkarıyordun ha? İyi de, o sırada biz Dorin'i anlatırken sen yoktun. Ne haritası bu? Nerede olduğunu söylemedin bile. Hepimiz bir şeyler anlatırken sen neyin haritasını çıkarıyordun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
         },
         {
           "type": "speech",
           "name": "Mirra",
-          "role_title": "Şifacı",
-          "content": "Kael, merakın yerinde. Ancak ne duydun ki bu kadar merak ediyorsun? Eğer havlama dışında bir şey duyduysan, sen anlat. Ben duymadım. Veyra, sen de çok konuştun. Geçen gün zamanı kestiremiyordun, şimdi de Kael'in ne dediğini karıştırıyorsun. Bu tutarsızlık."
+          "role_title": "Haritacı",
+          "content": "Ah, bakın yine bir yanlış anlaşılma. Harita çıkarmak dediğim, gerçekten kağıt kalemle değil. Kim nerede durdu, kim ne kadar konuştu, kimin sözü kime gitti... Zihnimde bunları not alıyordum. O yüzden dinlemek için biraz kenara çekildim. O sırada da Seraphine ortadan kayboldu. Jareth, sen de Dorin'i suçlarken çok istekliydin. Neredeydi o hevesin?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Seraphine evine cekildi. Jareth, Seraphine'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Mirra, lafı evirip çevirme. Ne haritasıydı o öyle? Zihninde not alıyormuş. Yalan. Boş laf. Sen ne yaptın asıl onu söyle. Seraphine, sen de hemen kayboldun. Niye? Ne gizliyorsun? Sakın boş konuşma bana.",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Haritacı",
+          "content": "Fenris, boş laf diyorsun ama neye boş laf diyorsun? Zihnimde olanı sana nasıl göstereyim? Asıl sen neden bu kadar gerildin? Seraphine'in yokluğunu nasıl açıklıyorsun? Bir anda ortadan kayboldu, o da benim gibi harita mı çıkarıyordu zihninde? Jareth, sen de dün Dorin'i suçlamakta çok aceleciydin. Sanki bir an önce oylansın istedin. Neden bu acele?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Mirra, bak bana boş laf deme. Senin 'zihin haritan' dediğin şey boş lafın tam da kendisi. Bir anda kaybolmalar, sonra da 'zihnimde not alıyordum' demek... Ne kadar da mantıklı, değil mi? Sen Seraphine'in yokluğunu nasıl açıklıyorsun diyorsun. Ben de sana soruyorum, sen niye onunla birlikte ortadan kayboldun?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Seraphine evine cekildi. Jareth, Seraphine'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Haritacı",
+          "content": "Fenris, bak bir şey soracağım. Seraphine, o sırada benimle mi kayboldu, yoksa o kendi başına mı gitti? İkisi farklı şeyler. Benim haritamda bu ayrımın net olması lazım. Eğer ikimiz birlikte gittiysek, o zaman aynı şeyi görmüş, aynı şeyi duymuş olmalıyız, değil mi? Ama ben, onun benimle geldiğini sanmıyorum. Jareth, sen ne diyeceksin buna? Sen Seraphine'in yanına gitmişsin. Bir şey söyledi mi sana neden gittiğine dair?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Fenris: Ne haritasıymış? Seraphine'in yokluğunu sana anlattı mı? Yoksa sen de mi bir şeylere şahit olup kayboldun? Lafı dolandırma Mirra. Jareth, sen ne diyeceksin? Seraphine sana ne anlattı? Anlattı mı hiç? Yoksa ikiniz de birden mi sustunuz?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Haritacı",
+          "content": "Fenris, bak ben laf dolandırmıyorum. Harita diyorum sana. Sen de sürekli aynı şeyi soruyorsun. Seraphine ile ben farklı yerlerdeydik. Ben kimin ne dediğini, nerede olduğunu yazıyordum. Seraphine neden gitti, onu Jareth anlatsın. Sen ısrarla neden ikimizin birlikte gittiğini düşünüyorsun? Bu harita benim için önemli, çünkü birileri yalan söylüyor ve ben o yamuk çizgileri bulmaya çalışıyorum. Jareth, hadi anlatsana, Seraphine sana ne dedi? Yoksa o da mı zihninde harita çıkarıyordu?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Serbest dolasim: Seraphine evine cekildi. Jareth, Seraphine'in evine gitti.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Mirra, boş laf işte, harita marita. Herkes bir anda yok oluyor, sonra \"zihnimde not aldım\". Güldürme beni. Sen Seraphine ile aynı anda kayboldun, değil mi? Aynı şeyi yaşadınız, aynı şeyi gördünüz mü? Yoksa ikiniz de birden mi hain kesildiniz? Jareth, sen bari dürüst ol. Seraphine sana ne dedi? Ne işiniz vardı Seraphine'in evinde? Yoksa o da mı zihninde harita çıkarıyordu?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Haritacı",
+          "content": "Jareth, bak şimdi Fenris de aynı şeyi soruyor. Seraphine, evine çekildi diyorlar. Sence neden böyle bir zamanda evine çekildi? Sen onunla konuşmaya gitmişsin. Bir şey söylemiş olmalı. Yoksa sen de mi bir şeylere şahit olup sustun? Bu çok önemli. Benim haritamda, Seraphine'in yokluğu ile senin onun peşinden gitmen arasında bir bağlantı var mıydı?",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Kesinlikle hain kesildiniz! İkiniz de. Ortadan kaybolmalar, sonra \"harita\", \"zihinsel not\"... Saçmalık. Jareth, sen bu boş laflara nasıl inanıyorsun? Seraphine'in evinde ne konuştunuz? Ne oldu da ikiniz birden sessizliğe büründünüz? Bana bak, burada kimse salak değil.",
+          "present": [
+            "Fenris",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Herkes ates basina dondu. Oylama zamani yaklasıyor.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Mirra, bak ne garip şey. Ortadan kayboluyorsun, sonra gelip \"harita çiziyordum\" diyorsun. Ama bize Dorin hakkında konuşurken bile sen yoktun. Bu nasıl bir harita? Kimsenin seni gördüğü bir yer, bir işin var mıydı? Söyle bakalım. Seraphine sen ne işler çevirdin dün? İkiniz birden mi harita çiziyordunuz?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Mirra, senin harita çıkarma bahane pek inandırıcı gelmiyor. Konuşmanın tam ortasında, insanların hayatı söz konusuyken, sen neredeydin? Benimle miydin? Değildin. Dün Dorin'in sözlerindeki boşlukları ararken, sen ortadan kayboldun. Ne diyorsun buna?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Mirra",
+          "role_title": "Haritacı",
+          "content": "Fenris, bak bir nefes alalım. Neden bu kadar gerginsin? Harita çizmek, zihnimdeki her şeyi yerine oturtmak benim için önemli. Benim kimseyi suçlama derdim yok, sadece her şey netleşsin istiyorum. Jareth, sen gittin Seraphine'i buldun. Ne konuştunuz? O neden ortadan kaybolduğunu sana anlattı mı? Ben sadece herkesin nerede ve ne yaptığını bilmek istiyorum. Bu, kimin yalan söylediğini ortaya çıkarır. Senin bu haritanın tamamlanmasından bir rahatsızlığın mı var?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine",
+            "Mirra"
+          ]
         }
       ],
       "house_visits": [
         {
-          "type": "visit",
-          "visitor": "Veyra",
-          "host": "Kael",
-          "visitor_reason": "Daha önce ses duymadığını söylediği halde şimdi neden bu kadar ilgili olduğunu anlamam gerekiyor.",
+          "type": "room_visit",
+          "owner": "Seraphine",
+          "visitor": "Jareth",
           "exchanges": [
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Duymadım."
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Seraphine, bak şimdi, iki kişi gitti. Ocağın kızıl koru mavi titremeye devam ediyor. Bu iyiye işaret değil. Dün o tartışmada Mirra ile bir haller oldu aranızda. \"Tuz\" falan dediniz. Neydi o? Anlamadım ben."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Avcı",
-              "content": "Duymadım mı? Ne duymadın? O kadar havlama oldu. Senin kulakların mühürlü mü? Anlat bakalım dün ne oldu. Hiçbir şey duymadım mı diyeceksin bana şimdi? Dokul."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Jareth, benim için tuhaflık Mirra'nın kendisiydi. Ortamdaki gerginken, o birden bire kayboldu. Ne yaptığı sorulduğunda ise \"tartışma haritası çıkardığını\" söyledi. Böylesi bir anda böyle bir şey yapması mantıksız. Sanki bir şeylerden kaçar gibiydi. \"Tuz\" meselesi ise, söylediklerinin ne kadar anlamsız olduğunu vurgulamak için onun ağzından çıktı. Sen ne düşündün peki? Onun bu davranışı hakkında."
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Dün gece sesleri duydum. Detay vermedim. Senin dediklerinle çelişmiyor."
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Mirra'nın sürekli bir şeyler uydurması... garip. Sanki sürekli bir açıklama, bir bahane bulmak zorunda gibi. O \"tuz\" meselesi de... boş konuşma gibi geldi bana. Sence de öyle değil miydi? Yani, şimdi iki kişi gitti, kimin eli kimin cebinde belli değil."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Avcı",
-              "content": "Ne \"detay vermedim\"? Ne demek bu? Hikaye uydurma. Havlama duyduysan, ne kadar duyduysan onu anlat. Hani \"zamanı kestiremiyorum\"? Şimdi birden her şey netleşti mi? Neden şimdi konuşuyorsun? Söylesene."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Mirra her zaman böyle miydi? Onu uzun zamandır tanıyorsun. Daha önce hiç bu kadar yersiz bir davranış sergilediğini hatırlıyor musun?"
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Seraphine",
+          "visitor": "Jareth",
+          "exchanges": [
+            {
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Seraphine, bak. Dün ortadan kaybolmanız… Mirra \"harita çıkarıyorum\" dedi, peki sen? Sen nereye kayboldun?"
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Dün sana zamanı kestiremiyorum demiştim, evet. Ama sesleri duymadım demedim. Şimdi de sadece sana cevap veriyorum. Başka kimin ne duyması ya da duymaması umurumda değil."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Jareth, ben senin o hızlı suçlamalarından sıkıldım. Belli ki birilerini hedef göstermeye çalışıyorsun. Kimin üstünü örtmeye çalıştığını söyle bana."
             },
             {
-              "speaker": "Kael",
-              "role_title": "Avcı",
-              "content": "Boş konuşuyorsun. \"Sana cevap veriyorum,\" he? Ne o, özel miyim ben? Sanki sadece benle konuşuyormuş gibi yapıyorsun. Niye? Ne gizliyorsun? Yoksa ben mi daha çok yaklaşıyorum gerçeğe? O yüzden mi kıvırıyorsun? Geç bunları. Anlat. Ne duydun. Ne zaman? Kaç köpekti? Neden dün 'kestiremiyorum' dedin, şimdi bana anlatır gibi yapıyorsun? Neyin peşindesin?"
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Ben mi? Ben hep neysem oyum. Benim üstünü örtecek bir şeyim yok. Sen asıl kendine bak. Mirra bir bahane uydurdu, sen ne yaptın? Susmakla nereye varacaksın?"
             },
             {
-              "speaker": "Veyra",
-              "role_title": "Simyacı",
-              "content": "Sana daha önce de söyledim. Duyduklarımı sana aktarıyorum. Başka bir şey yok."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Senin dürüstlüğün o kadar da sarsılmaz değil, Jareth. Birilerine çamur atmak senin için yeni bir şey değil. Sen dün Dorin'i suçlarken, ben sessizce senin önceki gün söylediklerinle şimdiki anlattıklarını karşılaştırıyordum. Hatırlasana, günler önce bana \"Sabahları eklemlerim tutuluyor, balta bile kaldıramıyorum\" demiştin. Şimdi ise sabahın erken saatlerinde atölyede tüm gece çalıştığını iddia ediyorsun. Bu nasıl oluyor? Bana anlat bunu."
+            }
+          ]
+        },
+        {
+          "type": "room_visit",
+          "owner": "Seraphine",
+          "visitor": "Jareth",
+          "exchanges": [
+            {
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Seraphine, bak. Dün Mirra ile ikinizin ortadan kaybolması hiç hoş değil. Ortada bir cinayet varken, birileri konuşurken... Siz nerede ve ne yapıyordunuz?"
             },
             {
-              "speaker": "Kael",
-              "role_title": "Avcı",
-              "content": "Senin sözlerinle benim söylediklerim çelişmiyor mu yani? Ne duydun o zaman? Duyduklarını aktarıyorsun da neyi aktarıyorsun? Dokul. Lafı çevirme. Konuş."
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Jareth, bak şimdi. O an ben de Mirra gibi kafa karışıklığı içindeydim. Düşünmem gerekiyordu. Ama Mirra ile birlikte değildik. Benim kayboluşumun onun ki ile bir ilgisi yok. Seninkini sorgulamaktan daha az şüpheliyim."
+            },
+            {
+              "speaker": "Jareth",
+              "role_title": "Marangoz",
+              "content": "Ne yani, ikiniz de aynı anda akıl yürütmeye mi başladınız? Bu köyde iki kişi aynı anda kaybolduğunda hep böyle mi olur? Ben atölyedeydim, belli. Peki sen neredeydin? Ne düşünüyordun?"
+            },
+            {
+              "speaker": "Seraphine",
+              "role_title": "Terzi",
+              "content": "Biraz garip değil mi? Seni dün Dorin'in yanında görmedim ama onun sürgün edilmesini çok istedin. Hatta ilk başta kendin atölyede olduğunu söyledin ama bunun kanıtı yoktu. Belki de sen de benim gibi o an uzaklaşıp düşünüyordun. Gerçekten seni görmedim. Hatta sen de benim gibi o an uzaklaşıp düşünüyordun. Senin atölyede olduğunun kanıtı neydi? Söyle bakalım."
             }
           ]
         }
       ],
       "votes": {
-        "Veyra": "Kael",
-        "Kael": "Veyra",
-        "Mirra": "Kael",
-        "Aldric": "Kael"
+        "Jareth": "Mirra",
+        "Fenris": "Mirra",
+        "Seraphine": "Mirra",
+        "Mirra": "Fenris"
       },
-      "exiled": "Kael",
+      "exiled": "Mirra",
+      "exiled_type": "et_can"
+    },
+    {
+      "round": 4,
+      "campfire_history": [
+        {
+          "type": "narrator",
+          "content": "Gün 4. Demir Yurdu. 3 kişi kaldı. Gece sessiz geçti, kimse sürgün edilmedi. Bir evin eşiğinde tuz bulundu. Rüzgar kelime taklit ediyor, dikkatli olun. Ocak yanıyor."
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Bir evin eşiğinde tuz mu bulunmuş? Geçtiğimiz günler kimin başına ne geldiyse hep içeriden geldi. Ama tuz... Bu kez içimizden biri değil ya...\n\nFenris, Mirra'ya çok yüklendin. O kadar da değil miydi? Seraphine, senin kaybolman da işi karıştırdı. Dün ne oldu da ikiniz de aynı anda ortadan kayboldunuz? Birbirinizi suçladınız ama kimse net bir şey anlatmadı.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Jareth, evet. Tuz, dışarıdan bir işareti olabilir. Ama içeriyi temizlemeden dışarıya bakamayız.\n\nFenris, Mirra'yı suçladın. Ama kendin de net bir şey anlatmadın. Dün benim kaybolduğumu sordun. Peki sen neredeydin? Ne yapıyordun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Jareth, tuz meselesine kafayı takmışsın. Asıl içimizdeki çürükle ilgilenmeliyiz. Seraphine, Mirra'yı suçladım çünkü lafı evirip çeviriyordu. Sen de öyle. Dün ne oldu, neden sustun? Net cevap ver. Benim alibim mi? Ben ağıtlarımı yazıyordum, sesleri dinliyordum. Ne var bunda?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Benim kaybolmamı sordunuz, ama kimse beni dinlemedi. Fenris, sen beni suçladın, Mirra'yı suçladın. Ama sen ağıt yazdığını söyledin. Ağıt yazarken seni kim gördü? Kim duydu? Hani kanıtın?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Fenris, ağıt yazıyordun öyle mi? O zamanlar ben atölyede çalışırken senin ağıt sesini hiç duymadım. Sesin de gelmedi. Kimse seni görmedi veya duymadıysa, nasıl emin olacağız? Seraphine'in de dediği gibi, kanıtın ne?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Ne ağıtıymış mı? Sana sazımın telini mi anlatacağım şimdi? Derdimiz bu mu, yoksa aramızdaki haini bulmak mı? Konuyu dağıtma! Jareth, senin atölyede ne işin vardı? Seraphine, sen de hemen taraf değiştiriyorsun, şaşırtıcı değil. Dün nerdeydin, neden kaçtın?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Fenris, lafı evirip çeviriyorsun. Konuyu dağıtan ben değilim, sensin. Senin o ağıt sesin, atölyeye kadar gelmesi lazım. Gelmedi. Demek ki yoktun orada. Ben de soruyorum, neredeydin? Sen \"içimizdeki çürük\" diyorsun da, kendi çürüğünü görmüyorsun. Seraphine, sen de. Neden kaçtın? Ne saklıyorsun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Fenris, benim kaçtığımı nereden çıkardın? Ben kaçmadım. Sadece, dünden beri söylediklerinde bir tutarsızlık var. Ağıt yazdığını söylüyorsun, ama kimse duymamış. Herkesin sırrını ortaya dökelim diyorsun, ama kendi sırrını saklıyorsun. Jareth, sen de dün benim peşimden geldin, değil mi? Sen ne saklıyorsun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Sen de beni mi suçluyorsun? Bak sen. Ben atölyedeydim. Elimi belime koydum, bekledim gelen giden olur mu diye. Ama sen, dünkü kayboluşun... Mirra ile bir olup ne çevirdiniz? Fenris haklı mı?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Beni suçlamak kolay. Ama Fenris, sen dün Mirra'ya \"lafı evirip çeviriyorsun\" dedin. Şimdi sen yapıyorsun aynısını. Ağıt yazdığını söylüyorsun, kanıtın yok. Jareth de duymadı seni. Neden üstüne gitmiyorsun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Jareth, ne ağıtmış ne ağıtmış diye zırvalayıp duruyorsun. Benim işim sana hesap vermek mi? Yoksa o tuz meselesine takılıp, asıl tehlikeyi görmezden mi geleceksin? Seraphine, sen de mi ona katıldın? Dünkü kaçışını unutmadım, Mirra ile ne konuştuysanız onu söyle. Susma.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Fenris, beni lafı evirip çevirmekle suçlama. Benim tek yaptığım, senin anlattıklarında dikiş tutmayan yerleri göstermek. Ağıt yazdım diyorsun, kimse duymamış. Bu nasıl bir ağıt? Kimin için yazdın, neden saklıyorsun? Jareth, sen de dün benim peşimden geldin, bunu inkar etme. Sen ne arıyordun?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Seraphine, sen dün Mirra ile ne konuştuysan onu söyle. \"Dikiş tutmayan yerler\" mi? Benim ağzımı açtırıp, dikkatleri dağıtma. Jareth, sen hâlâ atölyede miydin? Dün o kadar olay oldu, sen hala tahta yontuyor muydun? Sizin bu sessiz halinizden şüpheleniyorum.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Fenris, bana atölyede ne yaptığımı soruyorsun? Allah Allah... Sen de dün ağıt yaktın, kimse duymadı, hala açıklama yapmıyorsun. Benim işim belli, herkesin gözü önünde atölyemdeydim. Ama sen... Senin o ağıt işi ne oldu? Seraphine, sen de. Dün öyle bir ortadan kayboluşunuz... Mirra ile ne konuştuysanız çıksın ortaya.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "narrator",
+          "content": "Herkes ates basina dondu. Oylama zamani yaklasıyor.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Seraphine",
+          "role_title": "Terzi",
+          "content": "Fenris, benim konuşmalarımda bir tutarsızlık yok. Ben sürekli aynı şeyi söylüyorum. Ama sen, hem ağıt yazdım diyorsun, hem de niye kimsenin duymadığını açıklamıyorsun. Kimin üstünü örtmeye çalışıyorsun? Jareth, sen de dün benim peşimden geldin, neden? Ne gördün?",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Marangoz",
+          "content": "Fenris, senin ağıtların neydi? Kimse duymadı diyorsun, ben de duymadım. Atölyenin oradan gelmez o ses. Nasıl iş bu? Seraphine, sen de benim peşimden geldiğimi söylüyorsun. Neden? Ne gördün? Ben sadece ortalığı kolaçan ediyordum, bakınıyordum. Herkes bir şey saklıyor gibi.",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Ozan",
+          "content": "Jareth, senin dilin ağıtlarıma dolanmış kalmış. Kulakların tıkalıysa benim suçum mu? Konumuz bu değil! Seraphine, sen hâlâ lafı evirip çeviriyorsun. Neymiş, benimle Mirra ve Seraphine beraber miymiş? Ne saçmalıyorsun? Dün o ortadan kayboluşunuzun hesabını verin önce!",
+          "present": [
+            "Jareth",
+            "Fenris",
+            "Seraphine"
+          ]
+        }
+      ],
+      "house_visits": [],
+      "votes": {
+        "Jareth": "Fenris",
+        "Fenris": "Seraphine",
+        "Seraphine": "Fenris"
+      },
+      "exiled": "Fenris",
       "exiled_type": "yanki_dogmus"
     }
   ],
   "world_seed": {
-    "world_seed": "e22fc540ea0b915acd688060e28c84cc5d2999a677de751f9eeda93e752f9d2f",
-    "game_id": "test_v2",
-    "tone": "karanlik_masalsi",
-    "season": "sonbahar",
-    "ocak_rengi": "soluk_mavi_titreme",
-    "ocak_rengi_mood": "Soguk ve tedirgin, her an sonebilir — suphe ve urperti",
-    "mask_source": "kadim_muhur",
-    "council_style": "paranoyak",
+    "world_seed": "1bfa5bbf6f611fac6cd33291341b38cdcdf4c634babedef81f82d8c0164a90d9",
+    "game_id": "217f5935-b058-46e2-8c30-0dc8b6b22277",
+    "tone": "sisli_efsane",
+    "season": "kis_sonu",
+    "ocak_rengi": "kizil_kor",
+    "ocak_rengi_mood": "Ofkeli ve sabirsiz, kavga cagiriyor — hizlanan kararlar",
+    "mask_source": "ocak_laneti",
+    "council_style": "sert_ama_adil",
     "myth_variant": {
       "name": "Mavi Titreme",
       "rumor": "Ocak bu ay mavi titriyor. Boyle olunca 'onlar' gelir derler.",
@@ -545,22 +1272,23 @@
       "existential_question": "Insani insan yapan bedel mi, hatira mi?"
     },
     "daily_omens": [
-      "Muhur kapisinda catlak gorundu.",
-      "Gece boyunca kopekler havladi. Hicbiri uyumadi."
+      "Ruzgar bugün kelime taklit ediyor, dikkatli ol.",
+      "Kuzgunlar cemberin ustunde uc tur atti.",
+      "Bir evin esiginde is yerine tuz bulundu."
     ],
     "place_variants": {
-      "settlement_name": "Bozkir Kapisi",
-      "forest_name": "Baykus Ormani",
-      "outer_wastes_name": "Kara Disi"
+      "settlement_name": "Demir Yurdu",
+      "forest_name": "Baykus Gecidi",
+      "outer_wastes_name": "Kul Colu"
     },
     "rituals": {
-      "hand_raise_phrase": "Cemberden soz talep ederim.",
-      "oath_refresh_phrase": "Atesin yaninda dilim temiz.",
+      "hand_raise_phrase": "Ates isterim.",
+      "oath_refresh_phrase": "Yemin tazelenir: dis diyarlarin dili burada gecmez.",
       "exile_phrase": "Cember disina adim at. Atesin seni artik tanimiyor."
     },
     "mechanic_skin": {
-      "campfire_turn_explanation": "Ates Basi'nda sirayla konusulur. Konusmak isteyen 'Cemberden soz talep ederim.' der.",
-      "house_visit_limit_explanation": "Konsey kurali: her gece en fazla 3 kapi calinir. Bozkir Kapisi siniri."
+      "campfire_turn_explanation": "Ates Basi'nda sirayla konusulur. Konusmak isteyen 'Ates isterim.' der.",
+      "house_visit_limit_explanation": "Konsey kurali: her gece en fazla 3 kapi calinir. Demir Yurdu siniri."
     },
     "taboo_words": [
       "AI",
@@ -596,55 +1324,51 @@
   },
   "players_initial": [
     {
-      "name": "Veyra",
-      "role_title": "Simyacı",
+      "name": "Jareth",
+      "role_title": "Marangoz",
       "player_type": "et_can",
+      "archetype_label": "Duru İdealist"
+    },
+    {
+      "name": "Soren",
+      "role_title": "Mühendis",
+      "player_type": "yanki_dogmus",
       "archetype_label": "Şüpheli Sessiz"
     },
     {
-      "name": "Lyra",
-      "role_title": "Kütüphaneci",
-      "player_type": "et_can",
-      "archetype_label": "Şüpheli Konuşkan"
-    },
-    {
-      "name": "Kael",
-      "role_title": "Avcı",
+      "name": "Fenris",
+      "role_title": "Ozan",
       "player_type": "yanki_dogmus",
       "archetype_label": "Saldırgan Agresif"
     },
     {
-      "name": "Mirra",
-      "role_title": "Şifacı",
-      "player_type": "et_can",
-      "archetype_label": "Sakin Az Konuşan"
-    },
-    {
       "name": "Dorin",
-      "role_title": "Nöbetçi",
+      "role_title": "Ejderha Avcısı",
       "player_type": "yanki_dogmus",
       "archetype_label": "Çekici Manipülatör"
     },
     {
-      "name": "Aldric",
-      "role_title": "Marangoz",
+      "name": "Seraphine",
+      "role_title": "Terzi",
       "player_type": "et_can",
-      "archetype_label": "Şüpheli Sessiz"
-    }
-  ],
-  "winner": "et_can",
-  "total_rounds": 3,
-  "final_alive": [
-    {
-      "name": "Veyra",
-      "type": "et_can"
+      "archetype_label": "Duru İdealist"
     },
     {
       "name": "Mirra",
+      "role_title": "Haritacı",
+      "player_type": "et_can",
+      "archetype_label": "Çekici Manipülatör"
+    }
+  ],
+  "winner": "et_can",
+  "total_rounds": 4,
+  "final_alive": [
+    {
+      "name": "Jareth",
       "type": "et_can"
     },
     {
-      "name": "Aldric",
+      "name": "Seraphine",
       "type": "et_can"
     }
   ]

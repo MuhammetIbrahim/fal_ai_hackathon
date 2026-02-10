@@ -49,6 +49,13 @@ MAX_VISIT_EXCHANGES = 8
 CAMPFIRE_BUFFER = 5    # Son N mesaj raw gosterilir
 SUMMARY_INTERVAL = 3   # Her N yeni mesajda ozet guncelle
 
+# ── Free Phase ayarlari ──
+INITIAL_CAMPFIRE_TURNS = 5    # Herkes birlikteyken baslangic
+FREE_ROAM_ROUNDS = 3          # Serbest dolasim round sayisi
+CAMPFIRE_TURNS_PER_ROUND = 3  # Her roundda campfire tartisma
+ROOM_EXCHANGES = 4            # Oda gorusmesi exchange sayisi
+CLOSING_CAMPFIRE_TURNS = 3    # Kapanista herkes birlikteyken
+
 
 def calculate_ai_count(player_count: int, rng: random_module.Random) -> int:
     """Rastgele AI sayisi. Kimse kac AI oldugunu bilmiyor.
@@ -104,13 +111,32 @@ def _sanitize_speech(text: str) -> str:
     """Konusma metninden tag ve sahne yonergelerini temizle."""
     # [Name] (Role): prefix
     text = re.sub(r'^\[.*?\]\s*\(.*?\)\s*:?\s*', '', text.strip())
+    # (Name, Role): prefix — "(Elara, Bahçıvan):" vb.
+    text = re.sub(r'^\([^)]*,\s*[^)]*\)\s*:?\s*', '', text.strip())
     # Standalone [Name]: prefix
     text = re.sub(r'^\[.*?\]\s*:?\s*', '', text.strip())
-    # (20+ karakterli sahne yonergesi) — "(sakin bir tonla konusur...)" vb.
+    # Bas kismi sahne yonergesi — (öfkeyle), (sakin bir tonla), (fisiltıyla) vb.
+    text = re.sub(r'^\([^)]{1,40}\)\s*', '', text.strip())
+    # Orta/son kisim uzun sahne yonergesi (20+ karakter)
     text = re.sub(r'\([^)]{20,}\)', '', text)
     # Coklu newline temizle
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
     return text
+
+
+def _is_duplicate(new_text: str, previous_texts: list[str], threshold: float = 0.7) -> bool:
+    """Yeni mesaj onceki mesajlara cok mu benziyor? (kelime overlap kontrolu)"""
+    new_words = set(new_text.lower().split())
+    if len(new_words) < 5:
+        return False
+    for prev in previous_texts:
+        prev_words = set(prev.lower().split())
+        if len(prev_words) < 5:
+            continue
+        overlap = len(new_words & prev_words) / max(len(new_words), len(prev_words))
+        if overlap > threshold:
+            return True
+    return False
 
 
 # ── Rolling Summary (campfire icin) ──────────────────
@@ -171,11 +197,17 @@ async def _maybe_update_campfire_summary(state: GameState) -> None:
         print(f"  [Memory] Ozet guncellendi ({beyond_buffer} mesaj ozetlendi)")
 
 
-def _format_campfire_context(state: GameState) -> str:
-    """Rolling summary + son CAMPFIRE_BUFFER raw mesaj."""
+def _format_campfire_context(state: GameState, viewer: str | None = None) -> str:
+    """Rolling summary + son CAMPFIRE_BUFFER raw mesaj.
+    viewer verilirse sadece o oyuncunun duyabilecegi mesajlar gosterilir."""
     summary = state.get("campfire_rolling_summary", "")
     all_msgs = [m for m in state["campfire_history"]
                 if m["type"] in ("speech", "moderator", "narrator")]
+
+    # Viewer filtresi: "present" alani varsa ve viewer icinde degilse gosterme
+    if viewer:
+        all_msgs = [m for m in all_msgs
+                    if "present" not in m or viewer in m["present"]]
 
     recent = all_msgs[-CAMPFIRE_BUFFER:] if len(all_msgs) > CAMPFIRE_BUFFER else all_msgs
 
@@ -523,7 +555,8 @@ Soz hakki sana geldi.
 
 BU BIR SES OYUNU — YASAKLAR:
 - Fiziksel ortam YOK. Kimseyi goremez, dokunamaz, koklayamazsin.
-- ASLA fiziksel/gorsel gozlem yapma. Su kelimeleri KULLANMA: yuz, goz, el, ter, kir, koku, nem, rutubet, sicaklik, soguk, ates, gol, duman, golge, isik, renk, kiyafet, yirtik, leke, kan, durus, oturma, bakmak, gormek.
+- ASLA fiziksel/gorsel gozlem yapma. Su kelimeleri KULLANMA: yuz, yuzun, yuzunde, yuzune, goz, gozler, el, eller, ter, kir, koku, nem, rutubet, sicaklik, soguk, ates, gol, duman, golge, isik, renk, kiyafet, yirtik, leke, kan, durus, oturma, bakmak, gormek, panik, korku, titreme.
+- "yuzunde X var", "gozlerinde Y", "elleri titredi" gibi HERHANGI BIR fiziksel tasvir YASAK.
 - ASLA metafor/siir/edebiyat yapma. YASAK.
 - Tek bilgi kaynagin: insanlarin SOYLEDIKLERI ve soylemedikleri.
 
@@ -600,7 +633,7 @@ def _get_world_context(state: GameState) -> str:
 
 
 async def _get_reaction(player: Player, last_speech: dict, state: GameState) -> dict:
-    history_text = _format_campfire_context(state)
+    history_text = _format_campfire_context(state, viewer=player.name)
     prompt = (
         f"{history_text}\n\n"
         f"Son konusan: [{last_speech['name']}]: {last_speech['content']}\n\n"
@@ -668,7 +701,7 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
 
 
 async def _character_speak(player: Player, state: GameState) -> str:
-    history_text = _format_campfire_context(state)
+    history_text = _format_campfire_context(state, viewer=player.name)
     alive_names = ", ".join(get_alive_names(state))
 
     own_msgs = [
@@ -693,13 +726,23 @@ async def _character_speak(player: Player, state: GameState) -> str:
         role_title=player.role_title,
     )
 
-    result = await llm_generate(
-        prompt=prompt,
-        system_prompt=player.acting_prompt,
-        model=MODEL,
-        temperature=0.9,
-    )
-    return _sanitize_speech(result.output)
+    # Onceki mesajlar (tekrar kontrolu icin)
+    own_recent = [m["content"] for m in state["campfire_history"]
+                  if m["type"] == "speech" and m["name"] == player.name][-3:]
+
+    for attempt in range(2):
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=player.acting_prompt,
+            model=MODEL,
+            temperature=0.9 + (attempt * 0.1),
+        )
+        speech = _sanitize_speech(result.output)
+        if not _is_duplicate(speech, own_recent):
+            return speech
+        print(f"  [{player.name}] tekrar tespit edildi, yeniden uretiliyor...")
+
+    return speech  # 2. denemede de benzer ciktiysa yine de dondur
 
 
 async def run_campfire(state: GameState) -> GameState:
@@ -1001,13 +1044,22 @@ async def _character_speak_1v1(
         role_title=player.role_title,
     )
 
-    result = await llm_generate(
-        prompt=prompt,
-        system_prompt=player.acting_prompt,
-        model=MODEL,
-        temperature=0.9,
-    )
-    return _sanitize_speech(result.output)
+    # Onceki mesajlar (tekrar kontrolu icin)
+    own_recent = [ex["content"] for ex in exchanges if ex["speaker"] == player.name][-3:]
+
+    for attempt in range(2):
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=player.acting_prompt,
+            model=MODEL,
+            temperature=0.9 + (attempt * 0.1),
+        )
+        speech = _sanitize_speech(result.output)
+        if not _is_duplicate(speech, own_recent):
+            return speech
+        print(f"  [{player.name}] tekrar tespit edildi, yeniden uretiliyor...")
+
+    return speech
 
 
 async def _run_single_visit(
@@ -1095,6 +1147,402 @@ async def run_house_visits(state: GameState, campfire_summary: str) -> GameState
             visit_tasks.append(_run_single_visit(visitor, host, reason, state, campfire_summary))
 
     await asyncio.gather(*visit_tasks)
+    return state
+
+
+# ══════════════════════════════════════════════════════
+#  5b. FREE PHASE (Serbest Dolasim — Room Mekanigi)
+# ══════════════════════════════════════════════════════
+
+LOCATION_DECISION_SYSTEM = """Sen {name} ({role_title}). Serbest dolasim zamani.
+Gun {round_number}/{day_limit}.
+
+Ates basinda: {campfire_names}
+Evinde: {home_names}
+Ziyarette: {visiting_info}
+
+{campfire_context}
+
+{cumulative_context}
+
+NEREYE GIDECEKSIN?
+
+CAMPFIRE — Ates basinda tartismaya katil.
+  + Herkesin ne dedigini duyarsin
+  - Ozel bilgi edinemezsin, herkes duyar
+
+HOME — Evine cekil.
+  + Biri gelirse 1v1 ozel gorusme — KIMSE DUYMAZ
+  + Tuzak kurabilirsin, geleni sorgulasin
+  - Kimse gelmezse yalniz kalirsin
+
+VISIT|<isim> — Birinin evine git.
+  + 1v1 sorgulama — EN ETKILI bilgi toplama yontemi
+  + Alibisini test et: campfire'da soyledikleriyle tutarli mi?
+  + Gizli ittifak kur veya boz
+  - Campfire'i kacirirsin, kisi evde degilse kapisi kapali
+
+KRITIK STRATEJI BILGISI:
+- Oylama oncesi 1v1 gorusme yapmayanlar bilgi dezavantajinda kalir
+- Suphelendigin biriyle 1v1 konusmamak = onu test etme firsatini kaybetmek
+- Campfire'da herkes performans yapar, 1v1'de maskeler duser
+- HER ZAMAN campfire'da kalmak pasif ve suphelidir
+
+SADECE su formatta cevap ver:
+CAMPFIRE
+veya
+HOME
+veya
+VISIT|<isim>"""
+
+
+async def _get_location_decision(
+    player: Player,
+    state: GameState,
+    locations: dict[str, str],
+) -> dict:
+    """Oyuncudan konum karari al."""
+    alive = get_alive_players(state)
+    alive_names = [p.name for p in alive if p.name != player.name]
+
+    campfire_names = [n for n, loc in locations.items() if loc == "campfire" and n != player.name]
+    home_names = [n for n, loc in locations.items() if loc == "home" and n != player.name]
+    visiting = [(n, loc.split(":")[1]) for n, loc in locations.items()
+                if loc.startswith("visiting:") and n != player.name]
+    visiting_info = ", ".join(f"{n} → {t}" for n, t in visiting) if visiting else "kimse"
+
+    campfire_context = _format_campfire_context(state, viewer=player.name)
+    cumulative = state.get("cumulative_summary", "")
+    cumulative_context = f"ONCEKI GUNLER:\n{cumulative}" if cumulative else ""
+
+    result = await llm_generate(
+        prompt=LOCATION_DECISION_SYSTEM.format(
+            name=player.name,
+            role_title=player.role_title,
+            round_number=state.get("round_number", 1),
+            day_limit=state.get("day_limit", 5),
+            campfire_names=", ".join(campfire_names) or "kimse",
+            home_names=", ".join(home_names) or "kimse",
+            visiting_info=visiting_info,
+            campfire_context=campfire_context,
+            cumulative_context=cumulative_context,
+        ),
+        system_prompt=player.acting_prompt,
+        model=MODEL,
+        temperature=0.7,
+    )
+
+    text = result.output.strip().split("\n")[0].strip()
+    if text == "HOME":
+        return {"name": player.name, "decision": "home", "target": None}
+    elif text.startswith("VISIT") and "|" in text:
+        target = text.split("|", 1)[1].strip()
+        if target not in alive_names:
+            for n in alive_names:
+                if n.lower() in target.lower():
+                    target = n
+                    break
+            else:
+                return {"name": player.name, "decision": "campfire", "target": None}
+        return {"name": player.name, "decision": "visit", "target": target}
+    else:
+        return {"name": player.name, "decision": "campfire", "target": None}
+
+
+async def _run_campfire_segment(
+    state: GameState,
+    max_turns: int,
+    participant_names: list[str] | None = None,
+) -> None:
+    """Campfire tartisma segmenti. participant_names verilirse sadece o kisiler konusur."""
+    ws = state.get("world_seed")
+    alive = get_alive_players(state)
+
+    if participant_names:
+        participants = [p for p in alive if p.name in participant_names]
+    else:
+        participants = alive
+        participant_names = [p.name for p in alive]
+
+    if len(participants) < 2:
+        if participants:
+            print(f"  {participants[0].name} atesin basinda yalniz bekliyor...")
+        return
+
+    # Son konusmaci yoksa random sec
+    recent_speeches = [m for m in state["campfire_history"]
+                       if m["type"] == "speech" and m["name"] in participant_names]
+    turns_done = 0
+
+    if not recent_speeches:
+        first = random_module.choice(participants)
+        print(f"  [{first.name}] dusunuyor...")
+        message = await _character_speak(first, state)
+
+        ok, reason = await moderator_check(first.name, message, WorldSeed(**ws) if ws else None)
+        if not ok:
+            print(f"  [Ocak Bekcisi]: {reason}")
+            state["campfire_history"].append({
+                "type": "moderator", "content": reason,
+                "present": list(participant_names),
+            })
+        else:
+            state["campfire_history"].append({
+                "type": "speech", "name": first.name,
+                "role_title": first.role_title, "content": message,
+                "present": list(participant_names),
+            })
+            first.add_message("assistant", message)
+            print(f"  [{first.name}] ({first.role_title}): {message}")
+        turns_done = 1
+
+    while turns_done < max_turns:
+        turns_done += 1
+
+        last_speeches = [m for m in state["campfire_history"]
+                         if m["type"] == "speech" and m["name"] in participant_names]
+        if not last_speeches:
+            break
+        last_speech = last_speeches[-1]
+
+        others = [p for p in participants if p.name != last_speech["name"]]
+        if not others:
+            break
+
+        tasks = [_get_reaction(p, last_speech, state) for p in others]
+        reactions = list(await asyncio.gather(*tasks))
+
+        action, name = await _orchestrator_pick(state, reactions)
+        if action == "END":
+            break
+
+        # Secilen kisi participant olmali
+        if name not in participant_names:
+            wanters = [r for r in reactions if r["wants"] and r["name"] in participant_names]
+            if wanters:
+                name = wanters[0]["name"]
+            else:
+                break
+
+        player = find_player(state, name)
+        if not player or not player.alive:
+            continue
+
+        print(f"  [{player.name}] dusunuyor...")
+        message = await _character_speak(player, state)
+
+        ok, reason = await moderator_check(name, message, WorldSeed(**ws) if ws else None)
+        if not ok:
+            print(f"  [Ocak Bekcisi]: {reason}")
+            state["campfire_history"].append({
+                "type": "moderator", "content": reason,
+                "present": list(participant_names),
+            })
+            continue
+
+        player.add_message("assistant", message)
+        state["campfire_history"].append({
+            "type": "speech", "name": name,
+            "role_title": player.role_title, "content": message,
+            "present": list(participant_names),
+        })
+        print(f"  [{name}] ({player.role_title}): {message}")
+
+        await _maybe_update_campfire_summary(state)
+
+
+async def _run_room_conversation(
+    owner: Player,
+    visitor: Player,
+    state: GameState,
+) -> dict:
+    """Oda icinde 1v1 gorusme."""
+    ws = state.get("world_seed")
+    campfire_summary = state.get("campfire_rolling_summary", "") or "(Ozet yok)"
+
+    print(f"\n  {'─' * 40}")
+    print(f"  ODA: {owner.name} evi — Misafir: {visitor.name}")
+    print(f"  {'─' * 40}")
+
+    exchanges = []
+    speakers = [visitor, owner]  # Misafir once konusur
+
+    for turn in range(ROOM_EXCHANGES):
+        current = speakers[turn % 2]
+        opponent = speakers[(turn + 1) % 2]
+
+        print(f"  [{current.name}] dusunuyor...")
+        message = await _character_speak_1v1(current, opponent, exchanges, state, campfire_summary)
+
+        ok, mod_reason = await moderator_check(current.name, message, WorldSeed(**ws) if ws else None)
+        if not ok:
+            print(f"  [Ocak Bekcisi]: {mod_reason}")
+            continue
+
+        exchanges.append({
+            "speaker": current.name,
+            "role_title": current.role_title,
+            "content": message,
+        })
+        current.add_message("assistant", message)
+        print(f"  [{current.name}] ({current.role_title}): {message}")
+
+    visit_data = {
+        "type": "room_visit",
+        "owner": owner.name,
+        "visitor": visitor.name,
+        "exchanges": exchanges,
+    }
+    state["house_visits"].append(visit_data)
+    return visit_data
+
+
+async def run_free_phase(state: GameState) -> GameState:
+    """Serbest dolasim fazi: Baslangic Campfire → Serbest Dolasim → Kapinis Campfire."""
+    round_n = state.get("round_number", 1)
+    alive = get_alive_players(state)
+    alive_names = [p.name for p in alive]
+
+    print(f"\n{'=' * 50}")
+    print(f"  SERBEST DOLASIM FAZI — Gun {round_n}")
+    print(f"{'=' * 50}")
+    for p in alive:
+        tag = "YANKI" if p.is_echo_born else "ET-CAN"
+        print(f"  [{tag}] {p.name} — {p.role_title}")
+    print()
+
+    # ── BASLANGIC CAMPFIRE (herkes birlikte) ──
+    print(f"  ── Baslangic Ates Basi ({INITIAL_CAMPFIRE_TURNS} tur) ──")
+    await _run_campfire_segment(state, INITIAL_CAMPFIRE_TURNS)
+
+    # ── SERBEST DOLASIM ROUNDLARI ──
+    for roam_round in range(1, FREE_ROAM_ROUNDS + 1):
+        alive = get_alive_players(state)
+        alive_names = [p.name for p in alive]
+
+        print(f"\n  ── Serbest Dolasim {roam_round}/{FREE_ROAM_ROUNDS} ──")
+
+        # Herkes karar verir (concurrent)
+        locations: dict[str, str] = {n: "campfire" for n in alive_names}
+        tasks = [_get_location_decision(p, state, locations) for p in alive]
+        decisions = list(await asyncio.gather(*tasks))
+
+        # Konumlari guncelle
+        for d in decisions:
+            if d["decision"] == "home":
+                locations[d["name"]] = "home"
+            elif d["decision"] == "visit":
+                locations[d["name"]] = f"visiting:{d['target']}"
+            else:
+                locations[d["name"]] = "campfire"
+
+        # Konum duzeltmeleri
+        for name, loc in list(locations.items()):
+            if loc.startswith("visiting:"):
+                target = loc.split(":")[1]
+                # Hedef evde degilse → campfire'a don
+                if locations.get(target) != "home":
+                    print(f"  {name} → {target}'in evi kapali (evde degil), ates basina dondu")
+                    locations[name] = "campfire"
+                else:
+                    # Ev zaten dolu mu? (baska misafir var mi)
+                    other_visitors = [n for n, l in locations.items()
+                                     if l == f"visiting:{target}" and n != name]
+                    if other_visitors:
+                        print(f"  {name} → {target}'in evi dolu, ates basina dondu")
+                        locations[name] = "campfire"
+
+        # Minimum hareket: hic oda gorusmesi yoksa 1 cift zorla esle
+        actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
+                         if l.startswith("visiting:")]
+        if not actual_visits and len(alive_names) >= 4:
+            campfire_pool = [n for n, l in locations.items() if l == "campfire"]
+            home_pool = [n for n, l in locations.items() if l == "home"]
+            if len(campfire_pool) >= 2 and not home_pool:
+                # Kimse hareket etmedi — 1 cift olustur
+                pair = random_module.sample(campfire_pool, 2)
+                locations[pair[0]] = "home"
+                locations[pair[1]] = f"visiting:{pair[0]}"
+                print(f"  {pair[0]} bir sureligine evine cekildi.")
+                print(f"  {pair[1]}, {pair[0]}'i takip etti.")
+            elif home_pool and campfire_pool:
+                # Birisi evde ama kimse ziyaret etmiyor — 1 kisiyi gonder
+                target_home = random_module.choice(home_pool)
+                visitor = random_module.choice(campfire_pool)
+                locations[visitor] = f"visiting:{target_home}"
+                print(f"  {visitor}, {target_home}'i ziyarete gitti.")
+
+        # Konum duyurusu
+        campfire_people = [n for n, l in locations.items() if l == "campfire"]
+        home_people = [n for n, l in locations.items() if l == "home"]
+        visits = [(n, l.split(":")[1]) for n, l in locations.items() if l.startswith("visiting:")]
+
+        print(f"\n  Konumlar:")
+        if campfire_people:
+            print(f"    Ates basi: {', '.join(campfire_people)}")
+        if home_people:
+            print(f"    Evinde: {', '.join(home_people)}")
+        for visitor_name, host_name in visits:
+            print(f"    {visitor_name} → {host_name}'in evinde")
+
+        # Hareket duyurusu (herkes bilir)
+        movement_parts = []
+        for n in home_people:
+            movement_parts.append(f"{n} evine cekildi")
+        for visitor_name, host_name in visits:
+            movement_parts.append(f"{visitor_name}, {host_name}'in evine gitti")
+
+        if movement_parts:
+            movement_msg = "Serbest dolasim: " + ". ".join(movement_parts) + "."
+            state["campfire_history"].append({
+                "type": "narrator",
+                "content": movement_msg,
+                "present": alive_names,  # hareket bilgisi herkes duyar
+            })
+
+        # Campfire tartismasi (sadece campfire'dakiler)
+        if len(campfire_people) >= 2:
+            print(f"\n  Ates basi tartismasi ({len(campfire_people)} kisi)...")
+            await _run_campfire_segment(state, CAMPFIRE_TURNS_PER_ROUND, campfire_people)
+
+        # Oda gorusmeleri (concurrent)
+        room_tasks = []
+        for visitor_name, host_name in visits:
+            visitor_player = find_player(state, visitor_name)
+            host_player = find_player(state, host_name)
+            if visitor_player and host_player:
+                room_tasks.append(_run_room_conversation(host_player, visitor_player, state))
+
+        if room_tasks:
+            await asyncio.gather(*room_tasks)
+
+        # Evinde yalniz bekleyenler (ziyaretci gelmedi)
+        for n in home_people:
+            has_visitor = any(vn == n for _, vn in visits)
+            if not has_visitor:
+                print(f"  {n} evinde yalniz bekledi — kimse gelmedi.")
+
+    # ── KAPINIS CAMPFIRE (herkes geri) ──
+    alive = get_alive_players(state)
+    alive_names = [p.name for p in alive]
+
+    donus_msg = "Herkes ates basina dondu. Oylama zamani yaklasıyor."
+    state["campfire_history"].append({
+        "type": "narrator",
+        "content": donus_msg,
+        "present": alive_names,
+    })
+    print(f"\n  [Anlatici] {donus_msg}")
+
+    print(f"\n  ── Kapinis Ates Basi ({CLOSING_CAMPFIRE_TURNS} tur) ──")
+    await _run_campfire_segment(state, CLOSING_CAMPFIRE_TURNS)
+
+    # Istatistik
+    speech_count = sum(1 for m in state["campfire_history"] if m["type"] == "speech")
+    speakers = set(m["name"] for m in state["campfire_history"] if m["type"] == "speech")
+    visit_count = len(state.get("house_visits", []))
+    print(f"\n  Faz ozeti: {speech_count} campfire konusma, {len(speakers)} konusmaci, {visit_count} oda gorusmesi")
+
     return state
 
 
@@ -1324,7 +1772,7 @@ def init_state(
 
 
 async def run_full_game(state: GameState) -> GameState:
-    """Tam oyun dongusu: Sabah → Tartisma → Ev Ziyareti → Oylama → Surgun → Kontrol."""
+    """Tam oyun dongusu: Sabah → Serbest Dolasim (Campfire + Odalar) → Oylama → Surgun → Kontrol."""
     day_limit = state.get("day_limit", 5)
     game_log = {
         "rounds": [],
@@ -1359,18 +1807,14 @@ async def run_full_game(state: GameState) -> GameState:
         state["phase"] = Phase.MORNING.value
         state = await run_morning(state)
 
-        # ── TARTISMA (Campfire) ──
+        # ── SERBEST DOLASIM (Campfire + Odalar) ──
         state["phase"] = Phase.CAMPFIRE.value
-        state = await run_campfire(state)
+        state = await run_free_phase(state)
 
         # ── CAMPFIRE OZETI ──
         print(f"\n  Campfire ozeti hazirlaniyor...")
         campfire_summary = await summarize_campfire(state["campfire_history"], round_n)
         print(f"  Ozet hazir ({len(campfire_summary)} karakter)")
-
-        # ── EV ZIYARETLERI (House Visits) ──
-        state["phase"] = Phase.HOUSES.value
-        state = await run_house_visits(state, campfire_summary)
 
         # ── OYLAMA ──
         state["phase"] = Phase.VOTE.value
