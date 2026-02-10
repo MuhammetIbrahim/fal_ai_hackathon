@@ -1,0 +1,438 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "campfire_history": [
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Veyra, sen dün akşam ne yapıyordun?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Maden. Çalıştım."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Veyra, maden dedin. Ne kadar kaldın orada?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Orion, madende kalınır. Çalışılır."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Çalışılır, anladım. Hani saat kaçta çıktın?"
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Veyra, doğru. Maden. Orada değilde neredeydin. Ama ne zaman geldin?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Veyra, madende miydin sen? Gece? Pek alışık değiliz buna. Normalde Orion'la beraber çıkardın."
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Nyx, Orion. İşim. Vardı. Bilirsiniz. Madencilik. Farklı."
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Veyra, madende. Normalde geç çıkmazsın. Ne vardı bu sefer? Hani."
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Nyx, ne biliyim. İş. Bitmez. Maden. Her zaman."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Veyra, sen normalde o kadar geç çıkmazsın. Nyx doğru söylüyor. Hani kim gördü seni madende o saatte?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Orion, Jareth. Ne fark eder? Maden. O kadar."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Veyra, o zaman kimse görmedi seni. Hani, neden gizliyorsun?"
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Veyra, madende. Kim vardı seninle? Tek miydin?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Jareth. Tek. Normal. Sen. Gece. Neredeydin?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Veyra, normal değil bu. Tek başına o saatte madende. Niye kimse görmedi seni? Jareth, sen neredeydin?"
+        },
+        {
+          "type": "speech",
+          "name": "Veyra",
+          "role_title": "Madenci",
+          "content": "Orion. Niye bu kadar takıldın? Maden. Gece. Herkes. İşine bakar. Bilmez misin?"
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Veyra, ne zaman geldiğini sordum. Cevaplamadın. Tek miydin yani?"
+        }
+      ],
+      "votes": {
+        "Veyra": "Orion",
+        "Jareth": "Veyra",
+        "Nyx": "Veyra",
+        "Orion": "Veyra",
+        "Fenris": "Veyra",
+        "Aldric": "Veyra"
+      },
+      "exiled": "Veyra",
+      "exiled_type": "yanki_dogmus"
+    },
+    {
+      "round": 2,
+      "campfire_history": [
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Jareth. Neredeydin dün gece? Susuyorsun."
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Ben mi? Dün mü? Ocak'ın yanında. Sen de görmedin mi? Her zamanki yerimdeydim."
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Ocak yanında. Kim vardı seninle? Sadece sen miydin?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Jareth, benim tanıdığım Jareth, Ocak'ın yanında sadece ısınmazdı. Hep bir şey anlatırdı. Dün gece ne anlattın? Ya da kime dinlettin?"
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Yanılmıyorsam sen de oralardaydın Fenris. Geçerken görmemiş miydin? Nyx, sen ne biliyorsun? Benim tanışıklığım sadece ocakla değil. Kiminle nerede ne konuştum, ne ilgilendirir seni?"
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Jareth. Lafı dolandırıyorsun. Kiminle olduğunu soruyorum. Nyx. Sen ne biliyorsun? Duydukların neydi? Yoksa sen de mi bir şeyler saklıyorsun?"
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Fenris, ocaktaydım. Kimse yoktu. Nyx, sen ne biliyorsun dedim. Cevap ver. Neredeydin sen o zaman?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Jareth, niye bu kadar gergin oldun? Eskiden böyle olmazdın. Fenris'e hak veriyorum. Çok dolambaçlı konuşuyorsun."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Jareth'in sesindeki gerginlik... kumaşın gerilmesi gibiydi. Fenris doğru söylüyor. Nyx, sen niye susuyorsun şimdi? Senin sesin de bir tuhaf."
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Jareth, bu kadar dolambaçlı konuşma. Geçen sene de sana sormuştuk. O zaman da böyleydin. Kim vardı yanında? Net bir şey söyle."
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Orion, kumaş gerildi mi senin yüzünden? Aldric, geçen sene neydi? Ne konuştuk? Siz ne biliyordunuz da şimdi soruyorsunuz? Nyx, sen susmaya devam mı edeceksin?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Jareth, her zamanki gibi bir şeyleri örtbas etmeye çalışıyorsun. Sorduğum sorulara cevap vermedin. Nyx, sen niye birden sessizleştin? Sanki iplik düğümlenmiş gibi."
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Jareth, geçen sene de böyleydi, doğru. Orion, sen de fark ettin. Yani, bu gerginlik, hep varmış. Fenris, haklısın. Jareth, yine aynı tas aynı hamam."
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Jareth. Yine mi? Aynı şey. Sürekli. Gevşek ağız. Kim vardı yanında. Net söyle. Yoksa sen mi."
+        },
+        {
+          "type": "speech",
+          "name": "Jareth",
+          "role_title": "Çiftçi",
+          "content": "Nyx, fenris; hep aynı şeyi söylüyorsunuz. Ne bu? Beni suçlamak mı? Fenris, ocağın yanında kimse yoktu. Sen niye böylesin? Aldric, geçen sene derken neyden bahsediyorsun?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Jareth, geçen sene de böyleydi. Sanki bir şey gizler gibi. Aynı tepkime. Nyx, sen Jareth'i tanıyorsun. O neyden bahsediyor?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Aldric, Jareth hep böyleydi. Gölün dibindeki taş gibi, kimseye göstermez kendini. Ama şimdi... şimdi daha bir kapalı. Ne saklıyor acaba?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Nyx, Jareth'i tanıyorsan, bize de anlat. Ne saklıyor? Bu ketumluk neden?"
+        }
+      ],
+      "votes": {
+        "Jareth": "Nyx",
+        "Nyx": "Jareth",
+        "Orion": "Jareth",
+        "Fenris": "Jareth",
+        "Aldric": "Jareth"
+      },
+      "exiled": "Jareth",
+      "exiled_type": "et_can"
+    },
+    {
+      "round": 3,
+      "campfire_history": [
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Nyx, Orion, Fenris, bu sessizlik bir çözüm sunmuyor. Kimden başlayacağız? Alibilerimizi konuşalım."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Aldric... Boğazın dün geceden beri neden kuru? Su içmedin mi?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Orion, sen hala dün geceden beri kendini mi savunuyorsun? Başka bir şey söyleyecek misin?"
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Nyx, Orion... Nedir bu saçmalık? Alibiniz var mı, yok mu? Söyleyin."
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Fenris, sakin ol. Orion, hadi. Dün gece ne yaptın?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Nyx, sus. Ben sana sonra döneceğim. Aldric, cevap ver. Suyunu dökmediler ya? Fenris, sen de sus."
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Orion, sen benim susuzluğumu neden merak ediyorsun? Konu bu değil. Başka bir şey mi saklıyorsun? Fenris haklı. Alibilerimizi konuşacağız. Önce sen Orion. Dün gece ne yaptın?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Aldric, senin titreyen sesin de yeni bir şey. Ben hep kendi dükkanımdaydım. Sabah kadar. Kumaşlar yalan söylemez. Peki ya sen? Susuzluğunun sebebi ne? Korkuyor musun?"
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Orion. Kumaşlar mı? Kumaşlar konuşmaz. Sen konuş. Dükkanında ne yaptın? Kim gördü seni?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Fenris, dükkanımdaydım ya. Kumaş mı konuştu diye bekliyorum? Ne diyeyim daha? Aldric, sen ne saklıyorsun? Niye susuyorsun şimdi?"
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Orion, bak. Kumaşlar konuşmaz dedin. Tamam. Ama ben de senin dükkanın önünden geçtim dün gece. Kapı kapalıydı. Sen hep sabaha kadar orada olmazsın, hani."
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Orion, bak. Nyx söylediklerindeki tutarsızlığı yakaladı. Kapın kapalıydı diyor. Sabah kadar dükkanında olmanla bu nasıl uyuşuyor? Açıkla. Yoksa yalan söylüyorsun."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Nyx, benim kapım hep kapalıdır. Sabaha kadar. Sen nerede dolaşıyordun gece gece? Yani kim gördü seni? Aldric, sen ne diyorsun peki? Benim kapım hep kapalı. Sen hiç terziye gelmemişsin anlaşılan."
+        },
+        {
+          "type": "speech",
+          "name": "Nyx",
+          "role_title": "Balıkçı",
+          "content": "Orion, sakin ol biraz. Kapı kapalıydı diyorum. Sen içeride miydin, dışarıda mıydın? Fark etmez mi? Bak."
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Nyx, yani ne diyorsun? Kapı kapalıysa içerde değil miydim? Ne saçmalık bu ya? Aldric, sen hala susuyorsun. Bak. Sen niye susuyorsun? Fenris, sen niye sormuyorsun Aldric'e?"
+        },
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Orion, bak. Sen benim susmamdan bahsediyorsun. Ama asıl sen saçmalıyorsun. Nyx, senin kapının kapalı olduğunu söyledi, sen de \"içerideydim\" diyorsun. Ama kapalı bir kapının arkasında olmak, sabaha kadar orada olduğunu kanıtlamaz. Bir aç-kapa yapılmış olabilir. Kim gördü seni girerken ya da çıkarken?"
+        },
+        {
+          "type": "speech",
+          "name": "Orion",
+          "role_title": "Terzi",
+          "content": "Aldric, benim kapım sen simyacılık yaparken hep kapalıdır. Sen bilmezsin. Yani, benim işim bu. İçerdeydim diyorum işte. Ne dememi bekliyorsun? Dükkanımdaydım. Sabah namazı için dükkanı açmadım ya. Anladın mı? Fenris, sen de susuyorsun. Bak. Sen niye Aldric'e sormuyorsun?"
+        },
+        {
+          "type": "speech",
+          "name": "Fenris",
+          "role_title": "Demirci",
+          "content": "Orion, Nyx, bu kapalı kapı hikayesi mi şimdi? Aldric haklı. Kapı kapalıysa içerideydin, tamam. Ama sabaha kadar mı? Kim gördü seni sabah orada? Söyleyin! Aldric, sen ne saklıyorsun? Susmak da bir cevap."
+        }
+      ],
+      "votes": {
+        "Nyx": "Orion",
+        "Orion": "Aldric",
+        "Fenris": "Orion",
+        "Aldric": "Orion"
+      },
+      "exiled": "Orion",
+      "exiled_type": "yanki_dogmus"
+    },
+    {
+      "round": 4,
+      "campfire_history": [
+        {
+          "type": "speech",
+          "name": "Aldric",
+          "role_title": "Simyacı",
+          "content": "Şimdi konuşma sırası sende Aldric. Konuşma tarzın yukarıdaki talimatlara uygun olmalıdır."
+        }
+      ],
+      "votes": {
+        "Nyx": "Aldric",
+        "Fenris": "Aldric",
+        "Aldric": "Fenris"
+      },
+      "exiled": "Aldric",
+      "exiled_type": "yanki_dogmus"
+    }
+  ],
+  "players_initial": [
+    {
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "player_type": "yanki_dogmus",
+      "archetype_label": "Şüpheli Sessiz"
+    },
+    {
+      "name": "Jareth",
+      "role_title": "Çiftçi",
+      "player_type": "et_can",
+      "archetype_label": "Şüpheli Konuşkan"
+    },
+    {
+      "name": "Nyx",
+      "role_title": "Balıkçı",
+      "player_type": "et_can",
+      "archetype_label": "Çekici Manipülatör"
+    },
+    {
+      "name": "Orion",
+      "role_title": "Terzi",
+      "player_type": "yanki_dogmus",
+      "archetype_label": "Şüpheli Sessiz"
+    },
+    {
+      "name": "Fenris",
+      "role_title": "Demirci",
+      "player_type": "yanki_dogmus",
+      "archetype_label": "Saldırgan Agresif"
+    },
+    {
+      "name": "Aldric",
+      "role_title": "Simyacı",
+      "player_type": "yanki_dogmus",
+      "archetype_label": "Duru İdealist"
+    }
+  ],
+  "winner": "yanki_dogmus",
+  "total_rounds": 4,
+  "final_alive": [
+    {
+      "name": "Nyx",
+      "type": "et_can"
+    },
+    {
+      "name": "Fenris",
+      "type": "yanki_dogmus"
+    }
+  ]
+}

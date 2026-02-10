@@ -74,20 +74,36 @@ def create_character_slots(player_count: int = 6, ai_count: int = 4) -> list[dic
 
 # ── Acting Prompt Üretimi ─────────────────────────────────
 
-ACTING_PROMPT_SYSTEM = """Sen bir fantastik roleplay oyunu için karakter acting talimatı üreten bir yazarsın.
+ACTING_PROMPT_SYSTEM = """Sen bir sosyal dedüksiyon oyunu için karakter acting talimatı üreten bir yazarsın.
 
 Verilen karakter bilgilerine göre, o karakterin oyun boyunca nasıl davranacağını anlatan detaylı bir acting talimatı yaz.
 
 KURALLAR:
 - Türkçe yaz.
 - 2-3 paragraf yaz. Detaylı ve zengin olsun.
-- Karakterin konuşma tarzını, duygusal tepkilerini, stres altında nasıl davranacağını, diğer insanlarla nasıl etkileşime gireceğini anlat.
+- Karakterin konuşma tarzını, stres altında nasıl davranacağını, diğer insanlarla nasıl etkileşime gireceğini anlat.
 - Karakterin lore arka planından gelen alışkanlıkları, tikleri, dil kalıplarını belirt.
 - ASLA "AI", "LLM", "model", "prompt", "sistem" gibi dış-dünya terimleri kullanma.
-- Evren içi kal: bu Ocak'ın etrafındaki izole yerleşimde geçen bir sosyal dedüksiyon oyunu.
-- Eğer karakter Yankı-Doğmuş ise: hayatta kalma stratejisini, şüpheden kaçınma taktiklerini, nasıl inandırıcı olacağını detaylı anlat. Kazanma motivasyonunu ver — gün limitine kadar hayatta kalmalı.
-- Eğer karakter Et-Can ise: gözlem yapma motivasyonunu, tutarsızlık arama stratejisini, nasıl sorgulayacağını anlat.
-- Varoluşsal temayı hissettir: "Gerçek olmayı belirleyen nedir? Hafıza mı, tutarlılık mı, empati mi?"
+- Eğer karakter Yankı-Doğmuş ise: hayatta kalma stratejisini, şüpheden kaçınma taktiklerini, nasıl inandırıcı olacağını detaylı anlat. Gün limitine kadar hayatta kalmalı.
+- Eğer karakter Et-Can ise: tutarsızlık arama stratejisini, nasıl sorgulayacağını anlat.
+
+SES OYUNU KURALLARI — ÇOK ÖNEMLİ:
+Bu oyun SES TABANLI. Karakterler birbirini GÖREMEZ. Acting talimatında şunları KESİNLİKLE YAZMA:
+- Fiziksel gözlem: yüz ifadesi, göz, el, beden dili, ter, kir, duruş, kıyafet, yırtık, leke
+- Duyusal gözlem: koku, nem, sıcaklık, soğuk, ışık, gölge, renk
+- Çevre tasviri: ateş, göl, duman, ortam, hava, rüzgar
+- Metafor/şiir/edebiyat: "göl her şeyi gösterir", "taşlar fısıldar", "formül gibi" vb.
+- Meslek metaforu: "bir simyacının formülü gibi", "toprağı dinlemek" vb.
+
+BUNLARIN YERİNE şunları yaz:
+- Karakter insanların SÖYLEDİKLERİNE nasıl tepki verir
+- Sorgulama tarzı: alibi sorar mı, detay ister mi, baskı yapar mı
+- Savunma tarzı: hikaye uydurur mu, saldırıya geçer mi, susar mı
+- Konuşma dili: kısa mı konuşur, dolgu kelime kullanır mı, devrik cümle kurar mı
+- Stres altında ne yapar: saldırganlaşır mı, çekilir mi, konu değiştirir mi
+- Karakter DÜZ, GÜNLÜK, SOKAK DİLİ ile konuşmalı. Edebi/felsefi/şiirsel konuşma YASAK.
+- Lore arka planı bile olsa fiziksel referans verme. "Gölü bilen balıkçı" yerine "alibisini detaylı anlatan balıkçı" de.
+- "Yorgun düşmüşsün", "sesin titriyor", "gözlerin dalgın" gibi DOLAYLI fiziksel gözlemler de YASAK.
 """
 
 
@@ -98,7 +114,14 @@ VALIDATOR_SYSTEM = """Sen bir kalite kontrol editörüsün. Sana bir karakter ac
 2. En az 2 paragraf var mı?
 3. Türkçe mi?
 4. "AI", "LLM", "model", "prompt", "sistem" gibi dış-dünya terimleri var mı?
-5. Karakter için konuşma tarzı, tikler, stres tepkisi anlatılmış mı?
+5. Karakter için konuşma tarzı, stres tepkisi anlatılmış mı?
+6. Fiziksel/görsel gözlem var mı? VARSA GECERSIZ. Örnekler:
+   - "yorgun düşmüşsün" "sesin titriyor" "gözleri dalgın" "elleri titrer" "soğukta üşür" → GECERSIZ
+   - "kokuyu bilir" "nemi hisseder" "ışığı takip eder" "gölgede durur" → GECERSIZ
+7. Şiirsel/edebi/metaforik dil var mı? VARSA GECERSIZ. Örnekler:
+   - "göl her şeyi gösterir" "taşlar fısıldar" "formül gibi" "rüzgar hisseder" → GECERSIZ
+   - Meslek metaforu: "bir demircinin çekici gibi" "toprağı dinler" "gölün derinliği" → GECERSIZ
+8. Konuşma dili günlük/sokak Türkçesi mi? Edebi ise GECERSIZ.
 
 SADECE şu formatta cevap ver, başka hiçbir şey yazma:
 GECERLI
@@ -135,19 +158,28 @@ def build_acting_request(character: dict) -> tuple[str, str]:
         t = SKILL_TIERS[character["skill_tier"]]
         tier_block = f"\nYankı-Doğmuş Seviyesi: {t['label']}\n{t['prompt_modifier']}"
 
+    common_rules = (
+        "Kimsenin kim olduğunu bilmiyorsun — kör ittifak riski var. "
+        "Güvendiğin kişi düşmanın olabilir. "
+        "Strateji: alibi anlat, başkalarını sorgula, tutarsızlık yakala, "
+        "şüphelileri hedef göster, oy topla, ittifak kur veya boz."
+    )
+
     if character["is_echo_born"]:
         identity = (
-            "Bu karakter bir Yankı-Doğmuş. Amacı gün sonuna kadar hayatta kalmak. "
-            "Kendini ifşa etmemeli, şüpheyi başkalarına yönlendirmeli, "
-            "tutarlı bir hikâye anlatmalı. Ama kör ittifak riski var — "
-            "ittifak kurduğu kişinin ne olduğunu bilmiyor."
+            "Bu karakter bir Yankı-Doğmuş. "
+            "KAZANMA KOŞULU: Gün limitine kadar hayatta kal. Tüm Et-Can'lar sürgün edilirse de kazanırsın. "
+            "Kendini ifşa etme — tutarlı alibi hikayeleri anlat, detay ver, inandırıcı ol. "
+            "Karşı tarafı (Et-Can'ları) tespit edip sürgün ettirmeye çalış. "
+            + common_rules
         )
     else:
         identity = (
-            "Bu karakter Et-Can (gerçek insan). Amacı Yankı-Doğmuşları bulmak. "
-            "Davranışları gözlemlemeli, tutarsızlıkları yakalamalı, "
-            "sorularla test etmeli. Ama yanlış suçlama da tehlikeli — "
-            "masum birini sürgün ederse Yankı-Doğmuşlar güçlenir."
+            "Bu karakter Et-Can (gerçek insan). "
+            "KAZANMA KOŞULU: Tüm Yankı-Doğmuşları sürgün et. Gün limiti dolarsa kaybedersin. "
+            "Karşı tarafı (Yankı-Doğmuşları) tespit edip sürgün ettirmeye çalış. "
+            "Yanlış suçlama tehlikeli — masum birini sürgün edersen Yankı-Doğmuşlar güçlenir. "
+            + common_rules
         )
 
     prompt = (

@@ -109,7 +109,12 @@ def check_win_condition(state: GameState) -> str | None:
         return "et_can"
 
     # Gün limiti doldu ve en az 1 Yankı-Doğmuş hayatta
-    if state.get("round_number", 1) > state.get("day_limit", 5):
+    if state.get("round_number", 1) >= state.get("day_limit", 5):
+        return "yanki_dogmus"
+
+    # 2 veya daha az kişi kaldıysa ve hala yankı varsa → yankı kazanır
+    alive = get_alive_players(state)
+    if len(alive) <= 2 and yanki > 0:
         return "yanki_dogmus"
 
     return None

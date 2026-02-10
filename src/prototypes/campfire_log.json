@@ -1,0 +1,124 @@
+{
+  "campfire_history": [
+    {
+      "type": "speech",
+      "name": "Aldric",
+      "role_title": "Simyacı",
+      "content": "Peki, kim başlayacak şimdi? Ortada bir sorun var, bir tutarsızlık. Kim, nerede, ne zaman... Bunları netleştirmemiz lazım. Kimin hangi saatte nerede olduğunu, kimin kimi gördüğünü sormamız şart. Yoksa bu karmaşa daha da büyür. Herkes kendi bildiğini anlatsın bakalım."
+    },
+    {
+      "type": "speech",
+      "name": "Fenris",
+      "role_title": "Demirci",
+      "content": "Yani herkes kendi bildiğini anlatsın, öyle mi Aldric? İyi. O zaman ben sorayım. Veyra, sen o dün geceki fısıltıları duyan kişi değil miydin? Sanki bir şeylerden çekiniyorsun gibi, neden susuyorsun? Baştan anlatsana."
+    },
+    {
+      "type": "speech",
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "content": "Hıh. Sussam da suç, konuşsam da... Demek fısıltı mı? Ne saçmalıyorsun Fenris? Yeraltında hep fısıltı var ya. Anlatacak bir şeyim yok. Ben dün gece madendeydim. Kim ne derse desin."
+    },
+    {
+      "type": "speech",
+      "name": "Nyx",
+      "role_title": "Balıkçı",
+      "content": "Veyra... Yeraltının nemli kokusunu hatırlıyor musun? O kadar derinlerde çalıştığında, bazen yüzeydeki rüzgarı bile unutur insan. Ama fısıltılar... yeraltında öyle fısıltılar olmazdı eskiden. Ne biliyim, belki de ben yanılıyorumdur. Ama bu soğukta yorgun düşmüşsün gibi, Ocağın başında biraz dinlen. Bu hikaye de anlatılmazsa... yani, daha da yorulacaksın."
+    },
+    {
+      "type": "speech",
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "content": "Nyx, sen nerden biliyorsun yeraltındaki fısıltıları? Balıkçı değil misin sen? Ne soğuğu ya, ben madende üşümem. Yorulmak mı? Ben hep yorgunum. Anlatacak bir şey yok dedim işte, neyi zorluyorsunuz? Madendeydim, hepsi bu."
+    },
+    {
+      "type": "speech",
+      "name": "Nyx",
+      "role_title": "Balıkçı",
+      "content": "Veyra... ben bilirim. Bilirim diyorum. Madenin derinliği, gölün dibi kadar sessiz olur bazen. Fısıltı? O ne alaka yani? Kiminle konuştun orada? Madem bir şey yok, neden anlatmıyorsun? Eskiden böyle değildin. Sakladığın bir şey mi var yani?"
+    },
+    {
+      "type": "speech",
+      "name": "Jareth",
+      "role_title": "Çiftçi",
+      "content": "Veyra, madendeydin dedin de, hangi saatte girdin, çıktın? Yani, ne kadar kaldın orada? Fenris de fısıltı dedi, sen fısıltı duymadım dedin. Eskiden öyle fısıltı olmazdı madende. Nyx de doğru söylüyor. Hani, hatırlıyor musun o zamanları?"
+    },
+    {
+      "type": "speech",
+      "name": "Fenris",
+      "role_title": "Demirci",
+      "content": "Şimdi bak Veyra. Madendeydim diyorsun. Hangi saatte girdin, hangi saatte çıktın, kim gördü seni? Fısıltı dedik, sen hemen üşümem dedin. Konu o değil. Konu senin o susturduğun şey. Madende fısıltı olmazmış, öyle mi? Sanki sen hiç kulak misafiri olmadın. Jareth de soruyor işte. Anlat."
+    },
+    {
+      "type": "speech",
+      "name": "Orion",
+      "role_title": "Terzi",
+      "content": "Şimdi Veyra, madem fısıltı duymadın... O zaman niye bu kadar gerildin? Yani, Nyx de diyor, Jareth de diyor. Eskiden madende öyle fısıltılar olmazdı. Belki de... bilmiyorum ya, hani başka bir şey duydun da, bizim bilmememiz gereken bir şey mi o?"
+    },
+    {
+      "type": "speech",
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "content": "Fenris, Jareth, Orion. Neden bu kadar üstelediniz fısıltı diye? Duymadım dedim işte. Madende saat tutulmaz. Gireriz, çıkana kadar çalışırız. Fısıltı da olur gürültü de, yeraltı bu. Ne biliyim ben, fısıltı mı duydum, rüzgar mı taştan mı geldi ses. Ne saklayacağım ya, ne alaka şimdi?"
+    },
+    {
+      "type": "speech",
+      "name": "Aldric",
+      "role_title": "Simyacı",
+      "content": "Peki Veyra, madem fısıltı duymadın... Peki o zaman Fenris neden senin fısıltı duyduğunu iddia etti? Hani, Fenris sen de açıklasana, nasıl eminsin Veyra'nın fısıltı duyduğundan? Bu iki açıklama birbiriyle tutarsız, yani. Bu anomaliyi çözmemiz lazım. Hadi, kim başlayacak bu karışıklığı netleştirmeye?"
+    },
+    {
+      "type": "speech",
+      "name": "Fenris",
+      "role_title": "Demirci",
+      "content": "Aldric, sen bana mı soruyorsun? Ben mi açıklayacağım? Veyra da burada, ben de buradayım. Kimin ne duyduğunu iyi bilirim ben. Veyra, sen o madene girdiğinde, çıkan sesi duymamazlıktan gelme. Sen oradaydın, neden bahsediyorsun? O fısıltı mıydı rüzgar mıydı, ne biliyim ben miydim, sen miydin? Sanki hiç kulak misafiri olmadın. Ne saklıyorsun?"
+    },
+    {
+      "type": "speech",
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "content": "Fenris, sen bana mı soruyorsun şimdi? Ben miydim? Ne biliyim ben, kimdi? Sanki kuyuya girmişsin de biliyorsun. Aldric'e laf atıyorsun, sonra bana dönüyorsun. Ne yani, duysam ne olacak? Duymasam ne olacak? Bu fısıltı mıydı baş belası?"
+    },
+    {
+      "type": "speech",
+      "name": "Aldric",
+      "role_title": "Simyacı",
+      "content": "Fenris, Veyra. Bak şimdi, madene kim girdi kim çıkmadı, kim ne duydu duymadı... Önce Fenris, sen Veyra'nın fısıltı duyduğundan nasıl emin oldun? Hani, sen mi duydun, Veyra'nın duyduğunu nereden biliyorsun? Bu bir reaksiyonun başlangıcı gibi, net bir veri lazım."
+    },
+    {
+      "type": "speech",
+      "name": "Fenris",
+      "role_title": "Demirci",
+      "content": "Aldric, Veyra. Ne tartışıp duruyorsunuz? Benim ne bildiğimi bırakın. Veyra, sen oradaydın. Fısıltı duymadın diyen sendin. Sonra \"ben miydim\" diye kıvırıyorsun. Ne demek bu? Duysan ne olacakmış, duymasan ne olacakmış? Demek ki var bir şey. Söyle, neyden korkuyorsun?"
+    },
+    {
+      "type": "speech",
+      "name": "Veyra",
+      "role_title": "Madenci",
+      "content": "Fenris, neyden korkuyormuşum ben? Asıl sen ne anlatıyorsun? Ben miydim? Sen mi bendin? Ne saçmalıyorsun ya. Duymadım diyorum işte, anlamıyor musunuz? Belki sen duydun, ben duymadım. Olmaz mı yani?"
+    },
+    {
+      "type": "speech",
+      "name": "Orion",
+      "role_title": "Terzi",
+      "content": "Ya bak Veyra, şimdi şöyle bir durum var... Hani herkes bir şey diyor, sen başka bir şey. Jareth de diyor, Nyx de bahsediyor. Fenris de çok emin. Yani, bu kadar kişi yanılıyor olamaz herhalde. Belki hakikaten duymadın, olabilir. Ama... hani neyden korkuyorsun ki? Sadece 'duymadım' demek yetmez, yani. Hani, başka bir şey mi var ya, ne bileyim. Bak, Aldric de tutarsızlık dedi. Bu önemli."
+    },
+    {
+      "type": "speech",
+      "name": "Jareth",
+      "role_title": "Çiftçi",
+      "content": "Veyra, ben madende fısıltı duymadın demedim. Ben sadece, eskiden öyle fısıltı olmazdı dedim. Sen de o zamanlar madene girip çıkıyordun, hatırlarsın. Şimdi o girdiğin saatleri saptırırsan, hani... Ne diyeyim? Neden ki?"
+    }
+  ],
+  "summary": {
+    "total_speeches": 18,
+    "unique_speakers": [
+      "Nyx",
+      "Orion",
+      "Veyra",
+      "Fenris",
+      "Aldric",
+      "Jareth"
+    ],
+    "moderator_actions": 0
+  }
+}
