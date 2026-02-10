@@ -389,6 +389,7 @@ async def get_public_game_info(game_id: str) -> dict | None:
             "day_limit": state.get("day_limit"),
             "players": [
                 {
+                    "slot_id": p.slot_id,
                     "name": p.name,
                     "role_title": p.role_title,
                     "alive": p.alive,
