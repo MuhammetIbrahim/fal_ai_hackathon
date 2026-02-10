@@ -109,3 +109,27 @@ class GameStartResponse(BaseModel):
     game_id: str
     status: str
     message: str = Field(description="İşlem mesajı")
+
+
+class RoundLog(BaseModel):
+    """Bir round'un log'u."""
+    round: int
+    campfire_history: list[dict]
+    house_visits: list[dict]
+    votes: dict[str, str]
+    exiled: str | None
+    exiled_type: str | None
+
+
+class GameLogResponse(BaseModel):
+    """
+    Oyun log'u yanıtı — bitmiş oyunun tüm detayları.
+    
+    Replay ve analiz için kullanılır.
+    """
+    game_id: str
+    winner: str | None = Field(description="Kazanan taraf: et_can | yanki_dogmus")
+    total_rounds: int = Field(description="Toplam round sayısı")
+    rounds: list[RoundLog] = Field(description="Her round'un detaylı logu")
+    world_seed: dict | None = Field(default=None, description="Dünya seed'i")
+    players_initial: list[dict] | None = Field(default=None, description="Başlangıçtaki oyuncular")

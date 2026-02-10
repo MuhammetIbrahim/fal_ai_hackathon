@@ -27,7 +27,9 @@ from src.apps.game.schema import (
     GameCreateResponse,
     GameStateResponse,
     GameStartResponse,
+    GameLogResponse,
 )
+from src.core.game_loop import start_game_loop, is_game_running
 from src.core.game_engine import (
     create_new_game,
     get_public_game_info,
@@ -187,10 +189,20 @@ async def start_game_endpoint(game_id: str):
     try:
         result = await start_game(game_id)
         
+        # ═══ GAME LOOP BAŞLAT (Background Task) ═══
+        if not is_game_running(game_id):
+            # State'i al ve game loop'a geç
+            from src.core.game_engine import get_game_state, _deserialize_state
+            game_data = await get_game_state(game_id)
+            
+            if game_data and game_data.get("state"):
+                state = _deserialize_state(game_data["state"])
+                start_game_loop(game_id, state)
+        
         return GameStartResponse(
             game_id=result["game_id"],
             status=result["status"],
-            message=f"Oyun başlatıldı. {len(result['players'])} karakter oluşturuldu.",
+            message=f"Oyun başlatıldı. {len(result['players'])} karakter oluşturuldu. Game loop çalışıyor.",
         )
         
     except ValueError as e:
@@ -211,3 +223,43 @@ async def start_game_endpoint(game_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Oyun başlatılırken hata: {str(e)}",
         )
+
+
+@router.get(
+    "/{game_id}/log",
+    response_model=GameLogResponse,
+    summary="Oyun log'unu getir",
+    description="""
+    Bitmiş bir oyunun detaylı log'unu getirir.
+    
+    Round-by-round tüm konuşmalar, ziyaretler, oylamalar ve sürgünler.
+    Replay ve analiz için kullanılır.
+    
+    **Not:** Sadece bitmiş (finished) oyunlar için kullanılabilir.
+    """,
+)
+async def get_game_log_endpoint(game_id: str):
+    """
+    Oyun log'unu getir.
+    
+    Args:
+        game_id: Oyun ID'si
+        
+    Returns:
+        GameLogResponse: Detaylı oyun logu
+        
+    Raises:
+        HTTPException 404: Log bulunamadı
+    """
+    from src.core.database import db, GAME_LOGS
+    
+    log_data = db.get(GAME_LOGS, game_id)
+    
+    if not log_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Game log not found: {game_id}",
+        )
+    
+    return GameLogResponse(**log_data)
+
