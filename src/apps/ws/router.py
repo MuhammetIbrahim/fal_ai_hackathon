@@ -238,22 +238,45 @@ async def handle_client_event(
         
         logger.info(f"🗳️  {player_id} voted for {target} in {game_id}")
     
-    # ═══ VISIT REQUEST ═══
-    elif event_type == "visit_request":
-        target = event_data.get("target")
-        
-        if not target:
+    # ═══ LOCATION CHOICE (Serbest Dolasim) ═══
+    elif event_type == "location_choice":
+        choice = event_data.get("choice", "")
+
+        if not choice:
             await websocket.send_json({
                 "event": "error",
                 "data": {
-                    "code": "invalid_visit",
-                    "message": "Visit target is required"
+                    "code": "empty_choice",
+                    "message": "Location choice cannot be empty"
                 }
             })
             return
-        
-        # TODO: Game engine'e gönder
-        logger.info(f"🚪 {player_id} wants to visit {target} in {game_id}")
+
+        from src.core.game_loop import get_input_queue
+        queue = get_input_queue(game_id, player_id)
+        await queue.put({"event": "location_choice", "choice": choice})
+
+        logger.info(f"📍 {player_id} chose location: {choice} in {game_id}")
+
+    # ═══ VISIT SPEAK (1v1 konusma) ═══
+    elif event_type == "visit_speak":
+        content = event_data.get("content", "")
+
+        if not content:
+            await websocket.send_json({
+                "event": "error",
+                "data": {
+                    "code": "empty_content",
+                    "message": "Visit speech content cannot be empty"
+                }
+            })
+            return
+
+        from src.core.game_loop import get_input_queue
+        queue = get_input_queue(game_id, player_id)
+        await queue.put({"event": "visit_speak", "content": content})
+
+        logger.info(f"🏠 {player_id} spoke in visit: {game_id}")
     
     # ═══ UNKNOWN EVENT ═══
     else:

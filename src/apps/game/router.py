@@ -190,14 +190,8 @@ async def start_game_endpoint(game_id: str):
         result = await start_game(game_id)
         
         # ═══ GAME LOOP BAŞLAT (Background Task) ═══
-        if not is_game_running(game_id):
-            # State'i al ve game loop'a geç
-            from src.core.game_engine import get_game_state, _deserialize_state
-            game_data = await get_game_state(game_id)
-            
-            if game_data and game_data.get("state"):
-                state = _deserialize_state(game_data["state"])
-                start_game_loop(game_id, state)
+        if not is_game_running(game_id) and result.get("state"):
+            start_game_loop(game_id, result["state"])
         
         return GameStartResponse(
             game_id=result["game_id"],

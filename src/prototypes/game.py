@@ -1919,6 +1919,77 @@ async def run_full_game(state: GameState) -> GameState:
 
 
 # ══════════════════════════════════════════════════════
+#  PUBLIC API — Backend game_loop icin export edilen fonksiyonlar
+# ══════════════════════════════════════════════════════
+
+async def generate_campfire_speech(state: GameState, player: Player) -> str:
+    """Tek bir karakter icin campfire konusmasi uret. Backend game_loop kullanir."""
+    return await _character_speak(player, state)
+
+
+async def get_reaction(player: Player, last_speech: dict, state: GameState) -> dict:
+    """Bir oyuncunun son konusmaya tepkisini al. {name, wants, reason}"""
+    return await _get_reaction(player, last_speech, state)
+
+
+async def orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[str, str]:
+    """Orkestrator: tepkiler arasından kimi sececegine karar verir. ("NEXT"|"END", name)"""
+    return await _orchestrator_pick(state, reactions)
+
+
+async def check_moderation(
+    speaker_name: str,
+    message: str,
+    world_seed_dict: dict | None = None,
+) -> tuple[bool, str]:
+    """Mesaji moderasyon kontrolundan gecir. (ok, reason)"""
+    ws = WorldSeed(**world_seed_dict) if world_seed_dict else None
+    return await moderator_check(speaker_name, message, ws)
+
+
+async def generate_vote(state: GameState, player: Player, campfire_summary: str | None = None) -> str:
+    """Tek bir karakter icin oy uret."""
+    if campfire_summary is None:
+        campfire_summary = state.get("campfire_rolling_summary", "")
+    return await _player_vote(player, state, campfire_summary)
+
+
+async def generate_1v1_speech(
+    state: GameState,
+    speaker: Player,
+    opponent: Player,
+    exchanges: list[dict],
+    campfire_summary: str,
+) -> str:
+    """1v1 oda gorusmesinde tek bir konusma uret."""
+    return await _character_speak_1v1(speaker, opponent, exchanges, state, campfire_summary)
+
+
+async def generate_location_decision(
+    player: Player,
+    state: GameState,
+    locations: dict[str, str],
+) -> dict:
+    """Serbest dolasimda konum karari uret. locations = {name: "campfire"|"home"|"visiting:X"}"""
+    return await _get_location_decision(player, state, locations)
+
+
+async def maybe_update_campfire_summary(state: GameState) -> None:
+    """Rolling campfire summary'i guncelle (yeterli yeni mesaj varsa)."""
+    await _maybe_update_campfire_summary(state)
+
+
+async def update_cumulative_summary(
+    cumulative: str,
+    round_number: int,
+    campfire_summary: str,
+    vote_result: str,
+) -> str:
+    """Round sonunda kumulatif ozeti guncelle."""
+    return await _update_cumulative_summary(cumulative, round_number, campfire_summary, vote_result)
+
+
+# ══════════════════════════════════════════════════════
 #  MAIN
 # ══════════════════════════════════════════════════════
 

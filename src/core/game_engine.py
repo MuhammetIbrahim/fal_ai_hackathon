@@ -67,6 +67,23 @@ from game import (
     run_morning,
     exile_player,
     summarize_campfire,
+    # Public API — game_loop icin
+    generate_campfire_speech,
+    generate_vote,
+    generate_1v1_speech,
+    generate_location_decision,
+    maybe_update_campfire_summary,
+    update_cumulative_summary,
+    get_reaction,
+    orchestrator_pick,
+    check_moderation,
+    # Constants
+    MAX_CAMPFIRE_TURNS,
+    INITIAL_CAMPFIRE_TURNS,
+    FREE_ROAM_ROUNDS,
+    CLOSING_CAMPFIRE_TURNS,
+    CAMPFIRE_TURNS_PER_ROUND,
+    ROOM_EXCHANGES,
 )
 
 # ═══════════════════════════════════════════════════
@@ -443,7 +460,7 @@ __all__ = [
     "get_game_state",
     "get_public_game_info",
     
-    # Prototype re-exports (ileride wrapper'lanacak)
+    # Prototype re-exports
     "run_campfire",
     "run_house_visits",
     "run_vote",
@@ -454,6 +471,18 @@ __all__ = [
     "get_alive_players",
     "get_alive_names",
     "count_by_type",
+    # Public API — game_loop icin
+    "generate_campfire_speech",
+    "generate_vote",
+    "generate_1v1_speech",
+    "generate_location_decision",
+    # Constants
+    "MAX_CAMPFIRE_TURNS",
+    "INITIAL_CAMPFIRE_TURNS",
+    "FREE_ROAM_ROUNDS",
+    "CLOSING_CAMPFIRE_TURNS",
+    "CAMPFIRE_TURNS_PER_ROUND",
+    "ROOM_EXCHANGES",
     
     # Models
     "GameState",
