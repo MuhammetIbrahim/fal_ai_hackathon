@@ -112,11 +112,11 @@ async def _game_loop_runner(game_id: str, state: Any):
     # ═══ Lazy Import Game Engine ═══
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "prototypes"))
-        from game_state import (
+        from game_state import (  # type: ignore
             Phase, get_alive_players, get_alive_names, find_player,
             check_win_condition, count_by_type,
         )
-        from game import (
+        from game import (  # type: ignore
             run_morning, exile_player, summarize_campfire, run_house_visits,
             generate_campfire_speech, generate_vote, MAX_CAMPFIRE_TURNS,
         )
