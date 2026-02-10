@@ -201,15 +201,10 @@ async def handle_client_event(
             })
             return
         
-        # TODO: Game engine'e gönder
-        # Şimdilik sadece broadcast yap
-        await manager.broadcast(game_id, {
-            "event": "campfire_speech",
-            "data": {
-                "speaker": player_id,
-                "content": content,
-            }
-        })
+        # Game loop'un queue'suna gönder
+        from src.core.game_loop import get_input_queue
+        queue = get_input_queue(game_id, player_id)
+        await queue.put({"event": "speak", "content": content})
         
         logger.info(f"🗣️  {player_id} spoke in {game_id}")
     
@@ -227,8 +222,12 @@ async def handle_client_event(
             })
             return
         
-        # TODO: Game engine'e gönder
-        # Şimdilik sadece confirm
+        # Game loop'un queue'suna gönder
+        from src.core.game_loop import get_input_queue
+        queue = get_input_queue(game_id, player_id)
+        await queue.put({"event": "vote", "target": target})
+        
+        # Confirm mesajı
         await websocket.send_json({
             "event": "vote_confirmed",
             "data": {

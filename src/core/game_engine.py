@@ -226,17 +226,48 @@ async def start_game(game_id: str) -> dict:
     - Her karakter için acting prompt oluşturulur
     - Pro model kullanılır (daha detaylı karakterler)
     - ~30-60 saniye sürebilir (paralel çağrılar)
+    
+    FAL_KEY yoksa mock karakterler oluştur (test için).
     """
-    print(f"🎭 Karakterler oluşturuluyor... (LLM çağrıları yapılıyor)")
+    from src.core.config import get_settings
+    settings = get_settings()
     
-    players = await generate_players(
-        rng=rng,
-        world_seed=world_seed,
-        player_count=config["player_count"],
-        ai_count=config["ai_count"],
-    )
-    
-    print(f"✅ {len(players)} karakter oluşturuldu")
+    if not settings.FAL_KEY:
+        # Mock karakterler oluştur
+        print(f"⚠️  FAL_KEY yok — Mock karakterler oluşturuluyor")
+        from game_state import Player, PlayerType
+        
+        players = []
+        for i in range(config["player_count"]):
+            is_human = i < (config["player_count"] - config["ai_count"])
+            players.append(Player(
+                slot_id=f"P{i}",
+                name=f"Player_{i}",
+                role_title="Villager" if is_human else "AI Character",
+                lore=f"A mysterious inhabitant of {world_seed.place_variants.settlement_name}",
+                archetype="SupheliSessiz",
+                archetype_label="Suspicious and Silent",
+                player_type=PlayerType.ET_CAN if is_human else PlayerType.YANKI_DOGMUS,
+                acting_prompt="Act naturally and observe others carefully",
+                skill_tier="Orta" if not is_human else None,
+                skill_tier_label="Orta" if not is_human else None,
+                is_human=is_human,
+                alive=True,
+            ))
+        
+        print(f"✅ {len(players)} mock karakter oluşturuldu")
+    else:
+        # Gerçek LLM ile karakterler üret
+        print(f"🎭 Karakterler oluşturuluyor... (LLM çağrıları yapılıyor)")
+        
+        players = await generate_players(
+            rng=rng,
+            world_seed=world_seed,
+            player_count=config["player_count"],
+            ai_count=config["ai_count"],
+        )
+        
+        print(f"✅ {len(players)} karakter oluşturuldu")
     
     # ═══ 5. Game State Initialize ═══
     """
