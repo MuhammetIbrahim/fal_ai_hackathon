@@ -21,7 +21,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from fal_services import llm_generate, configure
+from fal_services import llm_generate, configure, tts_stream
 from game_state import (
     Player, PlayerType, Phase, GameState,
     get_alive_players, get_alive_names, find_player,
@@ -55,6 +55,24 @@ FREE_ROAM_ROUNDS = 3          # Serbest dolasim round sayisi
 CAMPFIRE_TURNS_PER_ROUND = 3  # Her roundda campfire tartisma
 ROOM_EXCHANGES = 4            # Oda gorusmesi exchange sayisi
 CLOSING_CAMPFIRE_TURNS = 3    # Kapanista herkes birlikteyken
+
+
+# ── Voice Hook ──
+_on_speech = None  # async callable(name: str, text: str) veya None
+
+
+async def _emit_speech(name: str, role_title: str, text: str) -> None:
+    """Konusmayi yazdir + voice hook varsa seslendir."""
+    print(f"  [{name}] ({role_title}): {text}")
+    if _on_speech:
+        await _on_speech(name, text)
+
+
+async def _emit_narrator(text: str) -> None:
+    """Anlatici metnini yazdir + voice hook varsa seslendir."""
+    print(f"\n  [OCAK BEKCISI] {text}")
+    if _on_speech:
+        await _on_speech("Anlatici", text)
 
 
 def calculate_ai_count(player_count: int, rng: random_module.Random) -> int:
@@ -774,7 +792,7 @@ async def run_campfire(state: GameState) -> GameState:
             "role_title": first.role_title, "content": message,
         })
         first.add_message("assistant", message)
-        print(f"  [{first.name}] ({first.role_title}): {message}")
+        await _emit_speech(first.name, first.role_title, message)
 
     # Broadcast dongusu
     turn = 1
@@ -816,7 +834,7 @@ async def run_campfire(state: GameState) -> GameState:
             "type": "speech", "name": name,
             "role_title": player.role_title, "content": message,
         })
-        print(f"  [{name}] ({player.role_title}): {message}")
+        await _emit_speech(name, player.role_title, message)
 
         # Rolling summary guncelle
         await _maybe_update_campfire_summary(state)
@@ -1098,7 +1116,7 @@ async def _run_single_visit(
             "content": message,
         })
         current.add_message("assistant", message)
-        print(f"  [{current.name}] ({current.role_title}): {message}")
+        await _emit_speech(current.name, current.role_title, message)
 
     visit_data = {
         "type": "visit",
@@ -1293,7 +1311,7 @@ async def _run_campfire_segment(
                 "present": list(participant_names),
             })
             first.add_message("assistant", message)
-            print(f"  [{first.name}] ({first.role_title}): {message}")
+            await _emit_speech(first.name, first.role_title, message)
         turns_done = 1
 
     while turns_done < max_turns:
@@ -1346,7 +1364,7 @@ async def _run_campfire_segment(
             "role_title": player.role_title, "content": message,
             "present": list(participant_names),
         })
-        print(f"  [{name}] ({player.role_title}): {message}")
+        await _emit_speech(name, player.role_title, message)
 
         await _maybe_update_campfire_summary(state)
 
@@ -1385,7 +1403,7 @@ async def _run_room_conversation(
             "content": message,
         })
         current.add_message("assistant", message)
-        print(f"  [{current.name}] ({current.role_title}): {message}")
+        await _emit_speech(current.name, current.role_title, message)
 
     visit_data = {
         "type": "room_visit",
@@ -1738,7 +1756,7 @@ async def run_morning(state: GameState) -> GameState:
         "content": morning_msg,
     })
 
-    print(f"\n  [OCAK BEKCISI] {morning_msg}")
+    await _emit_narrator(morning_msg)
     return state
 
 
@@ -1912,7 +1930,40 @@ async def main():
     parser.add_argument("--players", type=int, default=6, help="Toplam oyuncu sayisi")
     parser.add_argument("--ai-count", type=int, default=None, help="AI oyuncu sayisi (bos = rastgele)")
     parser.add_argument("--day-limit", type=int, default=None, help="Max gun sayisi (bos = otomatik hesapla)")
+    parser.add_argument("--voice", action="store_true", help="Konusmalari seslendir (TTS)")
+    parser.add_argument("--voice-streaming", action="store_true", help="Chunk chunk cal (dusuk latency)")
     args = parser.parse_args()
+
+    # ── Voice hook ──
+    if args.voice or args.voice_streaming:
+        import numpy as np
+        import sounddevice as sd
+
+        global _on_speech
+
+        if args.voice_streaming:
+            async def _voice_hook(name: str, text: str) -> None:
+                stream = sd.OutputStream(samplerate=16000, channels=1, dtype="float32")
+                stream.start()
+                try:
+                    async for pcm_chunk in tts_stream(text, speed=1.0):
+                        samples = np.frombuffer(pcm_chunk, dtype=np.int16).astype(np.float32) / 32768.0
+                        stream.write(samples)
+                finally:
+                    stream.stop()
+                    stream.close()
+        else:
+            async def _voice_hook(name: str, text: str) -> None:
+                chunks: list[bytes] = []
+                async for pcm_chunk in tts_stream(text, speed=1.0):
+                    chunks.append(pcm_chunk)
+                if chunks:
+                    audio = b"".join(chunks)
+                    samples = np.frombuffer(audio, dtype=np.int16).astype(np.float32) / 32768.0
+                    sd.play(samples, samplerate=16000, blocking=True)
+
+        _on_speech = _voice_hook
+        print(f"  Ses modu aktif: {'streaming' if args.voice_streaming else 'buffered'}")
 
     game_id = args.game_id or str(uuid.uuid4())
 

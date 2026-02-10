@@ -162,23 +162,31 @@ async def llm_stream(
     system_prompt: str = "",
     model: str = "google/gemini-2.5-flash",
     temperature: float = 0.8,
-    max_tokens: int = 200,
+    max_tokens: int | None = None,
 ) -> AsyncGenerator[str, None]:
     """Token token yield eder."""
     try:
+        args = {
+            "prompt": prompt,
+            "system_prompt": system_prompt,
+            "model": model,
+            "temperature": temperature,
+        }
+        if max_tokens is not None:
+            args["max_tokens"] = max_tokens
         stream = fal_client.stream_async(
             LLM_ENDPOINT,
-            arguments={
-                "prompt": prompt,
-                "system_prompt": system_prompt,
-                "model": model,
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
+            arguments=args,
         )
+        prev_text = ""
         async for event in stream:
             if isinstance(event, dict) and "output" in event:
-                yield event["output"]
+                full_text = event["output"]
+                # API kumulatif donduruyor — sadece yeni kismi yield et
+                if len(full_text) > len(prev_text):
+                    delta = full_text[len(prev_text):]
+                    prev_text = full_text
+                    yield delta
     except Exception as e:
         raise FalServiceError("llm", str(e)) from e
 
