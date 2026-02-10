@@ -1,4 +1,5 @@
 export type Phase =
+  | 'lobby'
   | 'morning'
   | 'campfire_open'
   | 'free_roam'
@@ -70,4 +71,32 @@ export interface DayScript {
   votes: VoteEntry[]
   exiledName: string
   exiledType: PlayerType
+}
+
+// ── WS Event Types ──────────────────────────────────
+
+export interface ServerEvent {
+  event: string
+  data: Record<string, unknown>
+}
+
+export type InputActionType = 'speak' | 'vote' | 'location_choice' | 'visit_speak'
+
+export interface InputAction {
+  type: InputActionType
+  timeout: number
+  alivePlayers?: string[]
+  extraData?: Record<string, unknown>
+}
+
+export interface HouseVisitState {
+  visitor: string
+  host: string
+  maxExchanges: number
+  exchanges: {
+    speaker: string
+    roleTitle: string
+    content: string
+    turn: number
+  }[]
 }

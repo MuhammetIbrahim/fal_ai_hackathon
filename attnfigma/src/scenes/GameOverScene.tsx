@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
 
 export const GameOverScene: React.FC = () => {
-  const { winner, players } = useGame()
+  const { winner, players, allPlayersReveal } = useGame()
   const [showTable, setShowTable] = useState(false)
 
   useEffect(() => {
@@ -12,6 +12,9 @@ export const GameOverScene: React.FC = () => {
 
   const winnerLabel = winner === 'et_can' ? 'ET-CANLAR KAZANDI!' : 'YANKI-DOGMUSLAR KAZANDI!'
   const winnerColor = winner === 'et_can' ? 'text-accent' : 'text-warden-alert'
+
+  // Use revealed players (with true types) if available, fall back to game players
+  const displayPlayers = allPlayersReveal ?? players
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
@@ -38,7 +41,7 @@ export const GameOverScene: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {players.map(p => {
+                {displayPlayers.map(p => {
                   const typeLabel = p.playerType === 'yanki_dogmus' ? 'YANKI' : 'ET-CAN'
                   const typeColor = p.playerType === 'yanki_dogmus' ? 'text-warden-alert' : 'text-accent'
                   const status = p.alive ? 'HAYATTA' : `SURGUN (Gun ${p.exiledRound ?? '?'})`

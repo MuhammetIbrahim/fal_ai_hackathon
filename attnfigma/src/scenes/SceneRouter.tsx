@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { GameProvider, useGame } from '../context/GameContext'
+import { LobbyScene } from './LobbyScene'
 import { MorningScene } from './MorningScene'
 import { CampfireScene } from './CampfireScene'
 import { FreeRoamScene } from './FreeRoamScene'
@@ -27,6 +28,7 @@ const SceneSwitch: React.FC = () => {
 
   const renderScene = () => {
     switch (currentPhase) {
+      case 'lobby':          return <LobbyScene />
       case 'morning':        return <MorningScene />
       case 'campfire_open':  return <CampfireScene />
       case 'campfire_close': return <CampfireScene />
@@ -35,7 +37,7 @@ const SceneSwitch: React.FC = () => {
       case 'vote':           return <VoteScene />
       case 'exile':          return <ExileScene />
       case 'game_over':      return <GameOverScene />
-      default:               return <MorningScene />
+      default:               return <LobbyScene />
     }
   }
 

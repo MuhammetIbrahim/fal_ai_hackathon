@@ -33,6 +33,37 @@ logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════
+# TTS Helper — fire-and-forget audio generation
+# ═══════════════════════════════════════════════════
+
+async def _generate_and_broadcast_audio(
+    game_id: str,
+    speaker: str,
+    content: str,
+    target_player_id: str | None = None,
+) -> None:
+    """TTS uret, audio URL'yi WS event olarak gonder. Hata olursa sessizce logla."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+        from fal_services import tts_generate
+        result = await tts_generate(content)
+        event = {
+            "event": "speech_audio",
+            "data": {
+                "speaker": speaker,
+                "audio_url": result.audio_url,
+                "duration": result.audio_duration_sec,
+            }
+        }
+        if target_player_id:
+            await manager.send_to(game_id, target_player_id, event)
+        else:
+            await manager.broadcast(game_id, event)
+    except Exception as e:
+        logger.warning(f"TTS failed for {speaker}: {e}")
+
+
+# ═══════════════════════════════════════════════════
 # GLOBAL: Game-Specific Input Queues
 # ═══════════════════════════════════════════════════
 
@@ -828,6 +859,10 @@ async def _run_campfire_segment_ws(
                 }
             })
 
+            # TTS fire-and-forget (AI only)
+            if not first.is_human:
+                asyncio.create_task(_generate_and_broadcast_audio(game_id, first.name, message))
+
         turns_done = 1
 
     # ── Sonraki turlar: orchestrator ile konusmaci sec ──
@@ -926,6 +961,10 @@ async def _run_campfire_segment_ws(
             }
         })
 
+        # TTS fire-and-forget (AI only)
+        if not speaker.is_human:
+            asyncio.create_task(_generate_and_broadcast_audio(game_id, speaker.name, message))
+
         # Rolling summary guncelle
         if maybe_update_campfire_summary:
             await maybe_update_campfire_summary(state)
@@ -1005,6 +1044,14 @@ async def _run_room_conversation_ws(
                     "host": owner.name,
                 }
             })
+
+        # TTS fire-and-forget (AI only, unicast to human player)
+        if not current.is_human:
+            human_p = visitor if visitor.is_human else (owner if owner.is_human else None)
+            if human_p:
+                asyncio.create_task(_generate_and_broadcast_audio(
+                    game_id, current.name, speech_content, target_player_id=human_p.slot_id
+                ))
 
     # Visit data kaydet
     visit_data = {

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
 
 export const MorningScene: React.FC = () => {
-  const { round, morningText, worldSeed, advancePhase } = useGame()
+  const { round, morningText, worldSeed } = useGame()
   const [displayed, setDisplayed] = useState('')
   const [showOmen, setShowOmen] = useState(false)
 
   // Typewriter efekti
   useEffect(() => {
+    if (!morningText) return
     setDisplayed('')
     setShowOmen(false)
     let i = 0
@@ -22,13 +23,8 @@ export const MorningScene: React.FC = () => {
     return () => clearInterval(iv)
   }, [morningText])
 
-  // Auto-advance
-  useEffect(() => {
-    const t = setTimeout(() => advancePhase(), 7000)
-    return () => clearTimeout(t)
-  }, [advancePhase])
-
-  const omen = worldSeed.omens[round - 1] ?? ''
+  const omens = worldSeed?.omens ?? []
+  const omen = omens[round - 1] ?? ''
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
@@ -53,11 +49,18 @@ export const MorningScene: React.FC = () => {
       </div>
 
       {/* Omen */}
-      {showOmen && (
+      {showOmen && omen && (
         <div className="relative z-10 mt-8 animate-fade-in">
           <p className="text-sm italic text-text-secondary/60">
             {omen}
           </p>
+        </div>
+      )}
+
+      {/* Waiting indicator */}
+      {!morningText && (
+        <div className="relative z-10 text-center">
+          <p className="text-sm text-text-secondary/50 animate-pulse">Sabah oluyor...</p>
         </div>
       )}
     </div>

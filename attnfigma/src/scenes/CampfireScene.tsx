@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import { useGame } from '../context/GameContext'
 import { ChatLog } from '../components/campfire/ChatLog'
 import type { Message } from '../components/campfire/ChatLog'
@@ -7,62 +7,46 @@ import type { Player } from '../components/campfire/QueuePanel'
 import { OmenBar } from '../components/campfire/OmenBar'
 
 export const CampfireScene: React.FC = () => {
-  const { phase, round, currentDayScript, players, worldSeed, advancePhase } = useGame()
+  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, selfPlayerName } = useGame()
+  const [inputText, setInputText] = useState('')
 
   const isClosing = phase === 'campfire_close'
-  const allMessages = isClosing
-    ? (currentDayScript?.campfireClose ?? [])
-    : (currentDayScript?.campfireOpen ?? [])
+  const label = isClosing ? 'Kapanis Ates Basi' : 'Ates Basi'
 
-  const [visibleMessages, setVisibleMessages] = useState<Message[]>([])
-  const [currentSpeakerIdx, setCurrentSpeakerIdx] = useState(-1)
-  const advancedRef = useRef(false)
+  // Convert messages to ChatLog format
+  const chatMessages: Message[] = messages.map(m => ({
+    id: m.id,
+    sender: m.sender,
+    text: m.text,
+    isSelf: m.isSelf,
+    isSystem: m.isSystem,
+    timestamp: m.timestamp,
+  }))
 
-  // Mesajlari trickle et
-  useEffect(() => {
-    setVisibleMessages([])
-    setCurrentSpeakerIdx(-1)
-    advancedRef.current = false
-
-    let count = 0
-    const iv = setInterval(() => {
-      if (count < allMessages.length) {
-        const msg = allMessages[count]
-        setVisibleMessages(prev => [...prev, {
-          id: msg.id,
-          sender: msg.sender,
-          text: msg.text,
-          isSelf: msg.isSelf,
-          isSystem: msg.isSystem,
-          timestamp: msg.timestamp,
-        }])
-        setCurrentSpeakerIdx(count)
-        count++
-      } else {
-        clearInterval(iv)
-        // Son mesajdan 2s sonra advance
-        setTimeout(() => {
-          if (!advancedRef.current) {
-            advancedRef.current = true
-            advancePhase()
-          }
-        }, 2500)
-      }
-    }, 3000)
-
-    return () => clearInterval(iv)
-  }, [phase, round])
-
-  // Queue panel icin player listesi
+  // Queue panel
   const queuePlayers: Player[] = players
     .filter(p => p.alive)
     .map(p => ({ id: p.id, name: p.name, avatarColor: p.avatarColor }))
 
-  const currentSpeaker = currentSpeakerIdx >= 0 && currentSpeakerIdx < allMessages.length
-    ? queuePlayers.find(p => p.name === allMessages[currentSpeakerIdx].sender) ?? null
+  const lastSpeaker = messages.length > 0 ? messages[messages.length - 1].sender : null
+  const currentSpeaker = lastSpeaker
+    ? queuePlayers.find(p => p.name === lastSpeaker) ?? null
     : null
 
-  const label = isClosing ? 'Kapanis Ates Basi' : 'Ates Basi'
+  const canSpeak = inputRequired?.type === 'speak'
+
+  const handleSend = () => {
+    if (!inputText.trim()) return
+    sendSpeak(inputText.trim())
+    setInputText('')
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
 
   return (
     <div className="cf-scene">
@@ -74,7 +58,7 @@ export const CampfireScene: React.FC = () => {
       {/* Top bar */}
       <header className="cf-topbar">
         <div className="cf-world-brief">
-          <h2 className="cf-world-title">{worldSeed.settlementName}</h2>
+          <h2 className="cf-world-title">{worldSeed?.settlementName ?? 'Koy'}</h2>
           <p className="cf-world-sub">Gun {round} — {label}</p>
         </div>
         <OmenBar />
@@ -83,12 +67,34 @@ export const CampfireScene: React.FC = () => {
       {/* Main content */}
       <div className="cf-body">
         <div className="cf-center">
-          <ChatLog messages={visibleMessages} />
-          {/* Demo modunda input yok, izleme gostergesi */}
+          <ChatLog messages={chatMessages} />
+
+          {/* Input area */}
           <div className="cf-input-area">
-            <div className="px-6 py-3 rounded-full bg-white/5 border border-white/8 text-text-secondary text-sm">
-              Ates basini izliyorsun...
-            </div>
+            {canSpeak ? (
+              <div className="flex items-center gap-2 w-full max-w-lg">
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Konusmak icin yaz..."
+                  autoFocus
+                  className="flex-1 px-4 py-3 rounded-full bg-white/10 border border-accent/30 text-text-primary text-sm placeholder:text-text-secondary/50 focus:outline-none focus:border-accent/60"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!inputText.trim()}
+                  className="px-4 py-3 rounded-full bg-accent/20 border border-accent/30 text-accent text-sm font-semibold hover:bg-accent/30 transition-all disabled:opacity-30"
+                >
+                  Gonder
+                </button>
+              </div>
+            ) : (
+              <div className="px-6 py-3 rounded-full bg-white/5 border border-white/8 text-text-secondary text-sm">
+                {messages.length === 0 ? 'Ates basi basliyor...' : 'Ates basini izliyorsun...'}
+              </div>
+            )}
           </div>
         </div>
         <QueuePanel

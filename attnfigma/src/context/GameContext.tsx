@@ -1,147 +1,444 @@
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react'
-import type { Phase, GamePlayer, ChatMessage, Transcript, VoteEntry, LocationDecision } from '../types/game'
-import { PLAYERS, WORLD_SEED, DAY_SCRIPTS, SELF_PLAYER_ID } from '../data/mockData'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import type {
+  Phase, GamePlayer, ChatMessage, VoteEntry, LocationDecision,
+  WorldSeed, InputAction, HouseVisitState,
+} from '../types/game'
+import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
+import { useAudioQueue } from '../hooks/useAudioQueue'
+
+// ── Avatar renk paleti (backend'den gelmez, biz atariz) ──
+const AVATAR_COLORS = [
+  '#D35400', '#1ABC9C', '#8E44AD', '#E67E22', '#2C3E50', '#C0392B',
+  '#2980B9', '#27AE60', '#F39C12', '#7F8C8D',
+]
+
+// ── State ──────────────────────────────────────────
 
 interface GameState {
+  // Connection
+  connectionStatus: ConnectionStatus
+  gameId: string | null
+  playerId: string | null
+
+  // Game status
+  status: 'lobby' | 'waiting' | 'running' | 'finished'
   phase: Phase
   round: number
+  dayLimit: number
+
+  // Players
   players: GamePlayer[]
-  messages: ChatMessage[]
-  transcripts: Transcript[]
-  votes: VoteEntry[]
-  locationDecisions: LocationDecision[]
-  exiledName: string | null
-  exiledType: 'et_can' | 'yanki_dogmus' | null
-  winner: 'et_can' | 'yanki_dogmus' | null
+  selfPlayerName: string | null
+
+  // World
+  worldSeed: WorldSeed | null
+  worldBrief: string | null
+
+  // Phase-specific (reset on phase change)
   morningText: string
-  fading: boolean
+  messages: ChatMessage[]
+  locationDecisions: LocationDecision[]
+  houseVisit: HouseVisitState | null
+  votes: VoteEntry[]
+  exiledName: string | null
+  exiledType: string | null
+  exiledRole: string | null
+  winner: string | null
+  allPlayersReveal: GamePlayer[] | null
+
+  // UI
+  inputRequired: InputAction | null
 }
 
 interface GameContextValue extends GameState {
-  worldSeed: typeof WORLD_SEED
-  selfPlayerId: string
-  advancePhase: () => void
-  currentDayScript: typeof DAY_SCRIPTS[0] | null
+  // Actions
+  createGame: (playerCount?: number, aiCount?: number) => Promise<void>
+  startGame: () => Promise<void>
+  sendSpeak: (content: string) => void
+  sendVote: (target: string) => void
+  sendLocationChoice: (choice: string) => void
+  sendVisitSpeak: (content: string) => void
+  clearInput: () => void
 }
 
 const GameContext = createContext<GameContextValue | null>(null)
 
-// Phase sırası — Day 1 full, Day 2 kısaltılmış
-const DAY1_PHASES: Phase[] = [
-  'morning', 'campfire_open', 'free_roam', 'house', 'campfire_close', 'vote', 'exile',
-]
-const DAY2_PHASES: Phase[] = [
-  'morning', 'campfire_open', 'vote', 'exile', 'game_over',
-]
+// ── Provider ──────────────────────────────────────
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const ws = useWebSocket()
+  const audio = useAudioQueue()
+  const msgCounter = useRef(0)
+
   const [state, setState] = useState<GameState>({
-    phase: 'morning',
-    round: 1,
-    players: PLAYERS.map(p => ({ ...p })),
+    connectionStatus: 'disconnected',
+    gameId: null,
+    playerId: null,
+    status: 'lobby',
+    phase: 'lobby',
+    round: 0,
+    dayLimit: 5,
+    players: [],
+    selfPlayerName: null,
+    worldSeed: null,
+    worldBrief: null,
+    morningText: '',
     messages: [],
-    transcripts: [],
-    votes: [],
     locationDecisions: [],
+    houseVisit: null,
+    votes: [],
     exiledName: null,
     exiledType: null,
+    exiledRole: null,
     winner: null,
-    morningText: DAY_SCRIPTS[0].morningText,
-    fading: false,
+    allPlayersReveal: null,
+    inputRequired: null,
   })
 
-  const phaseIndexRef = useRef(0)
+  // Sync WS status
+  useEffect(() => {
+    setState(prev => ({ ...prev, connectionStatus: ws.status }))
+  }, [ws.status])
 
-  const advancePhase = useCallback(() => {
-    setState(prev => {
-      const phases = prev.round === 1 ? DAY1_PHASES : DAY2_PHASES
-      const nextIdx = phaseIndexRef.current + 1
+  // ── WS Event Handlers ──────────────────────────
 
-      // Exile sonrası: round ilerlet veya game over
-      if (nextIdx >= phases.length) {
-        if (prev.round === 1) {
-          // Day 2'ye geç
-          phaseIndexRef.current = 0
-          const day2 = DAY_SCRIPTS[1]
-          const updatedPlayers = prev.players.map(p =>
-            p.name === prev.exiledName ? { ...p, alive: false, exiledRound: 1 } : p
-          )
-          return {
-            ...prev,
-            fading: false,
-            round: 2,
-            phase: DAY2_PHASES[0],
-            players: updatedPlayers,
-            messages: [],
-            transcripts: [],
-            votes: [],
-            locationDecisions: [],
-            exiledName: null,
-            exiledType: null,
-            morningText: day2.morningText,
-          }
-        }
-        // Day 2 bitti → game over
-        phaseIndexRef.current = phases.length - 1
-        const updatedPlayers = prev.players.map(p =>
-          p.name === prev.exiledName ? { ...p, alive: false, exiledRound: 2 } : p
-        )
+  useEffect(() => {
+    const unsubs: (() => void)[] = []
+
+    // phase_change → update phase, round, reset phase-specific data
+    unsubs.push(ws.onEvent('phase_change', (data) => {
+      const phase = mapPhase(data.phase as string)
+      audio.stop() // Clear audio queue on phase change
+      setState(prev => ({
+        ...prev,
+        phase,
+        round: (data.round as number) ?? prev.round,
+        dayLimit: (data.day_limit as number) ?? prev.dayLimit,
+        // Reset phase-specific data
+        ...(phase !== prev.phase ? {
+          messages: [],
+          locationDecisions: [],
+          houseVisit: null,
+          votes: [],
+          exiledName: null,
+          exiledType: null,
+          exiledRole: null,
+          inputRequired: null,
+        } : {}),
+      }))
+    }))
+
+    // morning → morning text
+    unsubs.push(ws.onEvent('morning', (data) => {
+      setState(prev => ({
+        ...prev,
+        morningText: (data.content as string) ?? '',
+      }))
+    }))
+
+    // campfire_speech → append to messages
+    unsubs.push(ws.onEvent('campfire_speech', (data) => {
+      msgCounter.current++
+      const speaker = data.speaker as string
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, {
+          id: `ws-${msgCounter.current}`,
+          sender: speaker,
+          text: data.content as string,
+          isSelf: speaker === prev.selfPlayerName,
+          timestamp: Date.now(),
+        }],
+      }))
+    }))
+
+    // moderator_warning → append as system message
+    unsubs.push(ws.onEvent('moderator_warning', (data) => {
+      msgCounter.current++
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, {
+          id: `ws-mod-${msgCounter.current}`,
+          sender: 'Moderator',
+          text: `${data.speaker}: ${data.reason}`,
+          isSelf: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }],
+      }))
+    }))
+
+    // free_roam_start → switch to free_roam phase
+    unsubs.push(ws.onEvent('free_roam_start', (data) => {
+      setState(prev => ({
+        ...prev,
+        phase: 'free_roam',
+        locationDecisions: [],
+      }))
+    }))
+
+    // location_decisions → set decisions
+    unsubs.push(ws.onEvent('location_decisions', (data) => {
+      const decisions = (data.decisions as Array<{ player: string; choice: string }>).map(d => ({
+        playerName: d.player,
+        choice: d.choice as LocationDecision['choice'],
+        displayText: formatLocationText(d.player, d.choice),
+      }))
+      setState(prev => ({
+        ...prev,
+        locationDecisions: decisions,
+      }))
+    }))
+
+    // your_turn → set inputRequired
+    unsubs.push(ws.onEvent('your_turn', (data) => {
+      setState(prev => ({
+        ...prev,
+        inputRequired: {
+          type: data.action_required as InputAction['type'],
+          timeout: (data.timeout_seconds as number) ?? 30,
+          alivePlayers: data.alive_players as string[] | undefined,
+        },
+      }))
+    }))
+
+    // house_visit_start → initialize house visit state + switch to house phase
+    unsubs.push(ws.onEvent('house_visit_start', (data) => {
+      setState(prev => ({
+        ...prev,
+        phase: 'house',
+        houseVisit: {
+          visitor: data.visitor as string,
+          host: data.host as string,
+          maxExchanges: (data.max_exchanges as number) ?? 4,
+          exchanges: [],
+        },
+      }))
+    }))
+
+    // house_visit_exchange → append exchange
+    unsubs.push(ws.onEvent('house_visit_exchange', (data) => {
+      setState(prev => {
+        if (!prev.houseVisit) return prev
         return {
           ...prev,
-          fading: false,
-          phase: 'game_over',
-          players: updatedPlayers,
-          winner: 'et_can',
-          exiledName: null,
+          houseVisit: {
+            ...prev.houseVisit,
+            exchanges: [...prev.houseVisit.exchanges, {
+              speaker: data.speaker as string,
+              roleTitle: data.role_title as string,
+              content: data.content as string,
+              turn: data.turn as number,
+            }],
+          },
         }
-      }
+      })
+    }))
 
-      phaseIndexRef.current = nextIdx
-      const nextPhase = phases[nextIdx]
-      const dayScript = DAY_SCRIPTS[prev.round - 1]
+    // house_visit_end → (keep house visit data, scene handles transition)
+    unsubs.push(ws.onEvent('house_visit_end', () => {
+      // Scene will naturally transition when next phase_change arrives
+    }))
 
-      // Her faz geçişinde ilgili verileri yükle
-      const updates: Partial<GameState> = {
-        phase: nextPhase,
-        fading: false,
-        messages: [],
-        transcripts: [],
-        votes: [],
-        locationDecisions: [],
-      }
+    // home_alone → show as system message
+    unsubs.push(ws.onEvent('home_alone', (data) => {
+      msgCounter.current++
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, {
+          id: `ws-home-${msgCounter.current}`,
+          sender: 'Anlatici',
+          text: data.message as string,
+          isSelf: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }],
+      }))
+    }))
 
-      if (nextPhase === 'campfire_open') {
-        // Mesajlar scene içinde trickle edilecek, boş başla
-      }
-      if (nextPhase === 'free_roam' && dayScript.freeRoamDecisions) {
-        // Kararlar scene içinde trickle edilecek
-      }
-      if (nextPhase === 'house' && dayScript.houseTranscript) {
-        // Transcript scene içinde trickle edilecek
-      }
-      if (nextPhase === 'vote') {
-        // Oylar scene içinde trickle edilecek
-      }
-      if (nextPhase === 'exile') {
-        updates.exiledName = dayScript.exiledName
-        updates.exiledType = dayScript.exiledType
-      }
-      if (nextPhase === 'morning') {
-        updates.morningText = dayScript.morningText
-      }
+    // exile → votes + exile result
+    unsubs.push(ws.onEvent('exile', (data) => {
+      const voteMap = (data.votes ?? {}) as Record<string, string>
+      const votes: VoteEntry[] = Object.entries(voteMap).map(([voter, target]) => ({
+        voter,
+        target,
+      }))
 
-      return { ...prev, ...updates }
+      setState(prev => {
+        // Mark exiled player as dead
+        const exiled = data.exiled as string | null
+        const updatedPlayers = prev.players.map(p =>
+          p.name === exiled ? { ...p, alive: false, exiledRound: prev.round } : p
+        )
+
+        return {
+          ...prev,
+          phase: 'exile',
+          votes,
+          exiledName: exiled,
+          exiledType: (data.exiled_type as string) ?? null,
+          exiledRole: (data.exiled_role as string) ?? null,
+          players: updatedPlayers,
+          inputRequired: null,
+        }
+      })
+    }))
+
+    // game_over → winner + reveal all players
+    unsubs.push(ws.onEvent('game_over', (data) => {
+      const allPlayers = (data.all_players as Array<{
+        name: string; role_title: string; player_type: string; alive: boolean
+      }>) ?? []
+
+      setState(prev => {
+        const revealed: GamePlayer[] = allPlayers.map((p, i) => ({
+          id: `P${i}`,
+          name: p.name,
+          roleTitle: p.role_title,
+          playerType: p.player_type as GamePlayer['playerType'],
+          alive: p.alive,
+          avatarColor: prev.players.find(pp => pp.name === p.name)?.avatarColor ?? AVATAR_COLORS[i % AVATAR_COLORS.length],
+        }))
+
+        return {
+          ...prev,
+          phase: 'game_over',
+          status: 'finished',
+          winner: data.winner as string,
+          allPlayersReveal: revealed,
+          inputRequired: null,
+        }
+      })
+    }))
+
+    // speech_audio → queue audio for playback
+    unsubs.push(ws.onEvent('speech_audio', (data) => {
+      const url = data.audio_url as string
+      if (url) {
+        audio.enqueue(url)
+      }
+    }))
+
+    // error → log
+    unsubs.push(ws.onEvent('error', (data) => {
+      console.error('[Game Error]', data.code, data.message)
+    }))
+
+    // connected → (initial welcome)
+    unsubs.push(ws.onEvent('connected', (data) => {
+      console.log('[Game] Connected:', data.message)
+    }))
+
+    return () => unsubs.forEach(fn => fn())
+  }, [ws, audio])
+
+  // ── Actions ──────────────────────────────────────
+
+  const createGame = useCallback(async (playerCount = 6, aiCount = 5) => {
+    setState(prev => ({ ...prev, status: 'waiting' }))
+
+    const resp = await fetch('/api/game/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_count: playerCount, ai_count: aiCount }),
     })
+    const data = await resp.json()
+
+    setState(prev => ({
+      ...prev,
+      gameId: data.game_id,
+      worldBrief: data.world_brief,
+      worldSeed: {
+        settlementName: data.settlement_name,
+        tone: '',
+        season: '',
+        fireColor: 'kehribar',
+        fireColorMood: '',
+        exilePhrase: 'Cember disina adim at. Atesin seni artik tanimiyor.',
+        handRaisePhrase: 'Ates isterim.',
+        omens: [],
+      },
+    }))
   }, [])
 
-  const currentDayScript = DAY_SCRIPTS[state.round - 1] ?? null
+  const startGame = useCallback(async () => {
+    if (!state.gameId) return
+
+    const resp = await fetch(`/api/game/${state.gameId}/start`, { method: 'POST' })
+    const data = await resp.json()
+
+    if (data.status === 'running') {
+      // Connect WS as P0 (human player)
+      const playerId = 'P0'
+      ws.connect(state.gameId, playerId)
+      setState(prev => ({
+        ...prev,
+        status: 'running',
+        playerId,
+      }))
+
+      // Fetch game state to get player list
+      const stateResp = await fetch(`/api/game/${state.gameId}`)
+      const gameState = await stateResp.json()
+
+      if (gameState.players) {
+        const players: GamePlayer[] = gameState.players.map((p: { slot_id: string; name: string; role_title: string; alive: boolean }, i: number) => ({
+          id: p.slot_id,
+          name: p.name,
+          roleTitle: p.role_title,
+          playerType: 'et_can' as const, // Hidden during game
+          alive: p.alive,
+          avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+        }))
+
+        // P0 is the human player
+        const selfPlayer = players.find(p => p.id === 'P0')
+
+        setState(prev => ({
+          ...prev,
+          players,
+          selfPlayerName: selfPlayer?.name ?? null,
+          dayLimit: gameState.day_limit ?? 5,
+        }))
+      }
+    }
+  }, [state.gameId, ws])
+
+  const sendSpeak = useCallback((content: string) => {
+    ws.send('speak', { content })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const sendVote = useCallback((target: string) => {
+    ws.send('vote', { target })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const sendLocationChoice = useCallback((choice: string) => {
+    ws.send('location_choice', { choice })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const sendVisitSpeak = useCallback((content: string) => {
+    ws.send('visit_speak', { content })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const clearInput = useCallback(() => {
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [])
+
+  // ── Context Value ──────────────────────────────
 
   const value: GameContextValue = {
     ...state,
-    worldSeed: WORLD_SEED,
-    selfPlayerId: SELF_PLAYER_ID,
-    advancePhase,
-    currentDayScript,
+    createGame,
+    startGame,
+    sendSpeak,
+    sendVote,
+    sendLocationChoice,
+    sendVisitSpeak,
+    clearInput,
   }
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
@@ -151,4 +448,31 @@ export function useGame(): GameContextValue {
   const ctx = useContext(GameContext)
   if (!ctx) throw new Error('useGame must be inside GameProvider')
   return ctx
+}
+
+// ── Helpers ──────────────────────────────────────
+
+function mapPhase(backendPhase: string): Phase {
+  const map: Record<string, Phase> = {
+    morning: 'morning',
+    campfire_open: 'campfire_open',
+    campfire_close: 'campfire_close',
+    campfire: 'campfire_open',
+    free_roam: 'free_roam',
+    house: 'house',
+    vote: 'vote',
+    exile: 'exile',
+    game_over: 'game_over',
+  }
+  return map[backendPhase] ?? 'morning'
+}
+
+function formatLocationText(player: string, choice: string): string {
+  if (choice === 'CAMPFIRE') return `${player} ates basinda kaldi.`
+  if (choice === 'HOME') return `${player} evine cekildi.`
+  if (choice.startsWith('VISIT|')) {
+    const target = choice.split('|')[1]
+    return `${player}, ${target}'in evine gitti.`
+  }
+  return `${player} bir yer secti.`
 }
