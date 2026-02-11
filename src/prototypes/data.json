@@ -191,5 +191,36 @@
     {"id": "nobet_degisimi", "type": "public", "omen_trigger": "kullu_el_izi", "text_hint": "Nobet levhasinda silik bir isim var.", "ui_object": "nobet_levhasi"},
     {"id": "kul_doluluk", "type": "public", "omen_trigger": "soguk_kor", "text_hint": "Kul kasesi beklenenden dolu.", "ui_object": "kul_kasesi"},
     {"id": "sise_eksik", "type": "private", "location_trigger": "sifahane", "text_hint": "Sifahane dolabinda bir sise eksik.", "ui_object": "sifahane_dolabi"}
+  ],
+  "night_moves": [
+    {
+      "id": "itibar_kirigi",
+      "label": "Itibar Kirigi",
+      "icon": "🗡️",
+      "description": "Bir oyuncunun itibarini zedele. Hedefin aldigi oylar ertesi gun 2x sayilir.",
+      "requires_target": true
+    },
+    {
+      "id": "gundem_kaydirma",
+      "label": "Gundem Kaydirma",
+      "icon": "📜",
+      "description": "Ertesi sabahki sinama tipini etkilemeye calis. Istedigin sinama tipini sec.",
+      "requires_target": false
+    },
+    {
+      "id": "sahte_iz",
+      "label": "Sahte Iz",
+      "icon": "👣",
+      "description": "Bir UI objesinde yaniltici degisiklik yarat. Dikkat dagit.",
+      "requires_target": false
+    }
+  ],
+  "extra_ui_objects": [
+    {"id": "meclis_masasi", "label": "Meclis Masasi", "icon": "🪑", "location": "gezgin_hani", "default_state": {"seats_taken": 0}},
+    {"id": "sinir_haritasi", "label": "Sinir Haritasi", "icon": "🗺️", "location": "gecit_kulesi", "default_state": {"marked_routes": []}},
+    {"id": "ot_rafı", "label": "Ot Rafi", "icon": "🌿", "location": "sifahane", "default_state": {"bundle_count": 3}},
+    {"id": "ocak_koru", "label": "Ocak Koru", "icon": "🔥", "location": "kul_tapinagi", "default_state": {"intensity": "normal"}},
+    {"id": "alet_duvari", "label": "Alet Duvari", "icon": "🔨", "location": "demirhane", "default_state": {"missing_tool": ""}},
+    {"id": "gezgin_notlari", "label": "Gezgin Notlari", "icon": "📝", "location": "gezgin_hani", "default_state": {"last_note": ""}}
   ]
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useGame } from '../context/GameContext'
 
 export const VoteScene: React.FC = () => {
-  const { votes, players, inputRequired, sendVote } = useGame()
+  const { votes, players, inputRequired, sendVote, baskisiTarget, canUseKalkan, sendKalkan } = useGame()
 
   const canVote = inputRequired?.type === 'vote'
   const alivePlayers = players.filter(p => p.alive)
@@ -63,6 +63,37 @@ export const VoteScene: React.FC = () => {
           </p>
         </div>
 
+        {/* Baskı Badge */}
+        {baskisiTarget && (
+          <div className="flex items-center justify-center gap-2 mb-4 px-4 py-2 rounded-lg animate-fade-in"
+               style={{
+                 background: 'rgba(211,47,47,0.06)',
+                 border: '1px solid rgba(211,47,47,0.15)',
+               }}>
+            <span className="text-xs text-warden-alert/80">&#9888;</span>
+            <span className="text-xs text-warden-alert/70 font-medium">
+              {baskisiTarget} uzerinde baski var — oylari 2x sayilir
+            </span>
+          </div>
+        )}
+
+        {/* Kalkan Button */}
+        {canUseKalkan && (
+          <button
+            onClick={sendKalkan}
+            className="w-full flex items-center justify-center gap-2 mb-4 px-4 py-3 rounded-xl transition-all duration-200"
+            style={{
+              background: 'linear-gradient(135deg, rgba(100,130,200,0.1) 0%, rgba(60,90,160,0.08) 100%)',
+              border: '1px solid rgba(100,130,200,0.2)',
+              boxShadow: '0 0 15px rgba(100,130,200,0.1)',
+            }}
+          >
+            <span className="text-lg">🛡️</span>
+            <span className="text-sm text-[#8090cc] font-semibold">Kalkan Kullan</span>
+            <span className="text-[10px] text-text-secondary/40 ml-2">(tek seferlik)</span>
+          </button>
+        )}
+
         {/* Vote UI */}
         {canVote && (
           <div className="mb-8 space-y-2">
@@ -95,6 +126,9 @@ export const VoteScene: React.FC = () => {
                     }}
                   />
                   <span className="text-sm text-text-primary font-medium">{p.name}</span>
+                  {baskisiTarget === p.name && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-warden-alert/10 text-warden-alert/70 font-mono">x2</span>
+                  )}
                   <span className="text-xs text-text-secondary/50 ml-auto">{p.roleTitle}</span>
                 </button>
               ))

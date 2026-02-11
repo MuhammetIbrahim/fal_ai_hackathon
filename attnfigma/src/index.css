@@ -1169,3 +1169,31 @@ html, body {
     box-shadow: 0 0 30px rgba(120,120,120,0.3);
   }
 }
+
+/* ========================================
+   KATMAN 3 — Gece Fazı, Baskı, Kalkan
+   ======================================== */
+
+/* --- Night Scene Glow --- */
+.night-glow {
+  position: absolute;
+  bottom: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140%;
+  height: 80%;
+  background: radial-gradient(
+    ellipse at center bottom,
+    rgba(100, 130, 200, 0.1) 0%,
+    rgba(60, 80, 140, 0.05) 35%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: nightPulse 8s ease-in-out infinite;
+}
+
+@keyframes nightPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}

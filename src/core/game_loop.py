@@ -201,9 +201,14 @@ async def _game_loop_runner(game_id: str, state: Any):
             generate_spotlight_cards, generate_sinama_event, check_ocak_tepki,
             generate_institution_scene, generate_public_mini_event,
             generate_private_mini_event,
+            # Katman 3
+            generate_night_move, generate_omen_vote,
+            resolve_night_phase, resolve_omen_choice,
+            apply_kamu_baskisi_to_votes, use_kalkan,
             INITIAL_CAMPFIRE_TURNS, FREE_ROAM_ROUNDS,
             CAMPFIRE_TURNS_PER_ROUND, CLOSING_CAMPFIRE_TURNS,
             ROOM_EXCHANGES, INSTITUTION_LOCATIONS,
+            NIGHT_MOVES, OMENS,
         )
     except ImportError as e:
         logger.error(f"Failed to import game engine: {e}")
@@ -648,6 +653,16 @@ async def _game_loop_runner(game_id: str, state: Any):
             alive = get_alive_players(state)
             alive_names = get_alive_names(state)
 
+            # Kamu baskisi bilgisi vote broadcast'ine ekle
+            baskisi_target = state.get("_kamu_baskisi", {}).get("target") if state.get("_kamu_baskisi") else None
+            # Oyuncunun kalkan hakkini kontrol et
+            human_player = next((p for p in alive if p.is_human), None)
+            can_use_kalkan = (
+                human_player is not None
+                and baskisi_target == human_player.name
+                and human_player.name not in state.get("_kalkan_used", [])
+            )
+
             await manager.broadcast(game_id, {
                 "event": "phase_change",
                 "data": {
@@ -655,6 +670,8 @@ async def _game_loop_runner(game_id: str, state: Any):
                     "round": round_n,
                     "alive_players": alive_names,
                     "message": "Surgun edilecek kisiyi secin!",
+                    "baskisi_target": baskisi_target,
+                    "can_use_kalkan": can_use_kalkan,
                 }
             })
 
@@ -702,14 +719,15 @@ async def _game_loop_runner(game_id: str, state: Any):
                     others = [n for n in alive_names if n != p.name]
                     p.vote_target = random_module.choice(others) if others else None
 
-            # Oylari say
+            # Oylari say (Katman 3: kamu baskisi etkisi)
             vote_map = {}
             for p in alive:
                 if p.vote_target:
                     vote_map[p.name] = p.vote_target
 
-            votes_list = [v for v in vote_map.values()]
-            tally = Counter(votes_list)
+            # Kamu baskisi: hedefin oylari 2x sayilir (kalkan kullanilmadiysa)
+            adjusted_votes = apply_kamu_baskisi_to_votes(state, vote_map)
+            tally = Counter(adjusted_votes)
 
             exiled_name = None
             if tally:
@@ -820,6 +838,134 @@ async def _game_loop_runner(game_id: str, state: Any):
                     db.update(GAMES, game_id, game_data)
 
                 break
+
+            # ═══════════════════════════════════════
+            # 7. GECE FAZI (Katman 3)
+            # ═══════════════════════════════════════
+            state["phase"] = Phase.NIGHT.value
+            alive = get_alive_players(state)
+
+            # Gunun 3 alameti (gece secimi icin)
+            day_omens = state.get("_day_omens", [])
+
+            await manager.broadcast(game_id, {
+                "event": "phase_change",
+                "data": {
+                    "phase": "night",
+                    "round": round_n,
+                    "night_moves": NIGHT_MOVES,
+                    "omen_options": [
+                        {"id": o["id"], "label": o["label"], "icon": o["icon"]}
+                        for o in day_omens
+                    ],
+                    "baskisi_target": state.get("_kamu_baskisi", {}).get("target") if state.get("_kamu_baskisi") else None,
+                }
+            })
+
+            # AI gece hamleleri (concurrent)
+            ai_night_tasks = []
+            ai_night_players = []
+            for p in alive:
+                if not p.is_human:
+                    ai_night_tasks.append(generate_night_move(p, state))
+                    ai_night_players.append(p)
+
+            # Insan gece hamlesi (WS)
+            human_night_tasks = []
+            human_night_players = []
+            for p in alive:
+                if p.is_human:
+                    human_night_tasks.append(
+                        _wait_for_human_input(
+                            game_id=game_id,
+                            player_id=p.slot_id,
+                            event_type="night_move",
+                            timeout=45.0,
+                        )
+                    )
+                    human_night_players.append(p)
+
+            # AI alamet oylamasi (concurrent)
+            ai_omen_tasks = []
+            for p in alive:
+                if not p.is_human and day_omens:
+                    ai_omen_tasks.append(generate_omen_vote(p, state, day_omens))
+
+            # Insan alamet secimi (WS)
+            human_omen_tasks = []
+            for p in alive:
+                if p.is_human and day_omens:
+                    human_omen_tasks.append(
+                        _wait_for_human_input(
+                            game_id=game_id,
+                            player_id=p.slot_id,
+                            event_type="omen_choice",
+                            timeout=30.0,
+                        )
+                    )
+
+            # Hepsini paralel calistir
+            night_results = await asyncio.gather(
+                asyncio.gather(*ai_night_tasks) if ai_night_tasks else asyncio.sleep(0),
+                asyncio.gather(*human_night_tasks) if human_night_tasks else asyncio.sleep(0),
+                asyncio.gather(*ai_omen_tasks) if ai_omen_tasks else asyncio.sleep(0),
+                asyncio.gather(*human_omen_tasks) if human_omen_tasks else asyncio.sleep(0),
+            )
+
+            ai_night_decisions = list(night_results[0]) if ai_night_tasks else []
+            human_night_choices = list(night_results[1]) if human_night_tasks else []
+            ai_omen_choices = list(night_results[2]) if ai_omen_tasks else []
+            human_omen_choices = list(night_results[3]) if human_omen_tasks else []
+
+            # Insan gece hamlesini parse et
+            all_night_decisions = list(ai_night_decisions)
+            for p, choice in zip(human_night_players, human_night_choices):
+                if choice and "|" in choice:
+                    parts = choice.split("|", 1)
+                    move_id = parts[0].strip().lower()
+                    target = parts[1].strip()
+                    all_night_decisions.append({"name": p.name, "move": move_id, "target": target})
+                else:
+                    # Fallback
+                    others = [pp.name for pp in alive if pp.name != p.name]
+                    if others:
+                        all_night_decisions.append({"name": p.name, "move": "itibar_kirigi", "target": random_module.choice(others)})
+
+            # Gece hamlelerini coz
+            night_result = resolve_night_phase(state, all_night_decisions)
+
+            # Alamet secimini coz
+            all_omen_votes = list(ai_omen_choices)
+            for choice in human_omen_choices:
+                if choice and day_omens:
+                    # Validate
+                    valid_ids = [o["id"] for o in day_omens]
+                    all_omen_votes.append(choice if choice in valid_ids else day_omens[0]["id"])
+
+            omen_result = None
+            if day_omens and all_omen_votes:
+                omen_result = resolve_omen_choice(state, all_omen_votes, day_omens)
+
+            # Broadcast gece sonucu
+            await manager.broadcast(game_id, {
+                "event": "night_result",
+                "data": {
+                    "winning_move": night_result.get("winning_move"),
+                    "target": night_result.get("target"),
+                    "effect_text": night_result.get("effect_text", "Gece sessiz gecti."),
+                    "chosen_omen": omen_result.get("chosen_omen") if omen_result else None,
+                    "ui_update": {
+                        "object_id": night_result.get("target"),
+                    } if night_result.get("winning_move") == "sahte_iz" else None,
+                }
+            })
+
+            await asyncio.sleep(3)  # Gece sahnesini gostermek icin bekle
+
+            logger.info(f"Night phase completed — Move: {night_result.get('winning_move')}")
+
+            # State kaydet
+            _save_state(game_id, state)
 
             # Sonraki gune gec
             state["round_number"] = round_n + 1

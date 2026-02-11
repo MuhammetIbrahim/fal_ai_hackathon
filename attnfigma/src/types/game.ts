@@ -8,6 +8,7 @@ export type Phase =
   | 'campfire_close'
   | 'vote'
   | 'exile'
+  | 'night'
   | 'game_over'
 
 export type PlayerType = 'et_can' | 'yanki_dogmus'
@@ -86,7 +87,7 @@ export interface ServerEvent {
   data: Record<string, unknown>
 }
 
-export type InputActionType = 'speak' | 'vote' | 'location_choice' | 'visit_speak'
+export type InputActionType = 'speak' | 'vote' | 'location_choice' | 'visit_speak' | 'night_move' | 'omen_choice'
 
 export interface InputAction {
   type: InputActionType
@@ -159,4 +160,22 @@ export interface MiniEvent {
   id: string
   content: string
   uiObject: string
+}
+
+// ── Katman 3 Types ──────────────────────────────────
+
+export interface NightMove {
+  id: string
+  label: string
+  icon: string
+  description: string
+  requires_target: boolean
+}
+
+export interface NightResult {
+  winningMove: string | null
+  target: string | null
+  effectText: string
+  chosenOmen: Omen | null
+  uiUpdate: { objectId: string } | null
 }

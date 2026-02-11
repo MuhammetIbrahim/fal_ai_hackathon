@@ -4,6 +4,7 @@ import type {
   WorldSeed, InputAction, HouseVisitState, Omen,
   SpotlightCard, SinamaEvent, SinamaType, OcakTepki,
   InstitutionVisitState, UIObject, MiniEvent,
+  NightMove, NightResult,
 } from '../types/game'
 import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
 import { useAudioQueue } from '../hooks/useAudioQueue'
@@ -60,6 +61,13 @@ interface GameState {
   institutionVisit: InstitutionVisitState | null
   kulKaymasi: { speaker: string; question: string } | null
 
+  // Katman 3
+  nightMoves: NightMove[]
+  omenOptions: Omen[]
+  nightResult: NightResult | null
+  baskisiTarget: string | null
+  canUseKalkan: boolean
+
   // UI
   inputRequired: InputAction | null
 }
@@ -72,6 +80,9 @@ interface GameContextValue extends GameState {
   sendVote: (target: string) => void
   sendLocationChoice: (choice: string) => void
   sendVisitSpeak: (content: string) => void
+  sendNightMove: (choice: string) => void
+  sendOmenChoice: (choice: string) => void
+  sendKalkan: () => void
   clearInput: () => void
 }
 
@@ -114,6 +125,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     miniEvent: null,
     institutionVisit: null,
     kulKaymasi: null,
+    nightMoves: [],
+    omenOptions: [],
+    nightResult: null,
+    baskisiTarget: null,
+    canUseKalkan: false,
     inputRequired: null,
   })
 
@@ -131,11 +147,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     unsubs.push(ws.onEvent('phase_change', (data) => {
       const phase = mapPhase(data.phase as string)
       audio.stop() // Clear audio queue on phase change
+
+      // Extract Katman 3 data from phase_change
+      const nightMoves = (data.night_moves as NightMove[]) ?? []
+      const omenOptions = (data.omen_options as Omen[]) ?? []
+      const baskisiTarget = (data.baskisi_target as string) ?? null
+      const canUseKalkan = (data.can_use_kalkan as boolean) ?? false
+
       setState(prev => ({
         ...prev,
         phase,
         round: (data.round as number) ?? prev.round,
         dayLimit: (data.day_limit as number) ?? prev.dayLimit,
+        // Night phase data
+        ...(phase === 'night' ? { nightMoves, omenOptions, nightResult: null } : {}),
+        // Vote phase data (baskı)
+        ...(phase === 'vote' ? { baskisiTarget, canUseKalkan } : {}),
         // Reset phase-specific data
         ...(phase !== prev.phase ? {
           morningText: '',
@@ -249,6 +276,27 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isSystem: true,
           timestamp: Date.now(),
         }],
+      }))
+    }))
+
+    // night_result → night phase resolution (Katman 3)
+    unsubs.push(ws.onEvent('night_result', (data) => {
+      const chosenOmenRaw = data.chosen_omen as { id: string; label: string; icon: string } | null
+      const uiUpdateRaw = data.ui_update as { object_id: string } | null
+      setState(prev => ({
+        ...prev,
+        nightResult: {
+          winningMove: (data.winning_move as string) ?? null,
+          target: (data.target as string) ?? null,
+          effectText: (data.effect_text as string) ?? 'Gece sessiz gecti.',
+          chosenOmen: chosenOmenRaw ? {
+            id: chosenOmenRaw.id,
+            label: chosenOmenRaw.label,
+            icon: chosenOmenRaw.icon,
+          } : null,
+          uiUpdate: uiUpdateRaw ? { objectId: uiUpdateRaw.object_id } : null,
+        },
+        inputRequired: null,
       }))
     }))
 
@@ -587,6 +635,21 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState(prev => ({ ...prev, inputRequired: null }))
   }, [ws])
 
+  const sendNightMove = useCallback((choice: string) => {
+    ws.send('night_move', { choice })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const sendOmenChoice = useCallback((choice: string) => {
+    ws.send('omen_choice', { choice })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
+  const sendKalkan = useCallback(() => {
+    ws.send('kalkan', {})
+    setState(prev => ({ ...prev, canUseKalkan: false }))
+  }, [ws])
+
   const clearInput = useCallback(() => {
     setState(prev => ({ ...prev, inputRequired: null }))
   }, [])
@@ -601,6 +664,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendVote,
     sendLocationChoice,
     sendVisitSpeak,
+    sendNightMove,
+    sendOmenChoice,
+    sendKalkan,
     clearInput,
   }
 
@@ -626,6 +692,7 @@ function mapPhase(backendPhase: string): Phase {
     institution: 'institution',
     vote: 'vote',
     exile: 'exile',
+    night: 'night',
     game_over: 'game_over',
   }
   return map[backendPhase] ?? 'morning'

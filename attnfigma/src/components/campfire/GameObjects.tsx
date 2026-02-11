@@ -3,12 +3,20 @@ import type { UIObject } from '../../types/game'
 
 // Default states to compare against
 const DEFAULT_STATES: Record<string, Record<string, unknown>> = {
+  // Katman 2 (6)
   kiler_kapisi: { state: 'locked' },
   anahtar_halkasi: { state: 'present' },
   kayit_defteri: { blurred_line: '' },
   nobet_levhasi: { names: [], silik_satir: '' },
   kul_kasesi: { fill: 0.3 },
   sifahane_dolabi: { bottle_count: 5 },
+  // Katman 3 (6)
+  meclis_masasi: { karar_notu: '' },
+  sinir_haritasi: { isaret_sayisi: 0 },
+  ot_rafi: { eksik_ot: '' },
+  ocak_koru: { renk: 'kehribar' },
+  alet_duvari: { eksik_alet: '' },
+  gezgin_notlari: { son_not: '' },
 }
 
 const OBJECT_META: Record<string, { label: string; icon: string }> = {
@@ -18,6 +26,12 @@ const OBJECT_META: Record<string, { label: string; icon: string }> = {
   nobet_levhasi: { label: 'Nobet Levhasi', icon: '📋' },
   kul_kasesi: { label: 'Kul Kasesi', icon: '🥣' },
   sifahane_dolabi: { label: 'Sifahane Dolabi', icon: '💊' },
+  meclis_masasi: { label: 'Meclis Masasi', icon: '🪑' },
+  sinir_haritasi: { label: 'Sinir Haritasi', icon: '🗺️' },
+  ot_rafi: { label: 'Ot Rafi', icon: '🌿' },
+  ocak_koru: { label: 'Ocak Koru', icon: '🔥' },
+  alet_duvari: { label: 'Alet Duvari', icon: '🔧' },
+  gezgin_notlari: { label: 'Gezgin Notlari', icon: '📝' },
 }
 
 function hasChanged(id: string, currentState: Record<string, unknown>): boolean {
@@ -36,6 +50,13 @@ function formatState(id: string, state: Record<string, unknown>): string {
   }
   if (id === 'kul_kasesi') return `${Math.round((state.fill as number ?? 0.3) * 100)}%`
   if (id === 'sifahane_dolabi') return `${state.bottle_count ?? 5} sise`
+  // Katman 3
+  if (id === 'meclis_masasi') return state.karar_notu ? `"${state.karar_notu}"` : 'Bos'
+  if (id === 'sinir_haritasi') return `${state.isaret_sayisi ?? 0} isaret`
+  if (id === 'ot_rafi') return state.eksik_ot ? `Eksik: ${state.eksik_ot}` : 'Tam'
+  if (id === 'ocak_koru') return `${state.renk ?? 'kehribar'}`
+  if (id === 'alet_duvari') return state.eksik_alet ? `Eksik: ${state.eksik_alet}` : 'Tam'
+  if (id === 'gezgin_notlari') return state.son_not ? `"${state.son_not}"` : 'Bos'
   return JSON.stringify(state)
 }
 

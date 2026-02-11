@@ -124,7 +124,10 @@ OMENS = DATA["omens"]
 SINAMA_TYPES = DATA.get("sinama_types", [])
 INSTITUTION_LOCATIONS = DATA.get("institution_locations", [])
 UI_OBJECTS_DEF = DATA.get("ui_objects", [])
+EXTRA_UI_OBJECTS_DEF = DATA.get("extra_ui_objects", [])
+ALL_UI_OBJECTS_DEF = UI_OBJECTS_DEF + EXTRA_UI_OBJECTS_DEF
 MINI_EVENT_TEMPLATES = DATA.get("mini_event_templates", [])
+NIGHT_MOVES = DATA.get("night_moves", [])
 
 
 # ══════════════════════════════════════════════════════
@@ -1960,10 +1963,16 @@ def init_state(
     state["_summary_cursor"] = 0
     state["cumulative_summary"] = ""
     # Katman 2 state
-    state["_ui_objects"] = {o["id"]: dict(o["default_state"]) for o in UI_OBJECTS_DEF}
+    state["_ui_objects"] = {o["id"]: dict(o["default_state"]) for o in ALL_UI_OBJECTS_DEF}
     state["_institution_visits"] = []
     state["_mini_events"] = []
     state["_kul_kaymasi_queue"] = []
+    # Katman 3 state
+    state["_night_effects"] = {}          # gecenin sonuclari: {move_id, target, ...}
+    state["_kamu_baskisi"] = None         # {target: str, round: int} veya None
+    state["_kalkan_used"] = []            # kalkan kullanan oyuncu isimleri
+    state["_chosen_omen"] = None          # gece oylamasiyla secilen omen id
+    state["_itibar_kirigi_target"] = None # 2x oy hedefi
     return state
 
 
@@ -2557,6 +2566,218 @@ async def generate_private_mini_event(
 
 
 # ══════════════════════════════════════════════════════
+#  10. KATMAN 3 — GECE FAZI + KAMU BASKISI + ALAMET SECIMI
+# ══════════════════════════════════════════════════════
+
+NIGHT_DECISION_SYSTEM = """Sen gizli bir gece hamlesi seciyor musun. 3 secenekten BIR TANE sec.
+
+SECENEKLER:
+1. ITIBAR_KIRIGI|<hedef_isim> — Bir oyuncunun itibarini zedele. Ertesi gun aldigi oylar 2x sayilir.
+2. GUNDEM_KAYDIRMA|<sinama_tipi> — Ertesi sabahki sinama tipini etkilemeye calis.
+   Gecerli tipler: esik_haritasi, kor_bedeli, sessiz_soru
+3. SAHTE_IZ|<ui_obje_id> — Bir UI objesinde yaniltici degisiklik yarat.
+   Gecerli objeler: kiler_kapisi, anahtar_halkasi, kayit_defteri, nobet_levhasi, kul_kasesi, sifahane_dolabi
+
+SADECE bir satir yaz. Ornek:
+ITIBAR_KIRIGI|Elif
+GUNDEM_KAYDIRMA|kor_bedeli
+SAHTE_IZ|kayit_defteri
+
+Stratejik dusun: Kim tehdittir? Kimi gozden dusurmelisin? Neyi gizlemelisin?"""
+
+
+async def generate_night_decision(player: Player, state: GameState) -> dict:
+    """AI oyuncu icin gece hamlesi uret."""
+    alive = get_alive_players(state)
+    alive_names = [p.name for p in alive if p.name != player.name]
+    round_n = state.get("round_number", 1)
+
+    # Baski durumu bilgisi
+    baskisi = state.get("_kamu_baskisi")
+    baski_info = ""
+    if baskisi:
+        baski_info = f"\nSu an {baskisi['target']} kamu baskisi altinda."
+
+    prompt = (
+        f"Sen: {player.name} ({player.role_title})\n"
+        f"Gun: {round_n}\n"
+        f"Hayattakiler: {', '.join(alive_names)}\n"
+        f"Ozet: {state.get('cumulative_summary', '')[:300]}\n"
+        f"{baski_info}\n\n"
+        f"Gece hamleni sec. SADECE bir satir yaz."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=NIGHT_DECISION_SYSTEM,
+        model=MODEL,
+        temperature=0.5,
+    )
+
+    text = result.output.strip().split("\n")[0].strip()
+
+    # Parse
+    if text.startswith("ITIBAR_KIRIGI") and "|" in text:
+        target = text.split("|", 1)[1].strip()
+        if target in alive_names:
+            return {"name": player.name, "move": "itibar_kirigi", "target": target}
+    elif text.startswith("GUNDEM_KAYDIRMA") and "|" in text:
+        sinama_tip = text.split("|", 1)[1].strip().lower()
+        valid_types = [s["id"] for s in SINAMA_TYPES]
+        if sinama_tip in valid_types:
+            return {"name": player.name, "move": "gundem_kaydirma", "target": sinama_tip}
+    elif text.startswith("SAHTE_IZ") and "|" in text:
+        obj_id = text.split("|", 1)[1].strip().lower()
+        valid_objs = [o["id"] for o in ALL_UI_OBJECTS_DEF]
+        if obj_id in valid_objs:
+            return {"name": player.name, "move": "sahte_iz", "target": obj_id}
+
+    # Fallback: rastgele itibar kirigi
+    rng = random_module.Random(f"night_{player.name}_{round_n}")
+    return {"name": player.name, "move": "itibar_kirigi", "target": rng.choice(alive_names)}
+
+
+def resolve_night_phase(state: GameState, decisions: list[dict]) -> dict:
+    """Gece hamlelerini coz. En cok secilen hamle gecenin sonucu olur.
+
+    Returns: {winning_move, move_id, target, all_decisions}
+    """
+    round_n = state.get("round_number", 1)
+
+    # Hamle sayimi
+    move_counts: dict[str, int] = {}
+    for d in decisions:
+        key = f"{d['move']}|{d.get('target', '')}"
+        move_counts[key] = move_counts.get(key, 0) + 1
+
+    # En cok secilen
+    if not move_counts:
+        return {"winning_move": None, "all_decisions": decisions}
+
+    winning_key = max(move_counts, key=move_counts.get)
+    parts = winning_key.split("|", 1)
+    winning_move = parts[0]
+    winning_target = parts[1] if len(parts) > 1 else ""
+
+    # Efektleri uygula
+    night_result = {
+        "winning_move": winning_move,
+        "move_id": winning_key,
+        "target": winning_target,
+        "all_decisions": decisions,
+        "round": round_n,
+    }
+
+    if winning_move == "itibar_kirigi" and winning_target:
+        # Hedefin ertesi gun 2x oy almasini sagla
+        state["_itibar_kirigi_target"] = winning_target
+        state["_kamu_baskisi"] = {"target": winning_target, "round": round_n + 1}
+        night_result["effect_text"] = f"{winning_target} itibar kirigina ugradi. Ertesi gun oylari 2x sayilacak."
+
+    elif winning_move == "gundem_kaydirma" and winning_target:
+        state["_night_effects"]["forced_sinama"] = winning_target
+        night_result["effect_text"] = f"Gundem kaydirildi. Ertesi sabahki sinama: {winning_target}."
+
+    elif winning_move == "sahte_iz" and winning_target:
+        # UI objesinde sahte degisiklik
+        ui_objs = state.get("_ui_objects", {})
+        if winning_target in ui_objs:
+            rng = random_module.Random(f"sahte_iz_{round_n}")
+            obj_state = ui_objs[winning_target]
+            # Sahte degisiklik yap
+            if "state" in obj_state:
+                obj_state["state"] = "tampered"
+            elif "fill" in obj_state:
+                obj_state["fill"] = rng.choice([0.1, 0.5, 0.9])
+            elif "bottle_count" in obj_state:
+                obj_state["bottle_count"] = max(0, obj_state["bottle_count"] - 1)
+            elif "blurred_line" in obj_state:
+                obj_state["blurred_line"] = "silik bir isim"
+            state["_ui_objects"][winning_target] = obj_state
+        night_result["effect_text"] = f"Bir sahte iz birakildi: {winning_target} degistirildi."
+
+    state["_night_effects"] = night_result
+    return night_result
+
+
+def apply_kamu_baskisi_to_votes(state: GameState, vote_map: dict[str, str]) -> dict[str, str]:
+    """Kamu baskisi varsa, hedefin oylarini 2x yap. Kalkan kullanildiysa iptal et.
+
+    vote_map: {voter_name: target_name} → modified vote_map dondurebilir
+    Returns: adjusted_vote_list (flat list of targets, 2x hedef icin duplicate eklenir)
+    """
+    baskisi = state.get("_kamu_baskisi")
+    if not baskisi:
+        return list(vote_map.values())
+
+    target_player = baskisi["target"]
+    # Kalkan kontrolu
+    if target_player in state.get("_kalkan_used", []):
+        # Kalkan kullanildi, baski iptal
+        state["_kamu_baskisi"] = None
+        return list(vote_map.values())
+
+    # 2x oy: hedefe atilan her oy bir kez daha sayilir
+    votes = list(vote_map.values())
+    extra = [v for v in votes if v == target_player]
+    return votes + extra
+
+
+def use_kalkan(state: GameState, player_name: str) -> bool:
+    """Oyuncu kalkan kullanir. Basarili ise True."""
+    if player_name in state.get("_kalkan_used", []):
+        return False  # Zaten kullanmis
+    state.setdefault("_kalkan_used", []).append(player_name)
+    # Eger bu oyuncuya baski uygulanmissa, baskiyi iptal et
+    baskisi = state.get("_kamu_baskisi")
+    if baskisi and baskisi["target"] == player_name:
+        state["_kamu_baskisi"] = None
+    return True
+
+
+async def generate_omen_choice(player: Player, state: GameState, omen_options: list[dict]) -> str:
+    """AI oyuncu icin alamet secimi. 3 omenden 1'ini secer."""
+    options_text = "\n".join(
+        f"{i+1}. {o['label']} ({o['icon']}) — {o.get('atmosphere', '')}"
+        for i, o in enumerate(omen_options)
+    )
+    prompt = (
+        f"Sen: {player.name}\n"
+        f"3 alametten birini sec. Ertesi gunun tonunu belirleyecek.\n\n"
+        f"{options_text}\n\n"
+        f"SADECE numarayi yaz (1, 2 veya 3)."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt="Secimini yap. SADECE bir sayi yaz: 1, 2 veya 3.",
+        model=MODEL,
+        temperature=0.3,
+    )
+
+    text = result.output.strip()
+    for i, o in enumerate(omen_options):
+        if str(i + 1) in text:
+            return o["id"]
+    # Fallback
+    return omen_options[0]["id"]
+
+
+def resolve_omen_choice(state: GameState, omen_votes: list[str], omen_options: list[dict]) -> dict | None:
+    """Alamet secimi oylamasini coz. En cok oy alan omen seciilir."""
+    if not omen_votes:
+        return None
+    tally = Counter(omen_votes)
+    winner_id, count = tally.most_common(1)[0]
+    state["_chosen_omen"] = winner_id
+    winning_omen = next((o for o in omen_options if o["id"] == winner_id), None)
+    return {
+        "chosen_omen": winning_omen,
+        "votes": dict(tally),
+    }
+
+
+# ══════════════════════════════════════════════════════
 #  PUBLIC API — Backend game_loop icin export edilen fonksiyonlar
 # ══════════════════════════════════════════════════════
 
@@ -2610,6 +2831,17 @@ async def generate_location_decision(
 ) -> dict:
     """Serbest dolasimda konum karari uret. locations = {name: "campfire"|"home"|"visiting:X"}"""
     return await _get_location_decision(player, state, locations)
+
+
+# Katman 3 exports
+async def generate_night_move(player: Player, state: GameState) -> dict:
+    """Gece hamlesi uret (AI oyuncu)."""
+    return await generate_night_decision(player, state)
+
+
+async def generate_omen_vote(player: Player, state: GameState, omen_options: list[dict]) -> str:
+    """Alamet secimi yap (AI oyuncu)."""
+    return await generate_omen_choice(player, state, omen_options)
 
 
 async def maybe_update_campfire_summary(state: GameState) -> None:
