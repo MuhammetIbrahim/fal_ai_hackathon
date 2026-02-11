@@ -254,9 +254,13 @@ async def start_game(game_id: str) -> dict:
         print(f"⚠️  FAL_KEY yok — Mock karakterler oluşturuluyor")
         from game_state import Player, PlayerType
         
+        mock_institutions = ["kilerci", "gecitci", "kul_rahibi", "sifaci_kurum", "demirci_kurum", "han_insani"]
+        mock_inst_labels = ["Kilerci", "Gecitci", "Kul Rahibi", "Sifaci", "Demirci", "Han Insani"]
+
         players = []
         for i in range(config["player_count"]):
             is_human = i < (config["player_count"] - config["ai_count"])
+            inst_idx = i % len(mock_institutions)
             players.append(Player(
                 slot_id=f"P{i}",
                 name=f"Player_{i}",
@@ -270,6 +274,11 @@ async def start_game(game_id: str) -> dict:
                 skill_tier_label="Orta" if not is_human else None,
                 is_human=is_human,
                 alive=True,
+                institution=mock_institutions[inst_idx],
+                institution_label=mock_inst_labels[inst_idx],
+                public_tick="Her cumleye soru ile baslar.",
+                alibi_anchor="Her sabah meydanda nobetini tutar.",
+                speech_color="Kisa ve kesin konusur.",
             ))
         
         print(f"✅ {len(players)} mock karakter oluşturuldu")

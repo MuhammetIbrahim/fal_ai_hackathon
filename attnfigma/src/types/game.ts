@@ -19,6 +19,11 @@ export interface GamePlayer {
   alive: boolean
   avatarColor: string
   exiledRound?: number
+  institution?: string
+  institutionLabel?: string
+  publicTick?: string
+  alibiAnchor?: string
+  speechColor?: string
 }
 
 export interface WorldSeed {

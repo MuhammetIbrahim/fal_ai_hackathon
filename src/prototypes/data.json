@@ -138,5 +138,29 @@
     "Seraphine", "Aldric", "Brynn", "Cassiel", "Elara",
     "Fenris", "Isolde", "Jareth", "Nyx", "Orion",
     "Ravenna", "Soren", "Talia", "Veyra", "Zephyr"
+  ],
+
+  "institutions": [
+    {"id": "kilerci", "label": "Kilerci", "location": "Kiler/Ambar", "description": "Erzak deposunun anahtarini tasir. Kim ne kadar yiyecek aldi, stokta ne kaldi — hepsini bilir.", "count": 2},
+    {"id": "gecitci", "label": "Gecitci", "location": "Gecit Kulesi", "description": "Yerlesimdeki giris-cikislari izler. Gece kim geldi, kim gitti — kayit tutar.", "count": 2},
+    {"id": "kul_rahibi", "label": "Kul Rahibi", "location": "Kul Tapinagi", "description": "Ocak rituellerini yonetir, alametleri yorumlar. Toplumun manevi pusulasi.", "count": 1},
+    {"id": "sifaci_kurum", "label": "Sifaci", "location": "Sifahane", "description": "Yarali ve hastalari tedavi eder. Kimin ne zaman geldigi, hangi yarasi oldugu — hepsini gorur.", "count": 1},
+    {"id": "demirci_kurum", "label": "Demirci", "location": "Demirhane", "description": "Alet ve silah yapar, kilit degistirir. Kimin ne siparis ettigi bilgi demektir.", "count": 1},
+    {"id": "han_insani", "label": "Han Insani", "location": "Gezgin Hani", "description": "Gezginlerin ugrak yeri. Dedikodu merkezi — herkes handa konusur, Han Insani dinler.", "count": 1}
+  ],
+
+  "omens": [
+    {"id": "pasli_anahtar", "label": "Pasli Anahtar", "icon": "\ud83d\udd11", "atmosphere": "Guvensizlik, erisim sorusu. Birinin kilidi kirilmis olabilir."},
+    {"id": "kirik_can", "label": "Kirik Can", "icon": "\ud83d\udd14", "atmosphere": "Iletisim kopuklugu, uyari. Birinin haberi ulasmamis olabilir."},
+    {"id": "catlak_ayna", "label": "Catlak Ayna", "icon": "\ud83e\ude9e", "atmosphere": "Kimlik, yansima. Biri oldugunu soyledigi kisi olmayabilir."},
+    {"id": "silik_muhur", "label": "Silik Muhur", "icon": "\ud83d\udcdc", "atmosphere": "Yetki sorgusu. Birinin gorevi gercekten ona mi verilmis?"},
+    {"id": "soguk_kor", "label": "Soguk Kor", "icon": "\u2668\ufe0f", "atmosphere": "Sonmus umut, gizli tehlike. Gorununen sakinlik aldatici olabilir."},
+    {"id": "kirik_sise", "label": "Kirik Sise", "icon": "\ud83c\udff7\ufe0f", "atmosphere": "Kayip, israf. Birinin sahip oldugu bir sey kaybolmus olabilir."},
+    {"id": "dikenli_tac", "label": "Dikenli Tac", "icon": "\ud83d\udc51", "atmosphere": "Liderlik yuku. Soz alan herkes hedef haline gelir."},
+    {"id": "kanli_tuy", "label": "Kanli Tuy", "icon": "\ud83e\udeb6", "atmosphere": "Masumiyet kaybi. Birinin temiz gecmisi sorgulanabilir."},
+    {"id": "bos_besik", "label": "Bos Besik", "icon": "\ud83d\udecf\ufe0f", "atmosphere": "Kayip, gelecek endisesi. Yerlesimdeki biri gece evine donmemis olabilir."},
+    {"id": "ters_kum_saati", "label": "Ters Kum Saati", "icon": "\u23f3", "atmosphere": "Zaman baskisi. Bu gun yapilacak secim geri donulemez olabilir."},
+    {"id": "kullu_el_izi", "label": "Kullu El Izi", "icon": "\u270b", "atmosphere": "Suc ortakligi, temas. Birisi baska biriyle gizlice bulusmus olabilir."},
+    {"id": "yarim_harita", "label": "Yarim Harita", "icon": "\ud83d\uddfa\ufe0f", "atmosphere": "Eksik bilgi. Herkesin bildigi hikayenin yarisi eksik olabilir."}
   ]
 }

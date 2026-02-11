@@ -52,6 +52,13 @@ class Player(BaseModel):
     chat_history: list[dict] = Field(default_factory=list)
     vote_target: str | None = None                      # oylama sırasında kimi seçti
 
+    # Katman 0 — Karakter kartı genişletme
+    institution: str | None = None                      # kurum id: kilerci, gecitci, ...
+    institution_label: str | None = None                # gösterim adı: Kilerci, Geçitçi, ...
+    public_tick: str | None = None                      # herkesin fark edeceği konuşma alışkanlığı (LLM üretir)
+    alibi_anchor: str | None = None                     # test edilebilir günlük rutin iddiası (LLM üretir)
+    speech_color: str | None = None                     # konuşma tonu/tarzı özeti (LLM üretir)
+
     @property
     def is_echo_born(self) -> bool:
         return self.player_type == PlayerType.YANKI_DOGMUS

@@ -36,14 +36,29 @@ export const VoteScene: React.FC = () => {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
-      <div className="cf-glow" />
       <div className="cf-vignette" />
+      <div className="cf-noise" />
+
+      {/* Red glow for vote scene */}
+      <div className="absolute bottom-[-20%] left-1/2 -translate-x-1/2 w-[140%] h-[80%] pointer-events-none z-0"
+           style={{
+             background: 'radial-gradient(ellipse at center bottom, rgba(211,47,47,0.08) 0%, rgba(139,0,0,0.04) 35%, transparent 70%)',
+             animation: 'glowPulse 6s ease-in-out infinite',
+           }} />
 
       <div className="relative z-10 w-full max-w-lg px-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-xs uppercase tracking-[3px] text-warden-alert/70 mb-2">Oylama</p>
-          <p className="text-sm text-text-secondary">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-4"
+               style={{
+                 background: 'rgba(211,47,47,0.08)',
+                 border: '1px solid rgba(211,47,47,0.15)',
+                 boxShadow: '0 0 30px rgba(211,47,47,0.1)',
+               }}>
+            <span className="text-2xl" style={{ filter: 'drop-shadow(0 0 6px rgba(211,47,47,0.5))' }}>&#9878;</span>
+          </div>
+          <p className="text-xs uppercase tracking-[4px] text-warden-alert/60 mb-2 font-semibold">Surgun Oylama</p>
+          <p className="text-sm text-text-secondary/60">
             {canVote ? 'Kimi surgun etmek istiyorsun?' : 'Herkes birini surgun icin seciyor...'}
           </p>
         </div>
@@ -57,14 +72,30 @@ export const VoteScene: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => sendVote(p.name)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-white/5 border border-white/10 hover:border-warden-alert/30 hover:bg-warden-alert/5 transition-all"
+                  className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(211,47,47,0.06)'
+                    e.currentTarget.style.borderColor = 'rgba(211,47,47,0.2)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)'
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                  }}
                 >
                   <div
-                    className="w-8 h-8 rounded-full shrink-0 border-2 border-white/10"
-                    style={{ backgroundColor: p.avatarColor }}
+                    className="w-9 h-9 rounded-full shrink-0 transition-all duration-200"
+                    style={{
+                      backgroundColor: p.avatarColor,
+                      border: '2px solid rgba(255,255,255,0.1)',
+                      boxShadow: `0 0 10px ${p.avatarColor}33`,
+                    }}
                   />
-                  <span className="text-sm text-text-primary">{p.name}</span>
-                  <span className="text-xs text-text-secondary ml-auto">{p.roleTitle}</span>
+                  <span className="text-sm text-text-primary font-medium">{p.name}</span>
+                  <span className="text-xs text-text-secondary/50 ml-auto">{p.roleTitle}</span>
                 </button>
               ))
             }
@@ -73,17 +104,21 @@ export const VoteScene: React.FC = () => {
 
         {/* Votes display */}
         {votes.length > 0 && (
-          <div className="space-y-3 mb-8">
+          <div className="space-y-2 mb-8">
             {votes.slice(0, visibleCount).map((vote, i) => {
               const voterPlayer = players.find(p => p.name === vote.voter)
               return (
-                <div key={i} className="flex items-center gap-3 animate-fade-in">
+                <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg animate-fade-in"
+                     style={{ background: 'rgba(255,255,255,0.02)' }}>
                   <div
-                    className="w-8 h-8 rounded-full shrink-0 border-2 border-white/10"
-                    style={{ backgroundColor: voterPlayer?.avatarColor ?? '#555' }}
+                    className="w-7 h-7 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: voterPlayer?.avatarColor ?? '#555',
+                      border: '2px solid rgba(255,255,255,0.08)',
+                    }}
                   />
-                  <span className="text-sm text-text-primary w-24 shrink-0">{vote.voter}</span>
-                  <span className="text-text-secondary text-xs">&rarr;</span>
+                  <span className="text-sm text-text-primary/80 w-24 shrink-0">{vote.voter}</span>
+                  <span className="text-warden-alert/40 text-xs tracking-widest">&#10230;</span>
                   <span className="text-sm text-warden-alert font-semibold">{vote.target}</span>
                 </div>
               )
@@ -93,29 +128,41 @@ export const VoteScene: React.FC = () => {
 
         {/* Tally */}
         {tally.length > 0 && (
-          <div className="border-t border-white/8 pt-4 space-y-2">
-            <p className="text-xs uppercase tracking-widest text-text-secondary mb-3">Sonuc</p>
-            {tally.map(([name, count]) => (
-              <div key={name} className="flex items-center gap-3">
-                <span className={`text-sm w-24 shrink-0 ${allDone && count === maxVote ? 'text-warden-alert font-bold' : 'text-text-primary'}`}>
-                  {name}
-                </span>
-                <div className="flex-1 h-6 bg-white/5 rounded overflow-hidden">
-                  <div
-                    className={`h-full rounded transition-all duration-500 ${allDone && count === maxVote ? 'bg-warden-alert/60' : 'bg-white/15'}`}
-                    style={{ width: `${(count / votes.length) * 100}%` }}
-                  />
+          <div className="pt-4 space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] uppercase tracking-[3px] text-text-secondary/50 mb-3 font-semibold">Sonuc</p>
+            {tally.map(([name, count]) => {
+              const isLeader = allDone && count === maxVote
+              return (
+                <div key={name} className="flex items-center gap-3">
+                  <span className={`text-sm w-24 shrink-0 ${isLeader ? 'text-warden-alert font-bold' : 'text-text-primary/70'}`}>
+                    {name}
+                  </span>
+                  <div className="flex-1 h-7 rounded-lg overflow-hidden" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                    <div
+                      className="h-full rounded-lg transition-all duration-700 ease-out"
+                      style={{
+                        width: `${(count / votes.length) * 100}%`,
+                        background: isLeader
+                          ? 'linear-gradient(90deg, rgba(211,47,47,0.5) 0%, rgba(211,47,47,0.3) 100%)'
+                          : 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+                        boxShadow: isLeader ? '0 0 15px rgba(211,47,47,0.2)' : 'none',
+                      }}
+                    />
+                  </div>
+                  <span className={`text-sm w-6 text-right font-mono ${isLeader ? 'text-warden-alert' : 'text-text-secondary/50'}`}>
+                    {count}
+                  </span>
                 </div>
-                <span className="text-sm text-text-secondary w-6 text-right">{count}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
         {/* Waiting */}
         {votes.length === 0 && !canVote && (
-          <div className="text-center">
-            <p className="text-sm text-text-secondary/50 animate-pulse">Oylar bekleniyor...</p>
+          <div className="text-center flex flex-col items-center gap-4">
+            <div className="w-6 h-6 border-2 border-warden-alert/20 border-t-warden-alert/50 rounded-full animate-spin" />
+            <p className="text-sm text-text-secondary/40">Oylar bekleniyor...</p>
           </div>
         )}
       </div>

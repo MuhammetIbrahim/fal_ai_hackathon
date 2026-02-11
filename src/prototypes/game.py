@@ -119,6 +119,8 @@ ARCHETYPES = DATA["archetypes"]
 ROLE_TITLES = DATA["role_titles"]
 SKILL_TIERS = DATA["skill_tiers"]
 NAMES_POOL = DATA["names_pool"]
+INSTITUTIONS = DATA["institutions"]
+OMENS = DATA["omens"]
 
 
 # ══════════════════════════════════════════════════════
@@ -287,6 +289,24 @@ async def _update_cumulative_summary(
 #  1. KARAKTER URETIMI (dinamik, world_seed RNG ile)
 # ══════════════════════════════════════════════════════
 
+def _build_institution_pool(player_count: int) -> list[dict]:
+    """Oyuncu sayisina gore kurum havuzu olustur.
+    8 oyuncu: 2 Kilerci + 2 Gecitci + 1 Kul Rahibi + 1 Sifaci + 1 Demirci + 1 Han Insani
+    Daha az oyuncu: count'lari kus, fazlalari rastgele kes.
+    """
+    pool = []
+    for inst in INSTITUTIONS:
+        for _ in range(inst["count"]):
+            pool.append(inst)
+    # Oyuncu sayisindan fazlaysa kes
+    if len(pool) > player_count:
+        pool = pool[:player_count]
+    # Azsa tekrarla (buyuk oyuncu sayisi icin)
+    while len(pool) < player_count:
+        pool.append(pool[len(pool) % len(INSTITUTIONS)])
+    return pool
+
+
 def create_character_slots(
     rng: random_module.Random,
     player_count: int = 6,
@@ -297,6 +317,10 @@ def create_character_slots(
     roles = rng.sample(ROLE_TITLES, player_count)
     archetype_keys = list(ARCHETYPES.keys())
     tier_keys = list(SKILL_TIERS.keys())
+
+    # Kurum dagilimi
+    inst_pool = _build_institution_pool(player_count)
+    rng.shuffle(inst_pool)
 
     characters = []
 
@@ -309,6 +333,9 @@ def create_character_slots(
         "archetype": rng.choice(archetype_keys),
         "is_echo_born": False,
         "skill_tier": None,
+        "institution": inst_pool[0]["id"],
+        "institution_label": inst_pool[0]["label"],
+        "institution_desc": inst_pool[0]["description"],
     })
 
     # AI + kalan insanlar
@@ -322,6 +349,9 @@ def create_character_slots(
             "archetype": rng.choice(archetype_keys),
             "is_echo_born": is_ai,
             "skill_tier": rng.choice(tier_keys) if is_ai else None,
+            "institution": inst_pool[i]["id"],
+            "institution_label": inst_pool[i]["label"],
+            "institution_desc": inst_pool[i]["description"],
         })
 
     rng.shuffle(characters)
@@ -402,29 +432,89 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
             + common_rules
         )
 
+    # Kurum bilgisi
+    inst_block = ""
+    if character.get("institution_label"):
+        inst_block = (
+            f"\nKURUM: {character['institution_label']}\n"
+            f"{character.get('institution_desc', '')}\n"
+            f"Bu kurum karakterin gunluk rutinini ve alibi kaynaklarini belirler."
+        )
+
     prompt = (
         f"DUNYA: {world_seed.place_variants.settlement_name} | "
         f"Ton: {world_seed.tone} | Mevsim: {world_seed.season}\n"
         f"Soylenti: {world_seed.myth_variant.rumor}\n\n"
         f"KARAKTERIN:\n"
         f"Isim: {character['name']}\n"
-        f"Unvan: {character['role_title']}\n\n"
+        f"Unvan: {character['role_title']}\n"
+        f"{inst_block}\n\n"
         f"LORE ARKA PLAN:\n{character['lore']}\n\n"
         f"ARKETIP: {arch['label']}\n{arch['description']}\n"
         f"Konusma Tarzi: {arch['speech_style']}\n\n"
         f"KIMLIK:\n{identity}\n"
         f"{tier_block}\n\n"
-        f"Bu karakter icin detayli bir acting talimati yaz (2-3 paragraf):"
+        f"Asagidaki 4 alani JSON olarak uret. Baska hicbir sey yazma, SADECE JSON:\n\n"
+        f'{{"acting_prompt": "2-3 paragraf acting talimati (yukaridaki kurallara uygun)",\n'
+        f' "public_tick": "Bu karakterin herkesin fark edecegi 1 konusma aliskanligi. '
+        f'Ornek: her cumleye bir soru ile baslar, surekli yani der, cumlelerini yarida keser. '
+        f'Kisa, somut, tek bir aliskanlık.",\n'
+        f' "alibi_anchor": "Bu karakterin her gun yaptigi, baskalarinin dogrulayabilecegi 1 rutin. '
+        f'Kurum ve unvanina uygun olsun. Ornek: her sabah kilere erzak sayar, aksam nobetini tutar. '
+        f'Somut zaman + yer + eylem icersin.",\n'
+        f' "speech_color": "Bu karakterin konusma tonu 1-2 cumle. '
+        f'Ornek: kisa kesik cumleler kurar, gereksiz kelime kullanmaz. Veya: hikayeci tarzi, her seyi bir aniyla anlatir."}}'
     )
     return prompt, ACTING_PROMPT_SYSTEM
 
 
-async def _generate_acting_prompt(character: dict, world_seed: WorldSeed) -> str:
-    """Tek karakter icin acting prompt uret (Pro model)."""
+def _parse_character_card(raw_output: str) -> dict:
+    """LLM ciktisini parse et. JSON blogu bul ve dondur."""
+    # JSON blogu bul — { ile baslar, } ile biter
+    text = raw_output.strip()
+
+    # ```json ... ``` blogu varsa cikar
+    if "```json" in text:
+        start = text.index("```json") + 7
+        end = text.index("```", start)
+        text = text[start:end].strip()
+    elif "```" in text:
+        start = text.index("```") + 3
+        end = text.index("```", start)
+        text = text[start:end].strip()
+
+    # Ilk { ve son } arasi
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+    if first_brace != -1 and last_brace != -1:
+        text = text[first_brace:last_brace + 1]
+
+    try:
+        data = json.loads(text)
+        return {
+            "acting_prompt": data.get("acting_prompt", ""),
+            "public_tick": data.get("public_tick", ""),
+            "alibi_anchor": data.get("alibi_anchor", ""),
+            "speech_color": data.get("speech_color", ""),
+        }
+    except json.JSONDecodeError:
+        # Fallback: tum metni acting_prompt olarak kullan
+        return {
+            "acting_prompt": raw_output.strip(),
+            "public_tick": "",
+            "alibi_anchor": "",
+            "speech_color": "",
+        }
+
+
+async def _generate_acting_prompt(character: dict, world_seed: WorldSeed) -> dict:
+    """Tek karakter icin acting prompt + kart alanlari uret (Pro model).
+    Returns: {"acting_prompt": str, "public_tick": str, "alibi_anchor": str, "speech_color": str}
+    """
     name = character["name"]
     prompt, system = _build_acting_request(character, world_seed)
 
-    print(f"  🎭 [{name}] Acting prompt uretiliyor (Pro)...")
+    print(f"  🎭 [{name}] Karakter karti uretiliyor (Pro)...")
     result = await llm_generate(
         prompt=prompt,
         system_prompt=system,
@@ -432,8 +522,14 @@ async def _generate_acting_prompt(character: dict, world_seed: WorldSeed) -> str
         temperature=1.0,
         reasoning=True,
     )
-    print(f"  ✅ [{name}] {len(result.output)} karakter uretildi")
-    return result.output
+    card = _parse_character_card(result.output)
+    has_all = all(card.get(k) for k in ("acting_prompt", "public_tick", "alibi_anchor", "speech_color"))
+    if has_all:
+        print(f"  ✅ [{name}] Kart tamam — acting:{len(card['acting_prompt'])}c, tick:{card['public_tick'][:30]}...")
+    else:
+        missing = [k for k in ("public_tick", "alibi_anchor", "speech_color") if not card.get(k)]
+        print(f"  ⚠️  [{name}] Eksik alanlar: {missing} — fallback acting prompt kullanildi")
+    return card
 
 
 async def generate_players(
@@ -445,12 +541,12 @@ async def generate_players(
     """Tam pipeline: slot olustur → acting prompt uret → Player listesi dondur."""
     slots = create_character_slots(rng, player_count, ai_count)
 
-    # Concurrent acting prompt uretimi
+    # Concurrent karakter karti uretimi
     tasks = [_generate_acting_prompt(c, world_seed) for c in slots]
-    prompts = await asyncio.gather(*tasks)
+    cards = await asyncio.gather(*tasks)
 
     players = []
-    for slot, acting_prompt in zip(slots, prompts):
+    for slot, card in zip(slots, cards):
         players.append(Player(
             slot_id=slot["slot_id"],
             name=slot["name"],
@@ -459,9 +555,14 @@ async def generate_players(
             archetype=slot["archetype"],
             archetype_label=ARCHETYPES[slot["archetype"]]["label"],
             player_type=PlayerType.YANKI_DOGMUS if slot["is_echo_born"] else PlayerType.ET_CAN,
-            acting_prompt=acting_prompt,
+            acting_prompt=card["acting_prompt"],
             skill_tier=slot.get("skill_tier"),
             skill_tier_label=SKILL_TIERS[slot["skill_tier"]]["label"] if slot.get("skill_tier") else None,
+            institution=slot.get("institution"),
+            institution_label=slot.get("institution_label"),
+            public_tick=card.get("public_tick") or None,
+            alibi_anchor=card.get("alibi_anchor") or None,
+            speech_color=card.get("speech_color") or None,
         ))
 
     return players
@@ -569,6 +670,7 @@ CHARACTER_WRAPPER = """{world_context}Tartisma fazindasin. Gun {round_number}/{d
 Hayattaki kisiler: {alive_names}
 {exiled_context}
 {cumulative_context}
+{card_context}
 Soz hakki sana geldi.
 
 BU BIR SES OYUNU — YASAKLAR:
@@ -718,6 +820,20 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
     return "NEXT", wanters[0]["name"]
 
 
+def _build_card_context(player: Player) -> str:
+    """Karakter kartindan campfire prompt'una eklenecek context."""
+    parts = []
+    if player.institution_label:
+        parts.append(f"Kurumun: {player.institution_label}")
+    if player.public_tick:
+        parts.append(f"Konusma aliskanlığın: {player.public_tick}")
+    if player.alibi_anchor:
+        parts.append(f"Gunluk rutinin (alibi): {player.alibi_anchor}")
+    if player.speech_color:
+        parts.append(f"Konusma tarzin: {player.speech_color}")
+    return "\n".join(parts) if parts else ""
+
+
 async def _character_speak(player: Player, state: GameState) -> str:
     history_text = _format_campfire_context(state, viewer=player.name)
     alive_names = ", ".join(get_alive_names(state))
@@ -738,6 +854,7 @@ async def _character_speak(player: Player, state: GameState) -> str:
         alive_names=alive_names,
         exiled_context=_get_exiled_context(state),
         cumulative_context=cumulative_context,
+        card_context=_build_card_context(player),
         history=history_text,
         own_last=own_last,
         name=player.name,
@@ -916,6 +1033,7 @@ VISIT_WRAPPER = """{world_context}Ozel gorusme. Karsinizda: {opponent_name} ({op
 Gun {round_number}/{day_limit}.
 {exiled_context}
 {cumulative_context}
+{card_context}
 
 BU BIR SES OYUNU — YASAKLAR:
 - Fiziksel ortam YOK. Kimseyi goremez, dokunamaz, koklayamazsin.
@@ -1055,6 +1173,7 @@ async def _character_speak_1v1(
         day_limit=state.get("day_limit", 5),
         exiled_context=_get_exiled_context(state),
         cumulative_context=cumulative_context,
+        card_context=_build_card_context(player),
         campfire_summary=campfire_summary,
         visit_history=visit_history,
         own_last=own_last,

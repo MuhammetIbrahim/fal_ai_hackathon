@@ -1,223 +1,194 @@
-# Ocak Yemini — Implementation Plan (Katmanlı)
+# Ocak Yemini — Implementation Plan (Katmanli)
 
 ## Vizyon
 
-Oyuncuların kimliği kanıt ile değil **davranış, tutarlılık, niyet–eylem uyumu, sosyal baskı ve politik koalisyonlar** üzerinden dedükte ettiği sesli AI Turing testi.
+Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, sosyal baski ve politik koalisyonlar** uzerinden dedukte ettigi sesli AI Turing testi.
 
-- 8 oyuncu (insan + LLM karışık)
-- 2 soy: Et-Can / Yankı-Doğmuş
-- Ölüm yok, sürgün var (tür ifşası yok)
-- Evren dışı / meta konuşma tabu
+- 8 oyuncu (insan + LLM karisik)
+- 2 soy: Et-Can / Yanki-Dogmus
+- Olum yok, surgun var (tur ifsasi yok)
+- Evren disi / meta konusma tabu
 
 ---
 
-## Katman 0 — Hackathon MVP (Mevcut + Küçük Eklemeler)
+## Katman 0 — Hackathon MVP
 
-**Durum:** Büyük kısmı zaten implemente.
-
-### Mevcut (çalışıyor)
-- [x] Karakter üretimi (LLM ile isim, unvan, rol)
-- [x] Morning sahne (anlatıcı text, typewriter)
-- [x] Campfire konuşma (orchestrator + moderator + sıra yönetimi)
-- [x] Free Roam (konum seçimi: ateş başı / ev / ziyaret)
+### 0.1 Temel Altyapi (TAMAMLANDI)
+- [x] Karakter uretimi (LLM ile isim, unvan, rol)
+- [x] Morning sahne (anlatici text, typewriter)
+- [x] Campfire konusma (orchestrator + moderator + sira yonetimi)
+- [x] Free Roam (konum secimi: ates basi / ev / ziyaret)
 - [x] House Visit (1v1 exchange, 4 tur)
-- [x] Vote + Exile (oy toplama, sürgün animasyonu)
-- [x] Game Over (kazanan taraf + tüm oyuncu ifşası)
-- [x] WebSocket entegrasyonu (frontend ↔ backend)
-- [x] TTS ses üretimi (fal.ai tts_generate → audio URL → frontend playback)
+- [x] Vote + Exile (oy toplama, surgun animasyonu)
+- [x] Game Over (kazanan taraf + tum oyuncu ifsasi)
+- [x] WebSocket entegrasyonu (frontend <-> backend)
+- [x] TTS ses uretimi (fal.ai tts_generate -> audio URL -> frontend playback)
+- [x] UI polish (dark fantasy tema, tum sahneler)
 
-### Eksik (Katman 0 tamamlama)
-- [ ] **Karakter Kartı genişletme** — mevcut karakter üretimine ekle:
-  - Arketip (şüpheli sessiz / konuşkan / agresif / sakin / manipülatif / idealist)
-  - Kamu Tik'i (görünen alışkanlık — konuşmalara yansır)
-  - Alibi Çapası (test edilebilir günlük rutin iddiası)
-  - Konuşma Rengi (1–3 cümle, LLM persona prompt'una eklenir)
-- [ ] **Kurum dağılımı** — 8 oyuncuya kurum ata:
-  - 2 Kilerciler, 2 Geçitçiler, 1 Kül Rahibi, 1 Şifacı, 1 Demirci, 1 Han İnsanı
-  - `generate_characters` prompt'una kurum bilgisi ekle
-- [ ] **Alamet (Omen) — sadece atmosfer**
-  - Morning'de 3 alamet ikonu göster (12'lik havuzdan rastgele 3)
-  - UI'da Omen Bar (zaten component var, içeriği dinamik yap)
-  - Alametin etkisi yok, sadece anlatıcı text'e ve campfire konuşma prompt'larına flavor ekler
+### 0.2 Karakter Karti Genisletme
+- [ ] `data.json` — kamu tik'i havuzu ekle (15+ tik)
+- [ ] `data.json` — alibi capasi kaliplari ekle (15+ kalip)
+- [ ] `data.json` — konusma rengi ornekleri ekle
+- [ ] `game_state.py` — Player modeline yeni alanlar: `institution`, `institution_label`, `public_tick`, `alibi_anchor`, `speech_color`
+- [ ] `game.py` — `create_character_slots()` yeni alanlari ata
+- [ ] `game.py` — `_build_acting_request()` yeni alanlari prompt'a ekle
+- [ ] `game_engine.py` — mock karakter uretimini guncelle (yeni alanlar)
 
-### Dosyalar
-| Dosya | İşlem |
-|-------|-------|
-| `src/prototypes/generate_characters.py` | Kart alanları ekle |
-| `src/prototypes/game_state.py` | Player model'e yeni alanlar |
-| `src/prototypes/game.py` | `run_morning()` alamet seçimi |
-| `fal_services.py` | Karakter üretim prompt güncelle |
-| `attnfigma/src/components/campfire/OmenBar.tsx` | Dinamik alamet gösterimi |
+### 0.3 Kurum Dagilimi
+- [ ] `data.json` — 6 kurum tanimla (Kilerciler, Gecitciler, Kul Rahibi, Sifaci, Demirci, Han Insani)
+- [ ] `game.py` — `create_character_slots()` kurumlari dagit (8 oyuncu icin: 2+2+1+1+1+1)
+- [ ] `game.py` — acting prompt'a kurum bilgisi ekle
+- [ ] Frontend — `GamePlayer` tipine `institution` alani ekle
+
+### 0.4 Alamet (Omen) Sistemi — Atmosfer
+- [ ] `data.json` — 12 alamet tanimla (isim, ikon, atmosfer aciklamasi)
+- [ ] `game.py` — `run_morning()` icinde gunun 3 alametini sec
+- [ ] `game_loop.py` — morning broadcast'ine alamet verisini ekle
+- [ ] Frontend `types/game.ts` — Omen tipi ekle
+- [ ] Frontend `GameContext.tsx` — omens state + morning event'inden parse
+- [ ] Frontend `MorningScene.tsx` — OmenBar goster (3 alamet ikonu + isim)
+
+### 0.5 End-to-End Test
+- [ ] Backend + Frontend birlikte calistir
+- [ ] Yeni oyun olustur, tum fazlari oyna
+- [ ] Karakter kartlarinda yeni alanlar gorunuyor mu kontrol et
+- [ ] Morning'de alametler gorunuyor mu kontrol et
+- [ ] TTS hala calisiyor mu kontrol et
 
 ---
 
-## Katman 1 — Spotlight + Sınama + Ocak Tepkisi (Yumuşak)
+## Katman 1 — Spotlight + Sinama + Ocak Tepkisi (Yumusak)
 
-**Hedef:** Konuşmalara yapı ve yakalanabilirlik ekle.
+**Hedef:** Konusmalara yapi ve yakalanabilirlik ekle.
 
-### 1.1 Spotlight Sahne Kartları
-- Her gün 2-3 oyuncu "spotlight" olur
-- Spotlight olan oyuncu campfire'da söylemesi gereken:
-  - 2 Gerçek (kısa, kart bilgisinden türetilir)
-  - 1 Gündem Cümlesi (politik hamle — kurum çıkarı)
-  - 1 Yemin Cümlesi (evren içi roleplay)
-- LLM oyuncular prompt'a spotlight kartı eklenir
-- İnsan oyuncu spotlight kartını UI'da görür
-- Söylemezse → sonuç Katman 1'de yok (Katman 2'de Ocak Tepkisi T3)
+### 1.1 Spotlight Sahne Kartlari
+- [ ] `game.py` — her gun 2-3 oyuncu spotlight sec
+- [ ] Spotlight karti uret: 2 Gercek + 1 Gundem Cumlesi + 1 Yemin Cumlesi
+- [ ] `game_loop.py` — campfire basinda spotlight kartini broadcast et
+- [ ] LLM oyuncular icin prompt'a spotlight karti ekle
+- [ ] Frontend `CampfireScene.tsx` — spotlight karti UI (insan oyuncu icin)
+- [ ] Frontend `types/game.ts` — SpotlightCard tipi
 
-### 1.2 Sınama Event'i (günde 1)
-- Tip havuzu (başlangıç 3 tip):
-  - **Eşik Haritası**: "Dün gece X lokasyonunda kimler vardı?" (mekânsal tutarlılık)
-  - **Kor Bedeli**: "Bu kararı neden aldın?" (niyet–eylem uyumu)
-  - **Sessiz Soru**: Rastgele 1 oyuncuya sürpriz tek soru
-- Sonuç: "Ocak Yankısı" olarak görünür (yumuşak/orta) — kişiye etiket yapmaz
-- Morning event'inin bir parçası olarak tetiklenir
+### 1.2 Sinama Event'i (gunde 1)
+- [ ] `game.py` — 3 sinama tipi: Esik Haritasi, Kor Bedeli, Sessiz Soru
+- [ ] `game_loop.py` — morning sonrasi sinama broadcast
+- [ ] Frontend `MorningScene.tsx` — sinama event gosterimi
+- [ ] Frontend `types/game.ts` — SinamaEvent tipi
 
-### 1.3 Ocak Tepkisi (sadece T1 + Kıvılcım seviyesi)
-- **T1 tetikleyici:** Kamu canon ile açık çelişen kesin iddia
-- **Tepki:** Sadece Kıvılcım — "Ocak kısa kıvılcım attı; kalabalık huzursuzlandı."
-- Bilgilendirici, cezalandırıcı değil
-- Mekanik sonuç yok, sadece sosyal sinyal
-
-### Dosyalar
-| Dosya | İşlem |
-|-------|-------|
-| `src/prototypes/game.py` | Spotlight seçimi + sınama event üretimi |
-| `src/core/game_loop.py` | Campfire'a spotlight akışı ekle |
-| `src/core/game_loop.py` | Sınama event broadcast |
-| `src/core/game_loop.py` | T1 tutarsızlık tespiti (LLM-based) |
-| `attnfigma/src/scenes/CampfireScene.tsx` | Spotlight kartı UI |
-| `attnfigma/src/scenes/MorningScene.tsx` | Sınama event gösterimi |
-| `attnfigma/src/types/game.ts` | SpotlightCard, SinamaEvent tipleri |
+### 1.3 Ocak Tepkisi (T1 + Kivilcim)
+- [ ] `game_loop.py` — campfire speech sonrasi T1 tutarsizlik tespiti (LLM-based)
+- [ ] Tetikleyici: kamu canon ile acik celisen kesin iddia
+- [ ] Tepki: "Ocak kisa kivilcim atti; kalabalik huzursuzlandi."
+- [ ] Frontend — kivilcim animasyonu (campfire'da flash efekt)
 
 ---
 
 ## Katman 2 — Lokasyonlar + Mini Event'ler + UI Objeleri + Tam Ocak Tepkisi
 
-**Hedef:** Dünyayı somutlaştır, ipucu motorunu çalıştır.
+**Hedef:** Dunyayi somutlastir, ipucu motorunu calistir.
 
-### 2.1 Kurum Lokasyonları
-- Free Roam'da sadece "ateş/ev/ziyaret" değil, kurum lokasyonlarına gitme seçeneği:
-  - Kiler/Ambar, Geçit Kulesi, Kül Tapınağı, Şifahane, Demirhane, Gezgin Hanı
-- Her lokasyonda 1 mini sahne (LLM üretir)
-- Lokasyon ziyaretleri "alibi" olarak campfire'da referans verilebilir
+### 2.1 Kurum Lokasyonlari
+- [ ] Free Roam'a kurum lokasyonlari ekle (Kiler, Gecit Kulesi, Kul Tapinagi, Sifahane, Demirhane, Gezgin Hani)
+- [ ] Her lokasyonda 1 mini sahne (LLM uretir)
+- [ ] Lokasyon ziyaretleri "alibi" olarak campfire'da referans verilebilir
+- [ ] Frontend `LocationScene.tsx` — **YENI** kurum lokasyon sahnesi
 
 ### 2.2 Mini Event'ler
-- **Kamu Mini Event:** Campfire öncesi okunur (alamete göre seçilir)
-- **Özel Mini Event:** House/lokasyon girişinde tetiklenir
-- Her mini event en az 1 UI objesine bağlanır
+- [ ] Kamu Mini Event: campfire oncesi okunur (alamete gore secilir)
+- [ ] Ozel Mini Event: house/lokasyon girisinde tetiklenir
+- [ ] Her mini event en az 1 UI objesine baglanir
+- [ ] Frontend `MiniEventCard.tsx` — **YENI**
 
-### 2.3 UI Objeleri (6 tane ile başla)
-Aktif objeler (event'e göre 2-3'ü gösterilir, geri kalanı gizli):
-1. Kiler Kapısı (kilit durumu)
-2. Anahtar Halkası (kayıp/var)
-3. Kayıt Defteri (1 satır bulanık)
-4. Nöbet Levhası (isimler + silik satır)
-5. Kül Kasesi (doluluk çizgisi)
-6. Şifahane Dolabı (şişe sayacı)
+### 2.3 UI Objeleri (6 tane)
+- [ ] Kiler Kapisi (kilit durumu)
+- [ ] Anahtar Halkasi (kayip/var)
+- [ ] Kayit Defteri (1 satir bulanik)
+- [ ] Nobet Levhasi (isimler + silik satir)
+- [ ] Kul Kasesi (doluluk cizgisi)
+- [ ] Sifahane Dolabi (sise sayaci)
+- [ ] Frontend `GameObjects.tsx` — **YENI** UI obje bilesenleri
 
-### 2.4 Ocak Tepkisi — Tam (T1 + T2 + Kül Kayması)
-- **T1:** Canon çelişki → Kıvılcım
-- **T2:** Kendi sözleriyle çelişki → Kıvılcım veya Kül Kayması
-- **Kül Kayması:** "Küller bir yana yığıldı…" → 1 zorunlu soru doğar (bilgilendirici, ceza değil)
-- ~~T3 (spotlight kaçırma)~~ → kaldırıldı, oyuncu agency'si korunur
-- ~~Mavi Çalım~~ → kaldırıldı, mekanik ceza social deduction'da immersion kırar
-
-### Dosyalar
-| Dosya | İşlem |
-|-------|-------|
-| `src/prototypes/game.py` | Lokasyon sahneleri, mini event üretimi |
-| `src/core/game_loop.py` | Lokasyon akışı, mini event broadcast |
-| `src/core/game_loop.py` | T2 tutarsızlık tespiti (LLM conversation history) |
-| `attnfigma/src/scenes/FreeRoamScene.tsx` | Lokasyon seçim UI |
-| `attnfigma/src/scenes/LocationScene.tsx` | **YENİ** — kurum lokasyon sahnesi |
-| `attnfigma/src/components/ui/GameObjects.tsx` | **YENİ** — UI obje bileşenleri |
-| `attnfigma/src/components/ui/MiniEventCard.tsx` | **YENİ** — mini event kartı |
+### 2.4 Ocak Tepkisi — Tam (T1 + T2 + Kul Kaymasi)
+- [ ] T1: Canon celiski -> Kivilcim
+- [ ] T2: Kendi sozleriyle celiski -> Kivilcim veya Kul Kaymasi
+- [ ] Kul Kaymasi: "Kuller bir yana yigildi..." -> 1 zorunlu soru dogar
 
 ---
 
-## Katman 3 — Gece Entrikası + Kamu Baskısı + Tam Obje Seti
+## Katman 3 — Gece Entrikasi + Kamu Baskisi + Tam Obje Seti
 
-**Hedef:** Politik motoru tam çalıştır.
+**Hedef:** Politik motoru tam calistir.
 
-### 3.1 Gece Entrikası (basitleştirilmiş)
-- Her gece 1 hamle: **"Kime sis at?"**
-- Hedefin ertesi gün alibi çapası "bulanık" görünür (doğrulanamaz)
-- Basit, "kanıt yok ipucu var" felsefesiyle uyumlu
-- Koalisyon gerektirmez
+### 3.1 Gece Entrikasi
+- [ ] Her gece 1 hamle: "Kime sis at?"
+- [ ] Hedefin ertesi gun alibi capasi "bulanik" gorunur
+- [ ] Frontend `NightScene.tsx` — **YENI** gece entrika UI
 
-### 3.2 Kamu Baskısı (yumuşatılmış)
-- Hedef: 1 oyuncu
-- Etki: Vote'ta hedefe verilen oylar **+1** (2x değil)
-- Aynı hedefe üst üste uygulanamaz
-- Counterplay: Baskı altındaki oyuncu campfire'da **1 ekstra konuşma hakkı** kazanır (savunma şansı mekanik değil, retorik)
+### 3.2 Kamu Baskisi
+- [ ] Hedef: 1 oyuncu, vote'ta +1 oy etkisi
+- [ ] Ayni hedefe ust uste uygulanamaz
+- [ ] Baski altindaki oyuncu campfire'da 1 ekstra konusma hakki
+- [ ] Frontend `VoteScene.tsx` — baski gostergesi (+1 badge)
 
 ### 3.3 Tam UI Obje Seti
-- 12 zorunlu objenin tamamı aktif
-- 8 zenginleştirici opsiyonel
-- Gün bazlı 2-3 obje "aktif", geri kalanı gizli/dim
+- [ ] 12 zorunlu objenin tamami aktif
+- [ ] 8 zenginlestirici opsiyonel
+- [ ] Gun bazli 2-3 obje "aktif", geri kalani gizli/dim
 
-### 3.4 Alamet — Oyuncu Seçimi
-- 3 alametin 1'ini oyuncular gece seçer: "Yarınki alametlerden birini sen belirle"
-- Bu zincir stratejik olur: alamet → mini event → campfire sorusu
-
-### Dosyalar
-| Dosya | İşlem |
-|-------|-------|
-| `src/core/game_loop.py` | Gece fazı, sis mekanizması, baskı hesaplama |
-| `src/prototypes/game.py` | Gece hamle üretimi (AI), baskı etkisi |
-| `attnfigma/src/scenes/NightScene.tsx` | **YENİ** — gece entrika UI |
-| `attnfigma/src/scenes/VoteScene.tsx` | Baskı göstergesi (+1 badge) |
-| `attnfigma/src/components/ui/GameObjects.tsx` | Tam obje seti |
+### 3.4 Alamet — Oyuncu Secimi
+- [ ] 3 alametin 1'ini oyuncular gece secer
+- [ ] Zincir: alamet -> mini event -> campfire sorusu
 
 ---
 
-## Alamet (Omen) Seti
+## Referans Veriler
 
-12'lik havuz — her gün 3'ü seçilir:
+### Alamet (Omen) Seti — 12'lik havuz
 
 | # | Alamet | Atmosfer Etkisi |
 |---|--------|-----------------|
-| 1 | Paslı Anahtar | Güvensizlik, erişim sorusu |
-| 2 | Kırık Çan | İletişim kopukluğu, uyarı |
-| 3 | Çatlak Ayna | Kimlik, yansıma, ikiyüzlülük |
-| 4 | Silik Mühür | Yetki sorgusu, meşruiyet |
-| 5 | Soğuk Kor | Sönmüş umut, gizli tehlike |
-| 6 | Kırık Şişe | Kayıp, israf, kaza |
-| 7 | Dikenli Taç | Liderlik yükü, fedakarlık |
-| 8 | Kanlı Tüy | Masumiyet kaybı, iz |
-| 9 | Boş Beşik | Kayıp, gelecek endişesi |
-| 10 | Ters Kum Saati | Zaman baskısı, geri dönüşsüzlük |
-| 11 | Küllü El İzi | Suç ortaklığı, temas |
-| 12 | Yarım Harita | Eksik bilgi, yön kaybı |
+| 1 | Pasli Anahtar | Guvensizlik, erisim sorusu |
+| 2 | Kirik Can | Iletisim kopuklugu, uyari |
+| 3 | Catlak Ayna | Kimlik, yansima, ikiyuzluluk |
+| 4 | Silik Muhur | Yetki sorgusu, mesuriyet |
+| 5 | Soguk Kor | Sonmus umut, gizli tehlike |
+| 6 | Kirik Sise | Kayip, israf, kaza |
+| 7 | Dikenli Tac | Liderlik yuku, fedakarlik |
+| 8 | Kanli Tuy | Masumiyet kaybi, iz |
+| 9 | Bos Besik | Kayip, gelecek endisesi |
+| 10 | Ters Kum Saati | Zaman baskisi, geri donusuzluk |
+| 11 | Kullu El Izi | Suc ortakligi, temas |
+| 12 | Yarim Harita | Eksik bilgi, yon kaybi |
 
----
+### Kurum Dagilimi
 
-## Kurum Dağılımı
-
-| Kurum | Sayı | Konum | Rol |
+| Kurum | Sayi | Konum | Rol |
 |-------|------|-------|-----|
-| Kilerciler | 2 | Kiler/Ambar | Erzak yönetimi |
-| Geçitçiler | 2 | Geçit Kulesi | Sınır güvenliği |
-| Kül Rahibi | 1 | Kül Tapınağı | Ritüel, alamet yorumu |
-| Şifacı | 1 | Şifahane | Sağlık, ilaç |
+| Kilerciler | 2 | Kiler/Ambar | Erzak yonetimi |
+| Gecitciler | 2 | Gecit Kulesi | Sinir guvenligi |
+| Kul Rahibi | 1 | Kul Tapinagi | Rituel, alamet yorumu |
+| Sifaci | 1 | Sifahane | Saglik, ilac |
 | Demirci | 1 | Demirhane | Alet, silah, iz |
-| Han İnsanı | 1 | Gezgin Hanı | Dedikodu, ticaret |
+| Han Insani | 1 | Gezgin Hani | Dedikodu, ticaret |
 
 ---
 
-## Öncelik Sırası
+## Ilerleme
 
 ```
-Katman 0 (hackathon demo)     ██████████████████████ ~%70 bitti
-Katman 1 (spotlight + sınama) ░░░░░░░░░░░░░░░░░░░░░ başlamadı
-Katman 2 (lokasyon + event)   ░░░░░░░░░░░░░░░░░░░░░ başlamadı
-Katman 3 (gece + politik)     ░░░░░░░░░░░░░░░░░░░░░ başlamadı
+Katman 0.1 (temel altyapi)       ████████████████████ TAMAM
+Katman 0.2 (karakter karti)      ░░░░░░░░░░░░░░░░░░░ sirada <<<
+Katman 0.3 (kurum dagilimi)      ░░░░░░░░░░░░░░░░░░░ bekliyor
+Katman 0.4 (alamet sistemi)      ░░░░░░░░░░░░░░░░░░░ bekliyor
+Katman 0.5 (e2e test)            ░░░░░░░░░░░░░░░░░░░ bekliyor
+Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ baslamadi
+Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ baslamadi
+Katman 3   (gece + politik)      ░░░░░░░░░░░░░░░░░░░ baslamadi
 ```
 
 ## Notlar
 
-- Her katman bağımsız test edilebilir — bir sonraki katmana geçmeden önce mevcut katman stabil olmalı
-- LLM prompt'ları katman bazlı genişler: Katman 0'da basit persona, Katman 3'te tam kart + kurum + alamet + spotlight
+- Her katman bagimsiz test edilebilir — bir sonraki katmana gecmeden once mevcut katman stabil olmali
+- LLM prompt'lari katman bazli genisler: Katman 0'da basit persona, Katman 3'te tam kart + kurum + alamet + spotlight
 - UI objeleri lazy-load: sadece aktif olanlar render edilir
-- Ses (TTS) tüm katmanlarda çalışır — zaten entegre
+- Ses (TTS) tum katmanlarda calisir — zaten entegre
