@@ -29,13 +29,15 @@
   --font-primary: 'Inter', system-ui, sans-serif;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
   font-family: var(--font-primary);
   background-color: var(--color-bg-dark);
   color: var(--color-text-primary);
   overflow: hidden;
-  /* Prevent scroll on full screen scenes */
 }
 
 /* Utilities */
@@ -216,6 +218,7 @@ body {
   gap: 1.5rem;
   padding: 0.5rem 2rem 1.5rem;
   overflow: hidden;
+  min-height: 0; /* flexbox overflow fix */
 }
 
 .cf-center {
@@ -223,11 +226,13 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0; /* flexbox overflow fix — allows chat-log to scroll */
 }
 
 /* --- Chat Log --- */
 .cf-chat-log {
   flex: 1;
+  min-height: 0; /* flexbox overflow fix — enables scroll */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -849,4 +854,90 @@ body {
 /* Game Over altin glow */
 .game-over-glow {
   text-shadow: 0 0 20px rgba(255, 191, 0, 0.5), 0 0 60px rgba(255, 191, 0, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════
+   RESPONSIVE — Mobile & Tablet
+   ═══════════════════════════════════════════════════ */
+
+/* Tablet (< 1024px) */
+@media (max-width: 1024px) {
+  .cf-queue-panel {
+    width: 180px;
+    padding: 0.6rem;
+  }
+  .cf-queue-name {
+    font-size: 0.8rem;
+  }
+  .cf-queue-dot {
+    width: 22px;
+    height: 22px;
+  }
+  .transcript-panel {
+    width: 280px;
+  }
+  .avatar-frame {
+    width: 160px;
+  }
+  .avatar-image-placeholder {
+    width: 120px;
+    height: 120px;
+  }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 768px) {
+  /* Campfire: queue panel gizle, chat full-width */
+  .cf-queue-panel {
+    display: none;
+  }
+  .cf-body {
+    padding: 0.5rem 1rem 1rem;
+  }
+  .cf-topbar {
+    padding: 1rem 1rem 0.5rem;
+  }
+  .cf-world-title {
+    font-size: 0.95rem;
+  }
+
+  /* House: avatarlar kucult, transcript full-width */
+  .avatar-frame {
+    width: 100px;
+    top: 10%;
+  }
+  .avatar-frame.left {
+    left: 5%;
+  }
+  .avatar-frame.right {
+    right: 5%;
+  }
+  .avatar-image-placeholder {
+    width: 80px;
+    height: 80px;
+  }
+  .avatar-name {
+    font-size: 0.85rem;
+  }
+  .transcript-panel {
+    width: calc(100% - 2rem);
+    right: 1rem;
+    top: 35%;
+  }
+  .house-header {
+    padding: 1rem 1.5rem;
+  }
+  .status-text {
+    font-size: 1rem;
+    padding: 0.3rem 0.8rem;
+  }
+  .ptt-container {
+    bottom: 1.5rem;
+  }
+
+  /* Center visual kucult */
+  .center-visual {
+    width: 200px;
+    height: 200px;
+  }
 }
