@@ -198,6 +198,7 @@ async def _game_loop_runner(game_id: str, state: Any):
             generate_1v1_speech, generate_location_decision,
             maybe_update_campfire_summary, update_cumulative_summary,
             get_reaction, orchestrator_pick, check_moderation,
+            generate_spotlight_cards, generate_sinama_event, check_ocak_tepki,
             INITIAL_CAMPFIRE_TURNS, FREE_ROAM_ROUNDS,
             CAMPFIRE_TURNS_PER_ROUND, CLOSING_CAMPFIRE_TURNS,
             ROOM_EXCHANGES,
@@ -282,6 +283,30 @@ async def _game_loop_runner(game_id: str, state: Any):
             })
 
             logger.info(f"Morning phase completed — Round {round_n}")
+
+            # ── SINAMA EVENT (Katman 1) ──
+            try:
+                sinama = await generate_sinama_event(state)
+                if sinama:
+                    await manager.broadcast(game_id, {
+                        "event": "sinama",
+                        "data": sinama,
+                    })
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.warning(f"Sinama generation failed: {e}")
+
+            # ── SPOTLIGHT KARTLARI (Katman 1) ──
+            try:
+                spotlight_cards = await generate_spotlight_cards(state)
+                if spotlight_cards:
+                    await manager.broadcast(game_id, {
+                        "event": "spotlight_cards",
+                        "data": {"cards": spotlight_cards},
+                    })
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.warning(f"Spotlight generation failed: {e}")
 
             # ═══════════════════════════════════════
             # 2. SERBEST DOLASIM FAZI (Free Phase)
@@ -870,6 +895,21 @@ async def _run_campfire_segment_ws(
             if not first.is_human:
                 asyncio.create_task(_generate_and_broadcast_audio(game_id, first.name, message))
 
+            # Ocak Tepki kontrolu (Katman 1)
+            try:
+                tepki = await check_ocak_tepki(first.name, message, state)
+                if tepki:
+                    state["campfire_history"].append({
+                        "type": "narrator",
+                        "content": tepki["message"],
+                    })
+                    await manager.broadcast(game_id, {
+                        "event": "ocak_tepki",
+                        "data": tepki,
+                    })
+            except Exception as e:
+                logger.warning(f"Ocak tepki check failed: {e}")
+
         turns_done = 1
 
     # ── Sonraki turlar: orchestrator ile konusmaci sec ──
@@ -971,6 +1011,21 @@ async def _run_campfire_segment_ws(
         # TTS fire-and-forget (AI only)
         if not speaker.is_human:
             asyncio.create_task(_generate_and_broadcast_audio(game_id, speaker.name, message))
+
+        # Ocak Tepki kontrolu (Katman 1)
+        try:
+            tepki = await check_ocak_tepki(speaker.name, message, state)
+            if tepki:
+                state["campfire_history"].append({
+                    "type": "narrator",
+                    "content": tepki["message"],
+                })
+                await manager.broadcast(game_id, {
+                    "event": "ocak_tepki",
+                    "data": tepki,
+                })
+        except Exception as e:
+            logger.warning(f"Ocak tepki check failed: {e}")
 
         # Rolling summary guncelle
         if maybe_update_campfire_summary:

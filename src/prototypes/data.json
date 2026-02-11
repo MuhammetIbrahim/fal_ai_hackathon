@@ -162,5 +162,10 @@
     {"id": "ters_kum_saati", "label": "Ters Kum Saati", "icon": "\u23f3", "atmosphere": "Zaman baskisi. Bu gun yapilacak secim geri donulemez olabilir."},
     {"id": "kullu_el_izi", "label": "Kullu El Izi", "icon": "\u270b", "atmosphere": "Suc ortakligi, temas. Birisi baska biriyle gizlice bulusmus olabilir."},
     {"id": "yarim_harita", "label": "Yarim Harita", "icon": "\ud83d\uddfa\ufe0f", "atmosphere": "Eksik bilgi. Herkesin bildigi hikayenin yarisi eksik olabilir."}
+  ],
+  "sinama_types": [
+    {"id": "esik_haritasi", "label": "Esik Haritasi", "icon": "🗺️", "prompt_hint": "Yerlesimde eski bir harita parcasi ortaya cikti. Uzerindeki isaretler bazi yolculuklari ya da bulusmalari isaret ediyor. Bu harita birinin alibi'sini dogrulayabilir ya da curutebilir."},
+    {"id": "kor_bedeli", "label": "Kor Bedeli", "icon": "🔥", "prompt_hint": "Ocak bu sabah beklenmedik bir bedel istedi. Birinin bir seyden vazgecmesi gerekiyor. Bu fedakarlik kimin gercek, kimin sahte oldugunu gosterebilir."},
+    {"id": "sessiz_soru", "label": "Sessiz Soru", "icon": "❓", "prompt_hint": "Havada cevaplanmamis bir soru asili kaldi. Kimse sormadi ama herkes duydu. Bu sessizlik icinde biri rahatsiz olacak."}
   ]
 }

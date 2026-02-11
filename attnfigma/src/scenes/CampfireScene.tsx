@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
 import { ChatLog } from '../components/campfire/ChatLog'
 import type { Message } from '../components/campfire/ChatLog'
@@ -7,8 +7,17 @@ import type { Player } from '../components/campfire/QueuePanel'
 import { OmenBar } from '../components/campfire/OmenBar'
 
 export const CampfireScene: React.FC = () => {
-  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, selfPlayerName } = useGame()
+  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, selfPlayerName, ocakTepki } = useGame()
   const [inputText, setInputText] = useState('')
+  const [showFlash, setShowFlash] = useState(false)
+
+  // Ocak tepki flash effect
+  useEffect(() => {
+    if (!ocakTepki) return
+    setShowFlash(true)
+    const t = setTimeout(() => setShowFlash(false), 3000)
+    return () => clearTimeout(t)
+  }, [ocakTepki])
 
   const isClosing = phase === 'campfire_close'
   const label = isClosing ? 'Kapanis Ates Basi' : 'Ates Basi'
@@ -54,6 +63,9 @@ export const CampfireScene: React.FC = () => {
       <div className="cf-glow" />
       <div className="cf-vignette" />
       <div className="cf-noise" />
+
+      {/* Ocak tepki flash */}
+      {showFlash && <div className="ocak-flash" />}
 
       {/* Top bar */}
       <header className="cf-topbar">

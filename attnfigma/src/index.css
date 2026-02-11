@@ -941,3 +941,114 @@ html, body {
     height: 200px;
   }
 }
+
+/* ========================================
+   KATMAN 1 — Spotlight, Sinama, Tepki
+   ======================================== */
+
+/* --- Spotlight Card Overlay --- */
+.spotlight-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 3, 2, 0.85);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.5s ease-out;
+}
+
+.spotlight-card {
+  max-width: 420px;
+  width: 90%;
+  padding: 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,191,0,0.04) 100%);
+  border: 1px solid rgba(255,191,0,0.15);
+  backdrop-filter: blur(12px);
+}
+
+.spotlight-truth {
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 0.4rem;
+  border-left: 2px solid rgba(255,191,0,0.3);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.spotlight-agenda {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255,191,0,0.04);
+  border: 1px solid rgba(255,191,0,0.1);
+}
+
+.spotlight-oath {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255,140,0,0.08) 0%, rgba(180,80,0,0.06) 100%);
+  border: 1px solid rgba(255,191,0,0.2);
+  box-shadow: 0 0 20px rgba(255,191,0,0.05);
+}
+
+/* --- Ocak Tepki Flash --- */
+.ocak-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  animation: ocakFlash 3s ease-out forwards;
+}
+
+@keyframes ocakFlash {
+  0% {
+    opacity: 0;
+    background: transparent;
+  }
+  5% {
+    opacity: 1;
+    background: radial-gradient(
+      ellipse at center bottom,
+      rgba(255, 140, 0, 0.25) 0%,
+      rgba(255, 60, 0, 0.12) 30%,
+      transparent 70%
+    );
+  }
+  15% {
+    opacity: 0.6;
+    background: radial-gradient(
+      ellipse at center bottom,
+      rgba(255, 140, 0, 0.15) 0%,
+      rgba(255, 80, 0, 0.08) 30%,
+      transparent 70%
+    );
+  }
+  100% {
+    opacity: 0;
+    background: transparent;
+  }
+}
+
+/* --- Tepki Chat Bubble --- */
+.cf-bubble.tepki {
+  align-self: center;
+  max-width: 85%;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255,140,0,0.08) 0%, rgba(180,60,0,0.06) 100%);
+  border: 1px solid rgba(255,140,0,0.2);
+  box-shadow: 0 0 15px rgba(255,140,0,0.1);
+  animation: tepkiPulse 2s ease-in-out;
+}
+
+@keyframes tepkiPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(255,140,0,0.1);
+  }
+  30% {
+    box-shadow: 0 0 30px rgba(255,140,0,0.25);
+  }
+}

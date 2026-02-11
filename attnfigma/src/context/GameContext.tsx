@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import type {
   Phase, GamePlayer, ChatMessage, VoteEntry, LocationDecision,
   WorldSeed, InputAction, HouseVisitState, Omen,
+  SpotlightCard, SinamaEvent, SinamaType, OcakTepki,
 } from '../types/game'
 import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
 import { useAudioQueue } from '../hooks/useAudioQueue'
@@ -46,6 +47,11 @@ interface GameState {
   exiledRole: string | null
   winner: string | null
   allPlayersReveal: GamePlayer[] | null
+
+  // Katman 1
+  spotlightCards: SpotlightCard[]
+  sinama: SinamaEvent | null
+  ocakTepki: OcakTepki | null
 
   // UI
   inputRequired: InputAction | null
@@ -94,6 +100,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     exiledRole: null,
     winner: null,
     allPlayersReveal: null,
+    spotlightCards: [],
+    sinama: null,
+    ocakTepki: null,
     inputRequired: null,
   })
 
@@ -126,6 +135,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           votes: [],
           exiledName: null,
           exiledType: null,
+          spotlightCards: [],
+          sinama: null,
+          ocakTepki: null,
           exiledRole: null,
           inputRequired: null,
         } : {}),
@@ -139,6 +151,55 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...prev,
         morningText: (data.content as string) ?? '',
         omens,
+      }))
+    }))
+
+    // sinama → daily atmospheric test event (Katman 1)
+    unsubs.push(ws.onEvent('sinama', (data) => {
+      setState(prev => ({
+        ...prev,
+        sinama: {
+          type: data.type as SinamaType,
+          title: data.title as string,
+          content: data.content as string,
+          icon: data.icon as string,
+        },
+      }))
+    }))
+
+    // spotlight_cards → spotlight cards for morning display (Katman 1)
+    unsubs.push(ws.onEvent('spotlight_cards', (data) => {
+      const rawCards = (data.cards as Array<{
+        player_name: string; truths: string[]; agenda: string; oath: string
+      }>) ?? []
+      const cards: SpotlightCard[] = rawCards.map(c => ({
+        playerName: c.player_name,
+        truths: [c.truths[0] ?? '', c.truths[1] ?? ''] as [string, string],
+        agenda: c.agenda ?? '',
+        oath: c.oath ?? '',
+      }))
+      setState(prev => ({ ...prev, spotlightCards: cards }))
+    }))
+
+    // ocak_tepki → contradiction spark during campfire (Katman 1)
+    unsubs.push(ws.onEvent('ocak_tepki', (data) => {
+      msgCounter.current++
+      setState(prev => ({
+        ...prev,
+        messages: [...prev.messages, {
+          id: `ws-tepki-${msgCounter.current}`,
+          sender: 'Ocak',
+          text: data.message as string,
+          isSelf: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }],
+        ocakTepki: {
+          speaker: data.speaker as string,
+          type: 'kivilcim' as const,
+          message: data.message as string,
+          contradictionHint: data.contradiction_hint as string | undefined,
+        },
       }))
     }))
 

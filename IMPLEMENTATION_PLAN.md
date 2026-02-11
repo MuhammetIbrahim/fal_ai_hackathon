@@ -65,25 +65,33 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 
 **Hedef:** Konusmalara yapi ve yakalanabilirlik ekle.
 
-### 1.1 Spotlight Sahne Kartlari
-- [ ] `game.py` — her gun 2-3 oyuncu spotlight sec
-- [ ] Spotlight karti uret: 2 Gercek + 1 Gundem Cumlesi + 1 Yemin Cumlesi
-- [ ] `game_loop.py` — campfire basinda spotlight kartini broadcast et
-- [ ] LLM oyuncular icin prompt'a spotlight karti ekle
-- [ ] Frontend `CampfireScene.tsx` — spotlight karti UI (insan oyuncu icin)
-- [ ] Frontend `types/game.ts` — SpotlightCard tipi
+### 1.1 Spotlight Sahne Kartlari (TAMAMLANDI)
+- [x] `game.py` — her gun 2-3 oyuncu spotlight sec (`generate_spotlight_cards()`)
+- [x] Spotlight karti uret: 2 Gercek + 1 Gundem Cumlesi + 1 Yemin Cumlesi (paralel LLM)
+- [x] `game_loop.py` — morning sonrasi spotlight kartlarini broadcast et
+- [x] LLM oyuncular icin prompt'a spotlight karti ekle (`_build_spotlight_context()` + CHARACTER_WRAPPER)
+- [x] Frontend `SpotlightCardDisplay.tsx` — spotlight karti overlay carousel (auto-cycle 6s, kendi kartin altin glow)
+- [x] Frontend `types/game.ts` — SpotlightCard tipi
+- [x] Frontend `GameContext.tsx` — spotlightCards state + WS handler
+- [x] Frontend `MorningScene.tsx` — sinama bittikten 2s sonra spotlight overlay
 
-### 1.2 Sinama Event'i (gunde 1)
-- [ ] `game.py` — 3 sinama tipi: Esik Haritasi, Kor Bedeli, Sessiz Soru
-- [ ] `game_loop.py` — morning sonrasi sinama broadcast
-- [ ] Frontend `MorningScene.tsx` — sinama event gosterimi
-- [ ] Frontend `types/game.ts` — SinamaEvent tipi
+### 1.2 Sinama Event'i (gunde 1) (TAMAMLANDI)
+- [x] `game.py` — 3 sinama tipi: Esik Haritasi, Kor Bedeli, Sessiz Soru (`generate_sinama_event()`)
+- [x] `data.json` — sinama_types eklendi (id, label, icon, prompt_hint)
+- [x] `game_loop.py` — morning sonrasi sinama broadcast
+- [x] Frontend `MorningScene.tsx` — sinama event typewriter gosterimi (omen bardan 2s sonra)
+- [x] Frontend `types/game.ts` — SinamaEvent + SinamaType tipi
+- [x] Frontend `GameContext.tsx` — sinama state + WS handler
 
-### 1.3 Ocak Tepkisi (T1 + Kivilcim)
-- [ ] `game_loop.py` — campfire speech sonrasi T1 tutarsizlik tespiti (LLM-based)
-- [ ] Tetikleyici: kamu canon ile acik celisen kesin iddia
-- [ ] Tepki: "Ocak kisa kivilcim atti; kalabalik huzursuzlandi."
-- [ ] Frontend — kivilcim animasyonu (campfire'da flash efekt)
+### 1.3 Ocak Tepkisi (T1 + Kivilcim) (TAMAMLANDI)
+- [x] `game.py` — `check_ocak_tepki()` Flash LLM ile celiski tespiti
+- [x] `game_loop.py` — campfire speech sonrasi T1 tutarsizlik tespiti (her konusmadan sonra)
+- [x] Tetikleyici: kamu canon ile acik celisen kesin iddia
+- [x] Tepki: narrator mesaji + contradiction hint
+- [x] Frontend `CampfireScene.tsx` — kivilcim flash overlay (3s animasyon)
+- [x] Frontend `ChatLog.tsx` — tepki bubble (sender === 'Ocak' → turuncu/altin ozel stil)
+- [x] Frontend `GameContext.tsx` — ocakTepki state + WS handler
+- [x] Frontend `index.css` — `.ocak-flash`, `.cf-bubble.tepki`, `@keyframes ocakFlash/tepkiPulse`
 
 ---
 
@@ -185,8 +193,8 @@ Katman 0.2 (karakter karti)      ███████████████�
 Katman 0.3 (kurum dagilimi)      ████████████████████ TAMAM
 Katman 0.4 (alamet sistemi)      ████████████████████ TAMAM
 Katman 0.5 (e2e test)            ████████████████████ TAMAM
-Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ sirada <<<
-Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ baslamadi
+Katman 1   (spotlight + sinama)  ████████████████████ TAMAM
+Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ sirada <<<
 Katman 3   (gece + politik)      ░░░░░░░░░░░░░░░░░░░ baslamadi
 ```
 

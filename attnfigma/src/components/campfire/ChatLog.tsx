@@ -22,15 +22,18 @@ export const ChatLog: React.FC<ChatLogProps> = ({ messages }) => {
 
     return (
         <div className="cf-chat-log">
-            {messages.map((msg) => (
-                <div
-                    key={msg.id}
-                    className={`cf-bubble ${msg.isSystem ? 'system' : msg.isSelf ? 'self' : 'other'}`}
-                >
-                    <span className="cf-bubble-sender">{msg.sender}</span>
-                    <p className="cf-bubble-text">{msg.text}</p>
-                </div>
-            ))}
+            {messages.map((msg) => {
+                const isTepki = msg.isSystem && msg.sender === 'Ocak'
+                return (
+                    <div
+                        key={msg.id}
+                        className={`cf-bubble ${isTepki ? 'tepki' : msg.isSystem ? 'system' : msg.isSelf ? 'self' : 'other'}`}
+                    >
+                        <span className="cf-bubble-sender">{msg.sender}</span>
+                        <p className="cf-bubble-text">{msg.text}</p>
+                    </div>
+                )
+            })}
             <div ref={bottomRef} />
         </div>
     );

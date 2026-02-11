@@ -100,6 +100,31 @@ export interface Omen {
   icon: string
 }
 
+// ── Katman 1 Types ──────────────────────────────────
+
+export interface SpotlightCard {
+  playerName: string
+  truths: [string, string]
+  agenda: string
+  oath: string
+}
+
+export type SinamaType = 'esik_haritasi' | 'kor_bedeli' | 'sessiz_soru'
+
+export interface SinamaEvent {
+  type: SinamaType
+  title: string
+  content: string
+  icon: string
+}
+
+export interface OcakTepki {
+  speaker: string
+  type: 'kivilcim'
+  message: string
+  contradictionHint?: string
+}
+
 export interface HouseVisitState {
   visitor: string
   host: string

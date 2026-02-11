@@ -121,6 +121,7 @@ SKILL_TIERS = DATA["skill_tiers"]
 NAMES_POOL = DATA["names_pool"]
 INSTITUTIONS = DATA["institutions"]
 OMENS = DATA["omens"]
+SINAMA_TYPES = DATA.get("sinama_types", [])
 
 
 # ══════════════════════════════════════════════════════
@@ -671,6 +672,7 @@ Hayattaki kisiler: {alive_names}
 {exiled_context}
 {cumulative_context}
 {card_context}
+{spotlight_context}
 Soz hakki sana geldi.
 
 BU BIR SES OYUNU — YASAKLAR:
@@ -834,6 +836,32 @@ def _build_card_context(player: Player) -> str:
     return "\n".join(parts) if parts else ""
 
 
+def _build_spotlight_context(player: Player, state: GameState) -> str:
+    """Spotlight kart bilgisini campfire prompt'una ekle."""
+    cards = state.get("_spotlight_cards", [])
+    if not cards:
+        return ""
+
+    # Bu oyuncunun kendi kartı var mı?
+    own_card = None
+    other_names = []
+    for c in cards:
+        if c["player_name"] == player.name:
+            own_card = c
+        else:
+            other_names.append(c["player_name"])
+
+    parts = []
+    if own_card:
+        parts.append("SAHNE ISIGINDA SEN VARSIN — bu turda senden beklenen:")
+        parts.append(f"  Gundem: {own_card['agenda']}")
+        parts.append(f"  Yemin cumlen (bunu soyle): \"{own_card['oath']}\"")
+    if other_names:
+        parts.append(f"Sahne isigindaki diger kisiler: {', '.join(other_names)}")
+
+    return "\n".join(parts) if parts else ""
+
+
 async def _character_speak(player: Player, state: GameState) -> str:
     history_text = _format_campfire_context(state, viewer=player.name)
     alive_names = ", ".join(get_alive_names(state))
@@ -855,6 +883,7 @@ async def _character_speak(player: Player, state: GameState) -> str:
         exiled_context=_get_exiled_context(state),
         cumulative_context=cumulative_context,
         card_context=_build_card_context(player),
+        spotlight_context=_build_spotlight_context(player, state),
         history=history_text,
         own_last=own_last,
         name=player.name,
@@ -2038,6 +2067,216 @@ async def run_full_game(state: GameState) -> GameState:
     print(f"\n  Game log → {OUTPUT_PATH}")
 
     return state
+
+
+# ══════════════════════════════════════════════════════
+#  9. KATMAN 1 — SPOTLIGHT + SINAMA + OCAK TEPKISI
+# ══════════════════════════════════════════════════════
+
+SPOTLIGHT_SYSTEM = """Sen bir oyun tasarimcisisin. Bir karakter icin "sahne isigi karti" ureteceksin.
+Kart 4 alandan olusur — SADECE JSON dondur, baska hicbir sey yazma:
+{
+  "truths": ["gercek1", "gercek2"],
+  "agenda": "gundem cumlesi",
+  "oath": "yemin cumlesi"
+}
+
+truths: Karakterin gecmisi, meslek veya davranisiyla ilgili 2 dogru bilgi. Test edilebilir olmali.
+agenda: Bu turda konusmayi yonlendirmesi gereken konu (1 cumle).
+oath: Ocagin onunde soylecegi yemin cumlesi — iddiali, dogrulanabilir (1 cumle)."""
+
+SINAMA_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir "sinama" olayini 2-3 cumleyle anlat.
+Sade, gotik, kisa. Edebiyat yapma. Sadece olayı anlat. Turkce yaz."""
+
+TEPKI_SYSTEM = """Bir konusmayi analiz et. Kamu bilgisiyle ACIKCA celisen KESIN bir iddia var mi?
+
+KURALLAR:
+- SADECE kesin, dogrudan celiskiler icin "true" de.
+- Belirsiz, dolayli veya yoruma acik durumlar icin "false" de.
+- Kisi sadece farkli bir konu actiysa bu celiski DEGILDIR.
+- Kisi onceki sozlerinin TERSINI soyluyorsa bu celiskidir.
+
+SADECE JSON dondur:
+{"contradiction": true/false, "hint": "kisa aciklama"}"""
+
+
+async def generate_spotlight_cards(state: GameState) -> list[dict]:
+    """Her gun 2-3 oyuncu icin spotlight karti uret."""
+    alive = get_alive_players(state)
+    if len(alive) < 2:
+        return []
+
+    # Daha once spotlight olmamis oyunculari oncelikle sec
+    prev_spotlight = set(state.get("_spotlight_history", []))
+    candidates = [p for p in alive if p.name not in prev_spotlight]
+    if len(candidates) < 2:
+        candidates = list(alive)  # Herkes en az 1 kez olduysa sifirla
+
+    # Deterministik secim: 2-3 kisi
+    round_n = state.get("round_number", 1)
+    rng = random_module.Random(f"spotlight_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+    count = min(rng.choice([2, 3]), len(candidates))
+    selected = rng.sample(candidates, count)
+
+    # Gunun alametleri
+    day_omens = state.get("_day_omens", [])
+    omen_text = ", ".join(o["label"] for o in day_omens) if day_omens else "yok"
+
+    # Paralel LLM cagrilari
+    async def _gen_card(player: Player) -> dict:
+        prompt = (
+            f"Karakter: {player.name}, {player.role_title}\n"
+            f"Kurum: {player.institution_label or 'yok'}\n"
+            f"Alibi: {player.alibi_anchor or 'yok'}\n"
+            f"Konusma tarzi: {player.speech_color or 'yok'}\n"
+            f"Gunun alametleri: {omen_text}\n\n"
+            f"Bu karakter icin sahne isigi karti uret."
+        )
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=SPOTLIGHT_SYSTEM,
+            model=MODEL,
+            temperature=0.8,
+        )
+        try:
+            raw = result.output.strip()
+            # JSON cikar
+            start = raw.find("{")
+            end = raw.rfind("}") + 1
+            if start >= 0 and end > start:
+                card = json.loads(raw[start:end])
+                return {
+                    "player_name": player.name,
+                    "truths": card.get("truths", ["", ""])[:2],
+                    "agenda": card.get("agenda", ""),
+                    "oath": card.get("oath", ""),
+                }
+        except (json.JSONDecodeError, KeyError):
+            pass
+        # Fallback
+        return {
+            "player_name": player.name,
+            "truths": [f"{player.name} gecmisini paylasmaktan cekinir.", f"{player.institution_label or player.role_title} gorevi agir sorumluluk tasir."],
+            "agenda": "Konusmayi alibi konusuna yonlendir.",
+            "oath": f"Yemin ederim ki gorduklarimi saklayan ben degilim.",
+        }
+
+    cards = await asyncio.gather(*[_gen_card(p) for p in selected])
+    cards = list(cards)
+
+    # State'e kaydet
+    state["_spotlight_cards"] = cards
+    # Spotlight gecmisine ekle
+    history = state.get("_spotlight_history", [])
+    history.extend(c["player_name"] for c in cards)
+    state["_spotlight_history"] = history
+
+    print(f"  [Spotlight] {len(cards)} kart uretildi: {', '.join(c['player_name'] for c in cards)}")
+    return cards
+
+
+async def generate_sinama_event(state: GameState) -> dict | None:
+    """Gunluk sinama eventi uret (3 tipten 1)."""
+    if not SINAMA_TYPES:
+        return None
+
+    round_n = state.get("round_number", 1)
+    rng = random_module.Random(f"sinama_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+    sinama_type = rng.choice(SINAMA_TYPES)
+
+    day_omens = state.get("_day_omens", [])
+    omen_text = ", ".join(o["label"] for o in day_omens) if day_omens else "yok"
+
+    settlement = state.get("world_seed", {}).get("place_variants", {}).get("settlement_name", "Yerlesim")
+
+    prompt = (
+        f"Sinama tipi: {sinama_type['label']}\n"
+        f"Ipucu: {sinama_type['prompt_hint']}\n"
+        f"Yerlesim: {settlement}\n"
+        f"Gun: {round_n}\n"
+        f"Gunun alametleri: {omen_text}\n\n"
+        f"Bu sinama olayini 2-3 cumleyle anlat."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=SINAMA_SYSTEM,
+        model=MODEL,
+        temperature=0.7,
+    )
+
+    sinama = {
+        "type": sinama_type["id"],
+        "title": sinama_type["label"],
+        "content": result.output.strip(),
+        "icon": sinama_type["icon"],
+    }
+
+    state["_sinama"] = sinama
+    print(f"  [Sinama] {sinama_type['label']}: {sinama['content'][:60]}...")
+    return sinama
+
+
+async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> dict | None:
+    """Campfire konusmasi sonrasi celiski kontrolu (Flash LLM)."""
+    # Kamu canon ozeti: son surgunler + onceki iddialar
+    canon_parts = []
+
+    # Surgun gecmisi
+    exiled = [m for m in state.get("messages", []) if isinstance(m, dict) and m.get("type") == "exile"]
+    for e in exiled[-3:]:
+        canon_parts.append(f"- {e.get('name', '?')} surgun edildi (Gun {e.get('round', '?')})")
+
+    # Son campfire ozetinden
+    summary = state.get("campfire_rolling_summary", "")
+    if summary:
+        canon_parts.append(f"Campfire ozeti: {summary[:500]}")
+
+    # Konusanin onceki sozleri
+    own_speeches = [
+        m["content"] for m in state["campfire_history"]
+        if m.get("type") == "speech" and m.get("name") == speaker_name
+    ][-3:]
+    if own_speeches:
+        canon_parts.append(f"{speaker_name}'in onceki sozleri: " + " | ".join(own_speeches))
+
+    if not canon_parts:
+        return None  # Henuz yeterli canon yok
+
+    canon = "\n".join(canon_parts)
+
+    prompt = (
+        f"KONUSMA ({speaker_name}):\n\"{speech}\"\n\n"
+        f"KAMU BILGISI:\n{canon}\n\n"
+        f"Bu konusmada kamu bilgisiyle celisen kesin bir iddia var mi?"
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=TEPKI_SYSTEM,
+        model=MODEL,
+        temperature=0.2,
+    )
+
+    try:
+        raw = result.output.strip()
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start >= 0 and end > start:
+            data = json.loads(raw[start:end])
+            if data.get("contradiction") is True:
+                hint = data.get("hint", "")
+                print(f"  [Ocak Tepki] KIVILCIM! {speaker_name}: {hint}")
+                return {
+                    "speaker": speaker_name,
+                    "type": "kivilcim",
+                    "message": "Ocak kisa kivilcim atti; kalabalik huzursuzlandi.",
+                    "contradiction_hint": hint,
+                }
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+    return None
 
 
 # ══════════════════════════════════════════════════════

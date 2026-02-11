@@ -1,17 +1,35 @@
 import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
+import { SpotlightCardDisplay } from '../components/spotlight/SpotlightCardDisplay'
+import type { SinamaType } from '../types/game'
+
+function getSinamaColor(type: SinamaType): string {
+  switch (type) {
+    case 'esik_haritasi': return 'rgba(255,191,0,0.7)'
+    case 'kor_bedeli': return 'rgba(211,47,47,0.7)'
+    case 'sessiz_soru': return 'rgba(120,160,200,0.7)'
+  }
+}
 
 export const MorningScene: React.FC = () => {
-  const { round, dayLimit, morningText, omens } = useGame()
+  const { round, dayLimit, morningText, omens, sinama, spotlightCards, selfPlayerName } = useGame()
   const [displayed, setDisplayed] = useState('')
   const [showOmens, setShowOmens] = useState(false)
   const [cursorVisible, setCursorVisible] = useState(true)
+
+  // Katman 1 state
+  const [showSinama, setShowSinama] = useState(false)
+  const [sinamaDisplayed, setSinamaDisplayed] = useState('')
+  const [showSpotlight, setShowSpotlight] = useState(false)
 
   // Typewriter efekti
   useEffect(() => {
     if (!morningText) return
     setDisplayed('')
     setShowOmens(false)
+    setShowSinama(false)
+    setSinamaDisplayed('')
+    setShowSpotlight(false)
     setCursorVisible(true)
     let i = 0
     const iv = setInterval(() => {
@@ -27,6 +45,41 @@ export const MorningScene: React.FC = () => {
     }, 30)
     return () => clearInterval(iv)
   }, [morningText])
+
+  // Show sinama after omens appear
+  useEffect(() => {
+    if (showOmens && sinama) {
+      const delay = setTimeout(() => setShowSinama(true), 2000)
+      return () => clearTimeout(delay)
+    }
+  }, [showOmens, sinama])
+
+  // Sinama typewriter
+  useEffect(() => {
+    if (!showSinama || !sinama) return
+    setSinamaDisplayed('')
+    let i = 0
+    const iv = setInterval(() => {
+      i++
+      setSinamaDisplayed(sinama.content.slice(0, i))
+      if (i >= sinama.content.length) {
+        clearInterval(iv)
+        // After sinama finishes, show spotlight cards
+        if (spotlightCards.length > 0) {
+          setTimeout(() => setShowSpotlight(true), 2000)
+        }
+      }
+    }, 25)
+    return () => clearInterval(iv)
+  }, [showSinama, sinama, spotlightCards.length])
+
+  // If no sinama but spotlight cards exist, show them after omens
+  useEffect(() => {
+    if (showOmens && !sinama && spotlightCards.length > 0) {
+      const delay = setTimeout(() => setShowSpotlight(true), 3000)
+      return () => clearTimeout(delay)
+    }
+  }, [showOmens, sinama, spotlightCards.length])
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
@@ -94,7 +147,33 @@ export const MorningScene: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Sinama Event (Katman 1) */}
+        {showSinama && sinama && (
+          <div className="mt-8 animate-fade-in">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-xl" style={{ filter: 'drop-shadow(0 0 4px rgba(255,191,0,0.3))' }}>
+                {sinama.icon}
+              </span>
+              <span className="text-[10px] uppercase tracking-[3px] font-semibold"
+                    style={{ color: getSinamaColor(sinama.type) }}>
+                {sinama.title}
+              </span>
+            </div>
+            <p className="text-sm text-text-primary/80 leading-relaxed italic max-w-md mx-auto">
+              {sinamaDisplayed}
+              {sinamaDisplayed.length < sinama.content.length && (
+                <span className="animate-pulse text-accent ml-0.5">|</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Spotlight Cards Overlay (Katman 1) */}
+      {showSpotlight && spotlightCards.length > 0 && (
+        <SpotlightCardDisplay cards={spotlightCards} selfPlayerName={selfPlayerName} />
+      )}
 
       {/* Waiting indicator */}
       {!morningText && (
