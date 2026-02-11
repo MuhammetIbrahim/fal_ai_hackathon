@@ -8,7 +8,11 @@ import { OmenBar } from '../components/campfire/OmenBar'
 import { GameObjects } from '../components/campfire/GameObjects'
 
 export const CampfireScene: React.FC = () => {
-  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, ocakTepki, kulKaymasi, uiObjects } = useGame()
+  const {
+    phase, round, messages, players, worldSeed, inputRequired, sendSpeak,
+    ocakTepki, kulKaymasi, uiObjects,
+    proposal, proposalResult, omenInterpretation, sozBorcu, sendProposalVote,
+  } = useGame()
   const [inputText, setInputText] = useState('')
   const [showFlash, setShowFlash] = useState(false)
   const [showKulFlash, setShowKulFlash] = useState(false)
@@ -87,6 +91,85 @@ export const CampfireScene: React.FC = () => {
         </div>
         <OmenBar />
       </header>
+
+      {/* Soz Borcu Banner (Katman 4) */}
+      {sozBorcu && sozBorcu.forcedSpeakers.length > 0 && (
+        <div className="relative z-10 flex items-center justify-center gap-2 px-4 py-2"
+             style={{ background: 'rgba(211,47,47,0.06)', borderBottom: '1px solid rgba(211,47,47,0.1)' }}>
+          <span className="text-xs text-warden-alert/60">&#9888;</span>
+          <span className="text-xs text-warden-alert/60">
+            Soz Borcu: {sozBorcu.forcedSpeakers.join(', ')} konusmak zorunda
+          </span>
+          {sozBorcu.damgali.length > 0 && (
+            <span className="text-[10px] text-warden-alert/80 ml-2 px-2 py-0.5 rounded bg-warden-alert/10 font-semibold">
+              Damga: {sozBorcu.damgali.join(', ')}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Omen Interpretation (Katman 4) */}
+      {omenInterpretation && (
+        <div className="relative z-10 px-6 py-3" style={{ background: 'rgba(255,191,0,0.03)', borderBottom: '1px solid rgba(255,191,0,0.08)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">{omenInterpretation.omen.icon}</span>
+            <span className="text-[10px] uppercase tracking-[2px] text-accent/50 font-semibold">
+              Alamet Yorumu — {omenInterpretation.omen.label}
+            </span>
+          </div>
+          <div className="space-y-1 max-h-20 overflow-y-auto">
+            {omenInterpretation.interpretations.map((interp, i) => (
+              <p key={i} className="text-[11px] text-text-secondary/60">
+                <span className="text-accent/50 font-medium">{interp.speaker}:</span> {interp.text}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Proposal Card (Katman 4) */}
+      {proposal && !proposalResult && (
+        <div className="relative z-10 px-6 py-3" style={{ background: 'rgba(100,130,200,0.04)', borderBottom: '1px solid rgba(100,130,200,0.1)' }}>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-base">&#9878;</span>
+            <span className="text-[10px] uppercase tracking-[2px] text-[#8090cc]/60 font-semibold">Kamusal Onerge</span>
+          </div>
+          <p className="text-sm text-text-primary/80 mb-2">{proposal.proposalText}</p>
+          {inputRequired?.type === 'proposal_vote' ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => sendProposalVote('a')}
+                className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                style={{ background: 'rgba(67,160,71,0.1)', border: '1px solid rgba(67,160,71,0.2)', color: '#43A047' }}
+              >
+                A: {proposal.optionA}
+              </button>
+              <button
+                onClick={() => sendProposalVote('b')}
+                className="flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all"
+                style={{ background: 'rgba(211,47,47,0.1)', border: '1px solid rgba(211,47,47,0.2)', color: '#D32F2F' }}
+              >
+                B: {proposal.optionB}
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3 text-xs text-text-secondary/50">
+              <span>A: {proposal.optionA}</span>
+              <span>B: {proposal.optionB}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Proposal Result (Katman 4) */}
+      {proposalResult && (
+        <div className="relative z-10 px-6 py-2 flex items-center justify-center gap-3"
+             style={{ background: 'rgba(100,130,200,0.04)', borderBottom: '1px solid rgba(100,130,200,0.08)' }}>
+          <span className="text-xs text-[#8090cc]/60">Onerge Sonucu:</span>
+          <span className="text-xs text-text-primary/80 font-semibold">{proposalResult.winnerText}</span>
+          <span className="text-[10px] text-text-secondary/40">({proposalResult.aCount} vs {proposalResult.bCount})</span>
+        </div>
+      )}
 
       {/* Main content */}
       <div className="cf-body">

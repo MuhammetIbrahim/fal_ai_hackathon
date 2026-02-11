@@ -13,7 +13,7 @@ function getSinamaColor(type: SinamaType): string {
 }
 
 export const MorningScene: React.FC = () => {
-  const { round, dayLimit, morningText, omens, sinama, spotlightCards, selfPlayerName, miniEvent } = useGame()
+  const { round, dayLimit, morningText, omens, sinama, spotlightCards, selfPlayerName, miniEvent, morningCrisis } = useGame()
   const [displayed, setDisplayed] = useState('')
   const [showOmens, setShowOmens] = useState(false)
   const [cursorVisible, setCursorVisible] = useState(true)
@@ -23,6 +23,8 @@ export const MorningScene: React.FC = () => {
   const [sinamaDisplayed, setSinamaDisplayed] = useState('')
   const [showMiniEvent, setShowMiniEvent] = useState(false)
   const [showSpotlight, setShowSpotlight] = useState(false)
+  // Katman 4 state
+  const [showCrisis, setShowCrisis] = useState(false)
 
   // Typewriter efekti
   useEffect(() => {
@@ -33,6 +35,7 @@ export const MorningScene: React.FC = () => {
     setSinamaDisplayed('')
     setShowMiniEvent(false)
     setShowSpotlight(false)
+    setShowCrisis(false)
     setCursorVisible(true)
     let i = 0
     const iv = setInterval(() => {
@@ -77,6 +80,20 @@ export const MorningScene: React.FC = () => {
     }, 25)
     return () => clearInterval(iv)
   }, [showSinama, sinama, spotlightCards.length])
+
+  // Show crisis after sınama finishes (or after mini event if no sınama)
+  useEffect(() => {
+    if (morningCrisis && !showCrisis) {
+      // Show crisis after sınama typewriter completes, or after omens if no sınama
+      if (showSinama && sinamaDisplayed.length >= (sinama?.content.length ?? 0)) {
+        const delay = setTimeout(() => setShowCrisis(true), 1500)
+        return () => clearTimeout(delay)
+      } else if (showOmens && !sinama) {
+        const delay = setTimeout(() => setShowCrisis(true), 2000)
+        return () => clearTimeout(delay)
+      }
+    }
+  }, [morningCrisis, showCrisis, showSinama, sinamaDisplayed, sinama, showOmens])
 
   // Show spotlight after mini event
   useEffect(() => {
@@ -187,6 +204,34 @@ export const MorningScene: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Morning Crisis (Katman 4) */}
+      {showCrisis && morningCrisis && (
+        <div className="relative z-10 mt-6 max-w-lg mx-auto px-8 animate-fade-in">
+          <div className="crisis-card px-5 py-4 rounded-xl"
+               style={{
+                 background: 'linear-gradient(135deg, rgba(211,47,47,0.06) 0%, rgba(139,0,0,0.04) 100%)',
+                 border: '1px solid rgba(211,47,47,0.15)',
+               }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-lg" style={{ filter: 'drop-shadow(0 0 4px rgba(211,47,47,0.5))' }}>&#9888;</span>
+              <span className="text-[10px] uppercase tracking-[3px] text-warden-alert/60 font-semibold">Sabah Krizi</span>
+            </div>
+            <p className="text-sm text-text-primary/80 leading-relaxed mb-3">{morningCrisis.crisisText}</p>
+            {morningCrisis.publicQuestion && (
+              <p className="text-xs text-warden-alert/70 italic mb-3">"{morningCrisis.publicQuestion}"</p>
+            )}
+            {morningCrisis.whispers.length > 0 && (
+              <div className="space-y-1 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <p className="text-[9px] uppercase tracking-[2px] text-text-secondary/30 font-semibold">Fisildantilar</p>
+                {morningCrisis.whispers.map((w, i) => (
+                  <p key={i} className="text-[11px] text-text-secondary/50 italic">"{w}"</p>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mini Event Card (Katman 2) */}
       {showMiniEvent && miniEvent && (

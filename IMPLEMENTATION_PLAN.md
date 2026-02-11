@@ -141,37 +141,37 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 
 **Hedef:** Politik motoru tam calistir. Gece fazi ekle. Oylamaya derinlik kat.
 
-### 3.1 Gece Fazı — Sis Hattı
-- [ ] Yeni phase: `night` (vote sonrasi, morning oncesi)
-- [ ] Her gece herkes 1 hamle secer (gizli):
+### 3.1 Gece Fazı — Sis Hattı (TAMAMLANDI)
+- [x] Yeni phase: `night` (vote sonrasi, morning oncesi)
+- [x] Her gece herkes 1 hamle secer (gizli):
   - **Itibar Kirigi**: Hedef oyuncuya verilen oylar ertesi gun 2x sayilir
   - **Gundem Kaydirma**: Ertesi gunun sinama tipini etkileme
   - **Sahte Iz**: Bir UI objesinde yaniltici degisiklik yaratir
-- [ ] En cok secilen hamle "gecenin sonucu" olur
-- [ ] Sonuc ertesi gunun krizine / mini event zincirine donusur
-- [ ] Frontend `NightScene.tsx` — gece entrika UI (3 secenekli kart)
-- [ ] `game.py` — `resolve_night_phase()` hamle toplama + sonuc hesaplama
-- [ ] `game_loop.py` — night phase WS akisi
+- [x] En cok secilen hamle "gecenin sonucu" olur
+- [x] Sonuc ertesi gunun krizine / mini event zincirine donusur
+- [x] Frontend `NightScene.tsx` — gece entrika UI (3 secenekli kart)
+- [x] `game.py` — `resolve_night_phase()` hamle toplama + sonuc hesaplama
+- [x] `game_loop.py` — night phase WS akisi
 
-### 3.2 Kamu Baskısı + Kalkan
-- [ ] Hedef: 1 oyuncu, vote'ta +1 oy etkisi (2x oy)
-- [ ] Ayni hedefe ust uste uygulanamaz
-- [ ] Baski altindaki oyuncu campfire'da 1 ekstra konusma hakki
-- [ ] **Kalkan**: Oyuncu 1 kez kullanabilir, 2x oyu iptal eder
+### 3.2 Kamu Baskısı + Kalkan (TAMAMLANDI)
+- [x] Hedef: 1 oyuncu, vote'ta +1 oy etkisi (2x oy)
+- [x] Ayni hedefe ust uste uygulanamaz
+- [x] Baski altindaki oyuncu campfire'da 1 ekstra konusma hakki
+- [x] **Kalkan**: Oyuncu 1 kez kullanabilir, 2x oyu iptal eder
   - Kalkan kullaniminin kendisi "politik iz" birakir
-- [ ] Frontend `VoteScene.tsx` — baski gostergesi (+1 badge) + kalkan butonu
-- [ ] `game.py` — baski + kalkan state yonetimi
+- [x] Frontend `VoteScene.tsx` — baski gostergesi (+1 badge) + kalkan butonu
+- [x] `game.py` — baski + kalkan state yonetimi
 
-### 3.3 Tam UI Obje Seti
-- [ ] 12 zorunlu objenin tamami aktif
-- [ ] 8 zenginlestirici opsiyonel obje
-- [ ] Gun bazli 2-3 obje "aktif", geri kalani gizli/dim
-- [ ] Objeler gece hamlelerine baglanir (Sahte Iz → obje degisikligi)
+### 3.3 Tam UI Obje Seti (TAMAMLANDI)
+- [x] 12 zorunlu objenin tamami aktif
+- [x] 8 zenginlestirici opsiyonel obje
+- [x] Gun bazli 2-3 obje "aktif", geri kalani gizli/dim
+- [x] Objeler gece hamlelerine baglanir (Sahte Iz → obje degisikligi)
 
-### 3.4 Alamet — Oyuncu Secimi
-- [ ] Gece fazinda 3 alametin 1'ini oyuncular secer
-- [ ] Zincir: alamet → mini event → campfire sorusu
-- [ ] Secilen alametin ertesi gun tonu ve krizi uzerinde etkisi var
+### 3.4 Alamet — Oyuncu Secimi (TAMAMLANDI)
+- [x] Gece fazinda 3 alametin 1'ini oyuncular secer
+- [x] Zincir: alamet → mini event → campfire sorusu
+- [x] Secilen alametin ertesi gun tonu ve krizi uzerinde etkisi var
 
 ---
 
@@ -179,55 +179,57 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 
 **Hedef:** Oyun deneyimini "tam sahne" hissine getir. Her gun kendi hikayesini anlatsin.
 
-### 4.1 Buyuk Kriz Event (Sabah Krizi)
-- [ ] Her sabah 1 "buyuk kriz" olayi (LLM uretir, omenlerden ilham alir)
-- [ ] Kriz birden fazla UI objesini ayni anda aktif eder (ornek: kiler kapisi + anahtar + defter)
-- [ ] Kriz kamu canon'una yeni bilgi ekler (herkesin bilecegi somut olay)
-- [ ] Kalabalik fisiltilari: 2-3 atmosferik NPC cumle (kanit degil, ton)
-- [ ] `game.py` — `generate_morning_crisis()` buyuk event + UI obje aktivasyonu
-- [ ] Frontend `MorningScene.tsx` — kriz sahne gosterimi (UI objeleri highlight)
+### 4.1 Buyuk Kriz Event (Sabah Krizi) (TAMAMLANDI)
+- [x] Her sabah 1 "buyuk kriz" olayi (LLM uretir, omenlerden ilham alir)
+- [x] Kriz birden fazla UI objesini ayni anda aktif eder (ornek: kiler kapisi + anahtar + defter)
+- [x] Kriz kamu canon'una yeni bilgi ekler (herkesin bilecegi somut olay)
+- [x] Kalabalik fisiltilari: 2-3 atmosferik NPC cumle (kanit degil, ton)
+- [x] `game.py` — `generate_morning_crisis()` buyuk event + UI obje aktivasyonu
+- [x] Frontend `MorningScene.tsx` — kriz sahne gosterimi (UI objeleri highlight)
 
-### 4.2 Politik Onerge Sistemi
-- [ ] Campfire'da gunun ana onergesi masaya gelir (LLM uretir, krize bagli)
-  - Ornek: "Sayim kimin yetkisinde olacak: Kiler mi, Meclis mi?"
-  - Ornek: "Bu gece disari cikis yasak mi?"
-- [ ] 2 tur tartisma, sonra oylama (surgun oyundan ayri)
-- [ ] Onerge sonucu ertesi gunu etkiler (kural degisikligi, yetki kayma)
-- [ ] `game.py` — `generate_campfire_proposal()` + onerge oylama
-- [ ] Frontend `CampfireScene.tsx` — onerge karti + oylama UI
+### 4.2 Politik Onerge Sistemi (TAMAMLANDI)
+- [x] Campfire'da gunun ana onergesi masaya gelir (LLM uretir, krize bagli)
+- [x] AI konusmalari + oylama (surgun oyundan ayri)
+- [x] Onerge sonucu kamu canon'a eklenir
+- [x] `game.py` — `generate_campfire_proposal()` + `resolve_proposal_vote()` + `generate_proposal_speech()` + `generate_proposal_vote_ai()`
+- [x] `game_loop.py` — proposal flow (AI konusmalar + AI+human oylama)
+- [x] Frontend `CampfireScene.tsx` — onerge karti + A/B oylama butonu + sonuc gosterimi
 
-### 4.3 Soz Borcu Mekaniği
-- [ ] Kul Kaymasi zorunlu sorusuna kacamak cevap → Soz Borcu dogar
-- [ ] Soz Borclu oyuncu sonraki turda ilk soru hedefi olur (speaker_lock kayma)
-- [ ] Ust uste 2 Soz Borcu → "Ocak Damgasi" (kamu gorunur uyari)
-- [ ] `game.py` — `_soz_borcu_queue` + damga mekaniği
-- [ ] `game_loop.py` — campfire basinda soz borcu kontrol → forced speaker
+### 4.3 Soz Borcu Mekaniği (TAMAMLANDI)
+- [x] Kul Kaymasi zorunlu sorusuna kacamak cevap → Soz Borcu dogar
+- [x] Soz Borclu oyuncu sonraki turda ilk soru hedefi olur (forced speaker)
+- [x] Ust uste 2 Soz Borcu → "Ocak Damgasi" (kamu gorunur uyari)
+- [x] `game.py` — `check_soz_borcu()` + `check_soz_borcu_verdict()` + damga mekaniği
+- [x] `game_loop.py` — campfire basinda soz borcu kontrol → forced speaker banner
+- [x] Frontend `CampfireScene.tsx` — soz borcu banner + damga gostergesi
 
-### 4.4 Alamet Yorumu Turu
-- [ ] Campfire basinda herkes Omen Bar'dan 1 alamet secer
-- [ ] Her oyuncu secilen alamet hakkinda 1 cumle soler (roleplay isinma)
-- [ ] Bu tur "dili evrene sokar" — herkesin karanlik fantazi tonunda konusmasi
-- [ ] `game.py` — omen_interpretation turu prompt + LLM (AI oyuncular icin)
-- [ ] `game_loop.py` — campfire_open basinda omen turu akisi
+### 4.4 Alamet Yorumu Turu (TAMAMLANDI)
+- [x] Campfire basinda AI oyuncular alamet hakkinda 1 cumle soler
+- [x] Bu tur "dili evrene sokar" — herkesin karanlik fantazi tonunda konusmasi
+- [x] `game.py` — `generate_omen_interpretation()` omen yorumu prompt + LLM
+- [x] `game_loop.py` — campfire_open oncesi omen yorumu turu akisi
+- [x] Frontend `CampfireScene.tsx` — omen yorumu banner (speaker: text listesi)
 
-### 4.5 House Giris Mini Event
-- [ ] House ziyaretinde kapidan girerken ozel mini event tetiklenir
-  - Ornek: "Esigin yaninda camur var. Koyde sabah yagmur yoktu."
-- [ ] Bu event 1v1 konusmayi yonlendirir (soru uretir)
-- [ ] Mevcut private mini event'lerden ayri — house'a ozel
-- [ ] `game.py` — `generate_house_entry_event()` kapı tetikleyici
+### 4.5 House Giris Mini Event (TAMAMLANDI)
+- [x] House ziyaretinde kapidan girerken ozel mini event tetiklenir (%60 sans)
+- [x] Bu event 1v1 konusmayi yonlendirir
+- [x] `game.py` — `generate_house_entry_event()` kapı tetikleyici
+- [x] `game_loop.py` — house_visit_start sonrasi house_entry_event broadcast
+- [x] Frontend `HouseScene.tsx` — kapida detay karti (exchanges bos iken gosterilir)
 
-### 4.6 Sinama "Askida Birakma"
-- [ ] Sinama sonucu sabah aciklanmaz, campfire'da "yankisi" gelir
-- [ ] Ornek: "Yollar ayni yere cikar… ama herkes ayni yoldan yurumez." (askida)
-- [ ] Campfire ortasinda sinama yankisi → tartisma besler
-- [ ] `game.py` — sinama sonucu delayed reveal
+### 4.6 Sinama "Askida Birakma" (TAMAMLANDI)
+- [x] Sinama sonucu campfire'da "yankisi" gelir
+- [x] Campfire ortasinda sinama yankisi → tartisma besler
+- [x] `game.py` — `generate_sinama_echo()` sinama delayed reveal
+- [x] `game_loop.py` — opening campfire sonrasi sinama_echo broadcast
+- [x] Frontend `GameContext.tsx` — sinamaEcho state + sinama_echo WS handler → chat mesaji olarak eklenir
 
-### 4.7 Harita UI
-- [ ] Gorsel lokasyon haritasi (Ocak Meydani, Kiler, Kule, Tapinak, Sifahane, Demirhane, Han, Sis Hatti)
-- [ ] Aktif lokasyonlar parlak, bos olanlar dim
-- [ ] Oyuncu hareketleri haritada canli gosterilir
-- [ ] Frontend `MapView.tsx` — SVG/canvas tabanli interaktif harita
+### 4.7 Harita UI (TAMAMLANDI)
+- [x] Gorsel lokasyon haritasi (Ocak Meydani, Kiler, Kule, Tapinak, Sifahane, Demirhane, Han, Sis Hatti)
+- [x] Aktif lokasyonlar parlak, bos olanlar dim
+- [x] Oyuncu hareketleri haritada canli gosterilir (renkli dot)
+- [x] Frontend `MapView.tsx` — SVG tabanli interaktif harita
+- [x] `FreeRoamScene.tsx` — compact harita kararlar sonrasi gosterilir
 
 ---
 
@@ -283,8 +285,8 @@ Katman 0.4 (alamet sistemi)      ███████████████�
 Katman 0.5 (e2e test)            ████████████████████ TAMAM
 Katman 1   (spotlight + sinama)  ████████████████████ TAMAM
 Katman 2   (lokasyon + event)    ████████████████████ TAMAM
-Katman 3   (gece + politik)      ░░░░░░░░░░░░░░░░░░░ sirada <<<
-Katman 4   (kriz + onerge + tam) ░░░░░░░░░░░░░░░░░░░ baslamadi
+Katman 3   (gece + politik)      ████████████████████ TAMAM
+Katman 4   (kriz + onerge + tam) ████████████████████ TAMAM
 ```
 
 ## Notlar

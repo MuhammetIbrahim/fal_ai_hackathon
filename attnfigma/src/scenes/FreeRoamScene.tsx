@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useGame } from '../context/GameContext'
+import { MapView } from '../components/map/MapView'
 
 export const FreeRoamScene: React.FC = () => {
   const { locationDecisions, inputRequired, sendLocationChoice, players } = useGame()
@@ -235,6 +236,27 @@ export const FreeRoamScene: React.FC = () => {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Map View (Katman 4) */}
+      {decisions.length > 0 && (
+        <div className="relative z-10 px-6 pb-4">
+          <MapView
+            compact
+            activeLocations={[
+              'campfire',
+              ...institutionGoers.map(d => d.choice.replace('INSTITUTION|', '')),
+            ]}
+            playerLocations={Object.fromEntries(
+              decisions.map(d => {
+                if (d.choice === 'CAMPFIRE') return [d.playerName, 'campfire']
+                if (d.choice === 'HOME') return [d.playerName, 'home']
+                if (d.choice.startsWith('INSTITUTION|')) return [d.playerName, d.choice.replace('INSTITUTION|', '')]
+                return [d.playerName, 'campfire']
+              })
+            )}
+          />
         </div>
       )}
 

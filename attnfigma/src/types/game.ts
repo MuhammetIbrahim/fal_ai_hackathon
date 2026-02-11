@@ -87,7 +87,7 @@ export interface ServerEvent {
   data: Record<string, unknown>
 }
 
-export type InputActionType = 'speak' | 'vote' | 'location_choice' | 'visit_speak' | 'night_move' | 'omen_choice'
+export type InputActionType = 'speak' | 'vote' | 'location_choice' | 'visit_speak' | 'night_move' | 'omen_choice' | 'proposal_vote'
 
 export interface InputAction {
   type: InputActionType
@@ -178,4 +178,36 @@ export interface NightResult {
   effectText: string
   chosenOmen: Omen | null
   uiUpdate: { objectId: string } | null
+}
+
+// ── Katman 4 Types ──────────────────────────────────
+
+export interface MorningCrisis {
+  crisisText: string
+  activatedObjects: string[]
+  publicQuestion: string
+  whispers: string[]
+}
+
+export interface Proposal {
+  proposalText: string
+  optionA: string
+  optionB: string
+}
+
+export interface ProposalResult {
+  winner: 'a' | 'b'
+  winnerText: string
+  aCount: number
+  bCount: number
+}
+
+export interface OmenInterpretation {
+  speaker: string
+  text: string
+}
+
+export interface OmenInterpretationRound {
+  omen: Omen
+  interpretations: OmenInterpretation[]
 }

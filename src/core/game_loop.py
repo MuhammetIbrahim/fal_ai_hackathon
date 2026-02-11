@@ -205,6 +205,11 @@ async def _game_loop_runner(game_id: str, state: Any):
             generate_night_move, generate_omen_vote,
             resolve_night_phase, resolve_omen_choice,
             apply_kamu_baskisi_to_votes, use_kalkan,
+            # Katman 4
+            generate_morning_crisis, generate_campfire_proposal,
+            resolve_proposal_vote, check_soz_borcu, check_soz_borcu_verdict,
+            generate_omen_interpretation, generate_house_entry_event,
+            generate_sinama_echo, generate_proposal_speech, generate_proposal_vote_ai,
             INITIAL_CAMPFIRE_TURNS, FREE_ROAM_ROUNDS,
             CAMPFIRE_TURNS_PER_ROUND, CLOSING_CAMPFIRE_TURNS,
             ROOM_EXCHANGES, INSTITUTION_LOCATIONS,
@@ -303,6 +308,18 @@ async def _game_loop_runner(game_id: str, state: Any):
             except Exception as e:
                 logger.warning(f"Sinama generation failed: {e}")
 
+            # ── BUYUK KRIZ EVENT (Katman 4) ──
+            try:
+                crisis = await generate_morning_crisis(state)
+                if crisis:
+                    await manager.broadcast(game_id, {
+                        "event": "morning_crisis",
+                        "data": crisis,
+                    })
+                    await asyncio.sleep(2)
+            except Exception as e:
+                logger.warning(f"Crisis generation failed: {e}")
+
             # ── KAMU MINI EVENT (Katman 2) ──
             try:
                 mini_event = await generate_public_mini_event(state)
@@ -332,6 +349,55 @@ async def _game_loop_runner(game_id: str, state: Any):
             # ═══════════════════════════════════════
             state["phase"] = Phase.CAMPFIRE.value
 
+            # ── 2a-pre. SOZ BORCU KONTROLU (Katman 4) ──
+            forced_speakers = state.get("_forced_speakers", [])
+            if forced_speakers:
+                damgali = state.get("_ocak_damgasi", [])
+                await manager.broadcast(game_id, {
+                    "event": "soz_borcu",
+                    "data": {
+                        "forced_speakers": forced_speakers,
+                        "damgali": damgali,
+                    }
+                })
+                await asyncio.sleep(1)
+                state["_forced_speakers"] = []  # reset
+
+            # ── 2a-pre. ALAMET YORUMU TURU (Katman 4) ──
+            try:
+                day_omens = state.get("_day_omens", [])
+                if day_omens and round_n >= 2:
+                    chosen_omen = day_omens[0]  # ilk alamet
+                    omen_interps = []
+                    alive = get_alive_players(state)
+
+                    # AI yorumlari concurrent
+                    ai_interp_tasks = []
+                    ai_interp_players = []
+                    for p in alive:
+                        if not p.is_human:
+                            ai_interp_tasks.append(generate_omen_interpretation(p, state, chosen_omen))
+                            ai_interp_players.append(p)
+
+                    if ai_interp_tasks:
+                        ai_results = await asyncio.gather(*ai_interp_tasks, return_exceptions=True)
+                        for p, interp in zip(ai_interp_players, ai_results):
+                            if isinstance(interp, str):
+                                omen_interps.append({"speaker": p.name, "text": interp})
+
+                    if omen_interps:
+                        await manager.broadcast(game_id, {
+                            "event": "omen_interpretation",
+                            "data": {
+                                "omen": {"id": chosen_omen["id"], "label": chosen_omen["label"], "icon": chosen_omen["icon"]},
+                                "interpretations": omen_interps,
+                            }
+                        })
+                        await asyncio.sleep(2)
+                        logger.info(f"Omen interpretation round completed — {len(omen_interps)} speeches")
+            except Exception as e:
+                logger.warning(f"Omen interpretation failed: {e}")
+
             # ── 2a. OPENING CAMPFIRE ──
             await manager.broadcast(game_id, {
                 "event": "phase_change",
@@ -340,6 +406,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                     "round": round_n,
                     "segment": "opening",
                     "max_turns": INITIAL_CAMPFIRE_TURNS,
+                    "proposal": state.get("_current_proposal"),
                 }
             })
 
@@ -359,6 +426,18 @@ async def _game_loop_runner(game_id: str, state: Any):
             )
 
             logger.info(f"Opening campfire completed — {INITIAL_CAMPFIRE_TURNS} turns")
+
+            # ── 2a-post. SINAMA ECHO (Katman 4) ──
+            try:
+                sinama_echo = await generate_sinama_echo(state)
+                if sinama_echo:
+                    await manager.broadcast(game_id, {
+                        "event": "sinama_echo",
+                        "data": {"content": sinama_echo},
+                    })
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.warning(f"Sinama echo failed: {e}")
 
             # ── 2b. FREE ROAM ROUNDS ──
             for roam_round in range(1, FREE_ROAM_ROUNDS + 1):
@@ -600,6 +679,89 @@ async def _game_loop_runner(game_id: str, state: Any):
                         )
 
                 logger.info(f"Free roam {roam_round}/{FREE_ROAM_ROUNDS} completed")
+
+            # ── 2b-post. POLITIK ONERGE (Katman 4) ──
+            try:
+                proposal = await generate_campfire_proposal(state)
+                if proposal:
+                    await manager.broadcast(game_id, {
+                        "event": "proposal",
+                        "data": proposal,
+                    })
+                    await asyncio.sleep(1)
+
+                    # AI onerge konusmalari (concurrent)
+                    alive = get_alive_players(state)
+                    ai_proposal_tasks = []
+                    ai_proposal_players = []
+                    for p in alive:
+                        if not p.is_human:
+                            ai_proposal_tasks.append(generate_proposal_speech(p, state, proposal))
+                            ai_proposal_players.append(p)
+
+                    if ai_proposal_tasks:
+                        ai_speeches = await asyncio.gather(*ai_proposal_tasks, return_exceptions=True)
+                        for p, speech in zip(ai_proposal_players, ai_speeches):
+                            if isinstance(speech, str):
+                                state["campfire_history"].append({
+                                    "type": "speech",
+                                    "speaker": p.name,
+                                    "content": speech,
+                                })
+                                await manager.broadcast(game_id, {
+                                    "event": "campfire_speech",
+                                    "data": {"speaker": p.name, "content": speech},
+                                })
+                                await _generate_and_broadcast_audio(game_id, p.name, speech)
+                                await asyncio.sleep(0.5)
+
+                    # Insan onerge oyu bekle
+                    human_proposal_tasks = []
+                    human_proposal_players = []
+                    for p in alive:
+                        if p.is_human:
+                            human_proposal_tasks.append(
+                                _wait_for_human_input(
+                                    game_id=game_id,
+                                    player_id=p.slot_id,
+                                    event_type="proposal_vote",
+                                    timeout=30.0,
+                                )
+                            )
+                            human_proposal_players.append(p)
+
+                    # AI onerge oylari concurrent
+                    ai_vote_tasks = []
+                    ai_vote_players = []
+                    for p in alive:
+                        if not p.is_human:
+                            ai_vote_tasks.append(generate_proposal_vote_ai(p, state, proposal))
+                            ai_vote_players.append(p)
+
+                    vote_results = await asyncio.gather(
+                        asyncio.gather(*ai_vote_tasks) if ai_vote_tasks else asyncio.sleep(0),
+                        asyncio.gather(*human_proposal_tasks) if human_proposal_tasks else asyncio.sleep(0),
+                    )
+
+                    ai_votes = list(vote_results[0]) if ai_vote_tasks else []
+                    human_votes = list(vote_results[1]) if human_proposal_tasks else []
+
+                    proposal_votes = {}
+                    for p, v in zip(ai_vote_players, ai_votes):
+                        proposal_votes[p.name] = v if v in ("a", "b") else "a"
+                    for p, v in zip(human_proposal_players, human_votes):
+                        proposal_votes[p.name] = v if v in ("a", "b") else "a"
+
+                    proposal_result = resolve_proposal_vote(state, proposal_votes)
+                    await manager.broadcast(game_id, {
+                        "event": "proposal_result",
+                        "data": proposal_result,
+                    })
+                    await asyncio.sleep(2)
+                    logger.info(f"Proposal vote completed — {proposal_result['winner_text']}")
+
+            except Exception as e:
+                logger.warning(f"Proposal system failed: {e}")
 
             # ── 2c. CLOSING CAMPFIRE ──
             alive = get_alive_players(state)
@@ -1284,6 +1446,18 @@ async def _run_room_conversation_ws(
                 "max_exchanges": max_exchanges,
             }
         })
+
+    # ── HOUSE ENTRY EVENT (Katman 4) ──
+    try:
+        entry_event = await generate_house_entry_event(state, visitor.name, owner.name)
+        if entry_event:
+            for p in [visitor, owner]:
+                await manager.send_to(game_id, p.slot_id, {
+                    "event": "house_entry_event",
+                    "data": {"content": entry_event},
+                })
+    except Exception as e:
+        logger.warning(f"House entry event failed: {e}")
 
     for turn in range(max_exchanges):
         current = speakers[turn % 2]

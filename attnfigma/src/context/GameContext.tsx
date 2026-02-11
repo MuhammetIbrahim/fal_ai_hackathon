@@ -5,6 +5,7 @@ import type {
   SpotlightCard, SinamaEvent, SinamaType, OcakTepki,
   InstitutionVisitState, UIObject, MiniEvent,
   NightMove, NightResult,
+  MorningCrisis, Proposal, ProposalResult, OmenInterpretationRound,
 } from '../types/game'
 import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
 import { useAudioQueue } from '../hooks/useAudioQueue'
@@ -68,6 +69,15 @@ interface GameState {
   baskisiTarget: string | null
   canUseKalkan: boolean
 
+  // Katman 4
+  morningCrisis: MorningCrisis | null
+  proposal: Proposal | null
+  proposalResult: ProposalResult | null
+  omenInterpretation: OmenInterpretationRound | null
+  sinamaEcho: string | null
+  houseEntryEvent: string | null
+  sozBorcu: { forcedSpeakers: string[]; damgali: string[] } | null
+
   // UI
   inputRequired: InputAction | null
 }
@@ -83,6 +93,7 @@ interface GameContextValue extends GameState {
   sendNightMove: (choice: string) => void
   sendOmenChoice: (choice: string) => void
   sendKalkan: () => void
+  sendProposalVote: (choice: string) => void
   clearInput: () => void
 }
 
@@ -130,6 +141,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     nightResult: null,
     baskisiTarget: null,
     canUseKalkan: false,
+    morningCrisis: null,
+    proposal: null,
+    proposalResult: null,
+    omenInterpretation: null,
+    sinamaEcho: null,
+    houseEntryEvent: null,
+    sozBorcu: null,
     inputRequired: null,
   })
 
@@ -180,6 +198,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           institutionVisit: null,
           kulKaymasi: null,
           exiledRole: null,
+          morningCrisis: null,
+          proposal: null,
+          proposalResult: null,
+          omenInterpretation: null,
+          sinamaEcho: null,
+          houseEntryEvent: null,
+          sozBorcu: null,
           inputRequired: null,
         } : {}),
       }))
@@ -297,6 +322,94 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           uiUpdate: uiUpdateRaw ? { objectId: uiUpdateRaw.object_id } : null,
         },
         inputRequired: null,
+      }))
+    }))
+
+    // morning_crisis → daily crisis event (Katman 4)
+    unsubs.push(ws.onEvent('morning_crisis', (data) => {
+      setState(prev => ({
+        ...prev,
+        morningCrisis: {
+          crisisText: (data.crisis_text as string) ?? '',
+          activatedObjects: (data.activated_objects as string[]) ?? [],
+          publicQuestion: (data.public_question as string) ?? '',
+          whispers: (data.whispers as string[]) ?? [],
+        },
+      }))
+    }))
+
+    // proposal → campfire proposal (Katman 4)
+    unsubs.push(ws.onEvent('proposal', (data) => {
+      setState(prev => ({
+        ...prev,
+        proposal: {
+          proposalText: (data.proposal_text as string) ?? '',
+          optionA: (data.option_a as string) ?? 'Kabul',
+          optionB: (data.option_b as string) ?? 'Reddet',
+        },
+      }))
+    }))
+
+    // proposal_result → proposal vote result (Katman 4)
+    unsubs.push(ws.onEvent('proposal_result', (data) => {
+      setState(prev => ({
+        ...prev,
+        proposalResult: {
+          winner: (data.winner as 'a' | 'b') ?? 'a',
+          winnerText: (data.winner_text as string) ?? '',
+          aCount: (data.a_count as number) ?? 0,
+          bCount: (data.b_count as number) ?? 0,
+        },
+      }))
+    }))
+
+    // omen_interpretation → campfire omen round (Katman 4)
+    unsubs.push(ws.onEvent('omen_interpretation', (data) => {
+      const omen = data.omen as { id: string; label: string; icon: string }
+      const interpretations = (data.interpretations as Array<{ speaker: string; text: string }>) ?? []
+      setState(prev => ({
+        ...prev,
+        omenInterpretation: {
+          omen: { id: omen.id, label: omen.label, icon: omen.icon },
+          interpretations,
+        },
+      }))
+    }))
+
+    // sinama_echo → delayed sınama echo in campfire (Katman 4)
+    unsubs.push(ws.onEvent('sinama_echo', (data) => {
+      msgCounter.current++
+      const content = data.content as string
+      setState(prev => ({
+        ...prev,
+        sinamaEcho: content,
+        messages: [...prev.messages, {
+          id: `ws-echo-${msgCounter.current}`,
+          sender: 'Sinama',
+          text: content,
+          isSelf: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }],
+      }))
+    }))
+
+    // house_entry_event → house doorstep detail (Katman 4)
+    unsubs.push(ws.onEvent('house_entry_event', (data) => {
+      setState(prev => ({
+        ...prev,
+        houseEntryEvent: (data.content as string) ?? null,
+      }))
+    }))
+
+    // soz_borcu → forced speakers + damga info (Katman 4)
+    unsubs.push(ws.onEvent('soz_borcu', (data) => {
+      setState(prev => ({
+        ...prev,
+        sozBorcu: {
+          forcedSpeakers: (data.forced_speakers as string[]) ?? [],
+          damgali: (data.damgali as string[]) ?? [],
+        },
       }))
     }))
 
@@ -650,6 +763,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState(prev => ({ ...prev, canUseKalkan: false }))
   }, [ws])
 
+  const sendProposalVote = useCallback((choice: string) => {
+    ws.send('proposal_vote', { choice })
+    setState(prev => ({ ...prev, inputRequired: null }))
+  }, [ws])
+
   const clearInput = useCallback(() => {
     setState(prev => ({ ...prev, inputRequired: null }))
   }, [])
@@ -667,6 +785,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendNightMove,
     sendOmenChoice,
     sendKalkan,
+    sendProposalVote,
     clearInput,
   }
 

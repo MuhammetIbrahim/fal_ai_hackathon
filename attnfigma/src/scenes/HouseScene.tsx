@@ -4,7 +4,7 @@ import { AvatarFrame } from '../components/house/AvatarFrame'
 import { TranscriptPanel } from '../components/house/TranscriptPanel'
 
 export const HouseScene: React.FC = () => {
-  const { houseVisit, inputRequired, sendVisitSpeak, selfPlayerName } = useGame()
+  const { houseVisit, inputRequired, sendVisitSpeak, selfPlayerName, houseEntryEvent } = useGame()
   const [inputText, setInputText] = useState('')
 
   const visitor = houseVisit?.visitor ?? 'Misafir'
@@ -74,6 +74,20 @@ export const HouseScene: React.FC = () => {
           transition: 'background 0.5s'
         }} />
       </div>
+
+      {/* House Entry Event (Katman 4) */}
+      {houseEntryEvent && exchanges.length === 0 && (
+        <div className="absolute top-[15%] left-1/2 -translate-x-1/2 z-30 max-w-sm animate-fade-in">
+          <div className="px-4 py-3 rounded-xl" style={{
+            background: 'rgba(255,191,0,0.06)',
+            border: '1px solid rgba(255,191,0,0.12)',
+            backdropFilter: 'blur(8px)',
+          }}>
+            <p className="text-[10px] uppercase tracking-[2px] text-accent/40 mb-1 font-semibold">Kapida</p>
+            <p className="text-xs text-text-primary/70 italic leading-relaxed">{houseEntryEvent}</p>
+          </div>
+        </div>
+      )}
 
       {/* Transcript */}
       <TranscriptPanel transcripts={transcripts} />

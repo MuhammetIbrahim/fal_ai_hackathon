@@ -1973,6 +1973,15 @@ def init_state(
     state["_kalkan_used"] = []            # kalkan kullanan oyuncu isimleri
     state["_chosen_omen"] = None          # gece oylamasiyla secilen omen id
     state["_itibar_kirigi_target"] = None # 2x oy hedefi
+    # Katman 4 state
+    state["_morning_crisis"] = None       # gunun kriz event'i
+    state["_public_canon"] = []           # kamu bilgi zinciri
+    state["_current_proposal"] = None     # aktif onerge
+    state["_proposal_result"] = None      # onerge sonucu
+    state["_soz_borcu"] = {}             # {player_name: count}
+    state["_ocak_damgasi"] = []          # damgali oyuncular
+    state["_forced_speakers"] = []        # zorla konusmasi gereken oyuncular
+    state["_sinama"] = None              # gunun sinama event'i (echo icin)
     return state
 
 
@@ -2857,6 +2866,357 @@ async def update_cumulative_summary(
 ) -> str:
     """Round sonunda kumulatif ozeti guncelle."""
     return await _update_cumulative_summary(cumulative, round_number, campfire_summary, vote_result)
+
+
+# ══════════════════════════════════════════════════════
+#  11. KATMAN 4 — BUYUK KRIZ + ONERGE + SOZ BORCU + ATMOSFER
+# ══════════════════════════════════════════════════════
+
+CRISIS_SYSTEM = """Sen bir karanlık fantazi yerlesiminin kriz anlaticisisin.
+Sabah buyuk bir olay oldu. Bunu 3-4 cumleyle anlat.
+
+KURALLAR:
+- Somut, elle tutulur bir olay (hirsizlik, hasar, kaybolma, bozulma).
+- Olaya en az 2 UI objesi bagli olsun (anahtar, defter, levha, kase, dolap, kapı, masa, harita, raf, kor, alet, not).
+- Olaydan doğan 1 kamusal soru/suclama olsun.
+- Kısa, sade Turkce. Siir YASAK.
+- 2-3 kalabalik fisiltisi ekle (kisa NPC cumleler, kanit degil, ton).
+
+JSON dondur:
+{"crisis_text": "...", "activated_objects": ["obj_id_1", "obj_id_2"], "public_question": "...", "whispers": ["fisılti1", "fisılti2"]}"""
+
+PROPOSAL_SYSTEM = """Sen bir siyasi müzakere anlaticisisin. Bugünün krizine bagli bir kamusal onerge uret.
+
+KURALLAR:
+- Onerge tartisma yaratsin (iki tarafli, net cevabi yok).
+- Kisa, sade Turkce. 1-2 cumle.
+- Onerge pratik bir kural/yetki degisikligi olmali.
+
+JSON dondur:
+{"proposal_text": "...", "option_a": "...", "option_b": "..."}"""
+
+SOZ_BORCU_SYSTEM = """Bir konusmayi analiz et: Kul Kaymasi sorusuna net cevap verdi mi, yoksa kacamak mi yapti?
+
+KURALLAR:
+- Net ve dogrudan cevap = "clear"
+- Kacamak, konuyu degistirme, soru ile cevaplama = "evasive"
+- SADECE JSON dondur: {"verdict": "clear"|"evasive"}"""
+
+OMEN_INTERP_SYSTEM = """Sen bir karakter olarak alamet hakkinda 1 cumle soyluyorsun.
+Karakter tonunda, kisa, karanlik fantazi. SADECE 1 cumle."""
+
+HOUSE_ENTRY_SYSTEM = """Sen bir ev giris sahnesi anlaticisisin. Ziyaretci kapıda 1 dikkat cekici detay fark eder.
+1 cumle, kisa, somut. Turkce."""
+
+SINAMA_ECHO_SYSTEM = """Sinama olayinin campfire ortasinda yankilanan versiyonunu yaz.
+Askida birakan, tartisma baslatan 1-2 cumle. Turkce, sade."""
+
+
+async def generate_morning_crisis(state: GameState) -> dict | None:
+    """Her sabah buyuk kriz olayi uret. Birden fazla UI objesini aktif eder."""
+    round_n = state.get("round_number", 1)
+    if round_n < 2:
+        return None  # Gun 1'de kriz yok
+
+    day_omens = state.get("_day_omens", [])
+    omen_text = ", ".join(o["label"] for o in day_omens) if day_omens else "yok"
+
+    settlement = state.get("world_seed", {}).get("place_variants", {}).get("settlement_name", "Yerlesim")
+
+    # UI obje durumlari
+    ui_objects = state.get("_ui_objects", {})
+    obj_summary = ", ".join(f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in ui_objects.items())
+
+    # Son surgun
+    last_exile = state.get("exiled_today")
+    exile_info = f"Dun {last_exile} surgun edildi." if last_exile else ""
+
+    # Gece sonucu
+    night_effects = state.get("_night_effects", {})
+    night_info = f"Gecenin sonucu: {night_effects.get('effect_text', '')}" if night_effects.get("winning_move") else ""
+
+    prompt = (
+        f"Yerlesim: {settlement}\nGun: {round_n}\n"
+        f"Alametler: {omen_text}\n"
+        f"{exile_info}\n{night_info}\n"
+        f"UI Objeleri: {obj_summary}\n\n"
+        f"Sabah buyuk kriz olayini uret."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=CRISIS_SYSTEM,
+            model=MODEL,
+            temperature=0.7,
+        )
+
+        text = result.output.strip()
+        # JSON parse
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            crisis = json.loads(json_match.group())
+        else:
+            crisis = {"crisis_text": text, "activated_objects": [], "public_question": "", "whispers": []}
+
+        # UI objeleri aktif et
+        for obj_id in crisis.get("activated_objects", []):
+            if obj_id in state.get("_ui_objects", {}):
+                state["_ui_objects"][obj_id]["_crisis_active"] = True
+
+        # Kamu canon'a ekle
+        state.setdefault("_public_canon", [])
+        state["_public_canon"].append({
+            "round": round_n,
+            "type": "crisis",
+            "text": crisis.get("crisis_text", ""),
+            "question": crisis.get("public_question", ""),
+        })
+
+        state["_morning_crisis"] = crisis
+        print(f"  [Kriz] {crisis.get('crisis_text', '')[:80]}...")
+        return crisis
+
+    except Exception as e:
+        print(f"  [Kriz] Hata: {e}")
+        return None
+
+
+async def generate_campfire_proposal(state: GameState) -> dict | None:
+    """Gunun ana kamusal onergesi — kriz bazli, campfire'da tartisma + oylama."""
+    crisis = state.get("_morning_crisis")
+    if not crisis:
+        return None
+
+    settlement = state.get("world_seed", {}).get("place_variants", {}).get("settlement_name", "Yerlesim")
+    round_n = state.get("round_number", 1)
+
+    prompt = (
+        f"Yerlesim: {settlement}\nGun: {round_n}\n"
+        f"Kriz: {crisis.get('crisis_text', '')}\n"
+        f"Kamusal soru: {crisis.get('public_question', '')}\n\n"
+        f"Bu krize bagli tartisma onergesi uret."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=PROPOSAL_SYSTEM,
+            model=MODEL,
+            temperature=0.7,
+        )
+
+        text = result.output.strip()
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            proposal = json.loads(json_match.group())
+        else:
+            proposal = {"proposal_text": text, "option_a": "Kabul", "option_b": "Reddet"}
+
+        state["_current_proposal"] = proposal
+        print(f"  [Onerge] {proposal.get('proposal_text', '')[:80]}...")
+        return proposal
+
+    except Exception as e:
+        print(f"  [Onerge] Hata: {e}")
+        return None
+
+
+def resolve_proposal_vote(state: GameState, votes: dict[str, str]) -> dict:
+    """Onerge oylamasini coz. votes = {player_name: "a"|"b"}"""
+    a_count = sum(1 for v in votes.values() if v == "a")
+    b_count = sum(1 for v in votes.values() if v == "b")
+    proposal = state.get("_current_proposal", {})
+
+    winner = "a" if a_count >= b_count else "b"
+    result = {
+        "winner": winner,
+        "winner_text": proposal.get(f"option_{winner}", ""),
+        "a_count": a_count,
+        "b_count": b_count,
+        "votes": votes,
+    }
+
+    # Kamu canon'a ekle
+    state.setdefault("_public_canon", [])
+    state["_public_canon"].append({
+        "round": state.get("round_number", 1),
+        "type": "proposal_result",
+        "text": f"Onerge sonucu: {result['winner_text']} ({a_count} vs {b_count})",
+    })
+
+    state["_proposal_result"] = result
+    return result
+
+
+def check_soz_borcu(state: GameState, player_name: str) -> None:
+    """Kul Kaymasi sorusuna cevap kontrolu sonrasi soz borcu isle."""
+    borcu = state.setdefault("_soz_borcu", {})
+    count = borcu.get(player_name, 0)
+    borcu[player_name] = count + 1
+
+    if count + 1 >= 2:
+        # Ocak Damgasi
+        state.setdefault("_ocak_damgasi", [])
+        if player_name not in state["_ocak_damgasi"]:
+            state["_ocak_damgasi"].append(player_name)
+            print(f"  [Damga] {player_name} Ocak Damgasi aldi!")
+
+    # Sonraki turda forced speaker
+    state.setdefault("_forced_speakers", [])
+    if player_name not in state["_forced_speakers"]:
+        state["_forced_speakers"].append(player_name)
+    print(f"  [SozBorcu] {player_name} — toplam: {count + 1}")
+
+
+async def check_soz_borcu_verdict(player_name: str, response: str, question: str) -> bool:
+    """Kul Kaymasi sorusuna verilen cevabin kacamak olup olmadigini kontrol et. True = kacamak."""
+    prompt = (
+        f"Soru: {question}\n"
+        f"Cevap ({player_name}): {response}\n\n"
+        f"Bu cevap kacamak mi?"
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=SOZ_BORCU_SYSTEM,
+            model=MODEL,
+            temperature=0.1,
+        )
+        text = result.output.strip()
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            verdict = json.loads(json_match.group())
+            return verdict.get("verdict") == "evasive"
+    except Exception:
+        pass
+    return False
+
+
+async def generate_omen_interpretation(player: Player, state: GameState, omen: dict) -> str:
+    """AI oyuncu icin alamet yorumu (campfire basinda 1 cumle)."""
+    card_ctx = _build_card_context(player, state)
+    prompt = (
+        f"{card_ctx}\n\n"
+        f"Alamet: {omen['label']} ({omen.get('icon', '')})\n"
+        f"Atmosfer: {omen.get('atmosphere', '')}\n\n"
+        f"Bu alamet hakkinda karakter tonunda 1 cumle soyle."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=OMEN_INTERP_SYSTEM,
+            model=MODEL,
+            temperature=0.8,
+        )
+        return result.output.strip()
+    except Exception:
+        return f"{omen['label']}... ilginc."
+
+
+async def generate_house_entry_event(state: GameState, visitor_name: str, host_name: str) -> str | None:
+    """House ziyaretinde kapida fark edilen detay."""
+    round_n = state.get("round_number", 1)
+    rng = random_module.Random(f"house_entry_{visitor_name}_{host_name}_{round_n}")
+
+    # %60 tetiklenme sansi
+    if rng.random() > 0.6:
+        return None
+
+    settlement = state.get("world_seed", {}).get("place_variants", {}).get("settlement_name", "Yerlesim")
+
+    prompt = (
+        f"Yerlesim: {settlement}\n"
+        f"Ziyaretci: {visitor_name}\nEv sahibi: {host_name}\n"
+        f"Gun: {round_n}\n\n"
+        f"Kapida fark edilen 1 detay."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=HOUSE_ENTRY_SYSTEM,
+            model=MODEL,
+            temperature=0.7,
+        )
+        return result.output.strip()
+    except Exception:
+        return None
+
+
+async def generate_sinama_echo(state: GameState) -> str | None:
+    """Sinama olayinin campfire ortasinda yankilanan versiyonu."""
+    sinama = state.get("_sinama")
+    if not sinama:
+        return None
+
+    prompt = (
+        f"Sinama olayi: {sinama.get('content', '')}\n"
+        f"Tipi: {sinama.get('title', '')}\n\n"
+        f"Bu olayın campfire'daki yankisini yaz."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt=SINAMA_ECHO_SYSTEM,
+            model=MODEL,
+            temperature=0.7,
+        )
+        return result.output.strip()
+    except Exception:
+        return None
+
+
+async def generate_proposal_speech(player: Player, state: GameState, proposal: dict) -> str:
+    """AI oyuncu icin onerge hakkinda konusma (kisa, 1-2 cumle)."""
+    card_ctx = _build_card_context(player, state)
+    prompt = (
+        f"{card_ctx}\n\n"
+        f"Onerge: {proposal.get('proposal_text', '')}\n"
+        f"A secenegi: {proposal.get('option_a', '')}\n"
+        f"B secenegi: {proposal.get('option_b', '')}\n\n"
+        f"Bu onerge hakkinda karakter tonunda 1-2 cumle soyle."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt="Sen bir karakter olarak konusuyorsun. Kisa, sade, karakter tonunda. SADECE 1-2 cumle.",
+            model=MODEL,
+            temperature=0.8,
+        )
+        return result.output.strip()
+    except Exception:
+        return "Bu onerge hakkinda konusmak istemiyorum."
+
+
+async def generate_proposal_vote_ai(player: Player, state: GameState, proposal: dict) -> str:
+    """AI oyuncu icin onerge oyu (a veya b)."""
+    card_ctx = _build_card_context(player, state)
+    prompt = (
+        f"{card_ctx}\n\n"
+        f"Onerge: {proposal.get('proposal_text', '')}\n"
+        f"A: {proposal.get('option_a', '')}\n"
+        f"B: {proposal.get('option_b', '')}\n\n"
+        f"Hangi secenegi destekliyorsun? SADECE 'a' veya 'b' yaz."
+    )
+
+    try:
+        result = await llm_generate(
+            prompt=prompt,
+            system_prompt="Bir karakter olarak karar ver. SADECE 'a' veya 'b' yaz, baska hicbir sey yazma.",
+            model=MODEL,
+            temperature=0.3,
+        )
+        text = result.output.strip().lower()
+        if "b" in text:
+            return "b"
+        return "a"
+    except Exception:
+        return "a"
 
 
 # ══════════════════════════════════════════════════════
