@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
 
 export const MorningScene: React.FC = () => {
-  const { round, dayLimit, morningText, worldSeed } = useGame()
+  const { round, dayLimit, morningText, omens } = useGame()
   const [displayed, setDisplayed] = useState('')
-  const [showOmen, setShowOmen] = useState(false)
+  const [showOmens, setShowOmens] = useState(false)
   const [cursorVisible, setCursorVisible] = useState(true)
 
   // Typewriter efekti
   useEffect(() => {
     if (!morningText) return
     setDisplayed('')
-    setShowOmen(false)
+    setShowOmens(false)
     setCursorVisible(true)
     let i = 0
     const iv = setInterval(() => {
@@ -21,15 +21,12 @@ export const MorningScene: React.FC = () => {
         clearInterval(iv)
         setTimeout(() => {
           setCursorVisible(false)
-          setShowOmen(true)
+          setShowOmens(true)
         }, 600)
       }
     }, 30)
     return () => clearInterval(iv)
   }, [morningText])
-
-  const omens = worldSeed?.omens ?? []
-  const omen = omens[(round - 1) % omens.length] ?? ''
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
@@ -73,17 +70,27 @@ export const MorningScene: React.FC = () => {
           {cursorVisible && <span className="animate-pulse text-accent ml-0.5">|</span>}
         </p>
 
-        {/* Omen */}
-        {showOmen && omen && (
+        {/* Omen Bar — 3 alamet */}
+        {showOmens && omens.length > 0 && (
           <div className="mt-10 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg"
-                 style={{
-                   background: 'rgba(255,191,0,0.04)',
-                   border: '1px solid rgba(255,191,0,0.1)',
-                 }}>
-              <span className="text-accent/50 text-xs">&#9670;</span>
-              <p className="text-sm italic text-text-secondary/50">{omen}</p>
-              <span className="text-accent/50 text-xs">&#9670;</span>
+            <p className="text-[10px] uppercase tracking-[3px] text-text-secondary/30 mb-3 font-semibold">
+              Gunun Alametleri
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              {omens.map((omen, i) => (
+                <div key={omen.id}
+                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-500"
+                     style={{
+                       background: 'rgba(255,191,0,0.04)',
+                       border: '1px solid rgba(255,191,0,0.1)',
+                       animationDelay: `${i * 200}ms`,
+                     }}>
+                  <span className="text-lg" style={{ filter: 'drop-shadow(0 0 4px rgba(255,191,0,0.3))' }}>
+                    {omen.icon}
+                  </span>
+                  <span className="text-xs text-accent/60 font-medium">{omen.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}

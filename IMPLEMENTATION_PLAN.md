@@ -43,13 +43,13 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 - [x] `game.py` — acting prompt'a kurum bilgisi eklendi
 - [x] Frontend `types/game.ts` — `GamePlayer`'a `institution`, `institutionLabel`, `publicTick`, `alibiAnchor`, `speechColor` eklendi
 
-### 0.4 Alamet (Omen) Sistemi — Atmosfer
-- [ ] `data.json` — 12 alamet tanimla (isim, ikon, atmosfer aciklamasi)
-- [ ] `game.py` — `run_morning()` icinde gunun 3 alametini sec
-- [ ] `game_loop.py` — morning broadcast'ine alamet verisini ekle
-- [ ] Frontend `types/game.ts` — Omen tipi ekle
-- [ ] Frontend `GameContext.tsx` — omens state + morning event'inden parse
-- [ ] Frontend `MorningScene.tsx` — OmenBar goster (3 alamet ikonu + isim)
+### 0.4 Alamet (Omen) Sistemi — Atmosfer (TAMAMLANDI)
+- [x] `data.json` — 12 alamet tanimlandi (id, label, icon, atmosphere)
+- [x] `game.py` — `run_morning()` icinde deterministik RNG ile gunun 3 alametini secer, state'e kaydeder
+- [x] `game_loop.py` — morning broadcast'ine `omens` array eklendi (id, label, icon)
+- [x] Frontend `types/game.ts` — `Omen` interface eklendi
+- [x] Frontend `GameContext.tsx` — `omens: Omen[]` state + morning event parse + phase_change reset
+- [x] Frontend `MorningScene.tsx` — OmenBar: typewriter bittikten sonra 3 alamet ikonu + isim gosterir
 
 ### 0.5 End-to-End Test
 - [ ] Backend + Frontend birlikte calistir
@@ -182,8 +182,8 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 Katman 0.1 (temel altyapi)       ████████████████████ TAMAM
 Katman 0.2 (karakter karti)      ████████████████████ TAMAM
 Katman 0.3 (kurum dagilimi)      ████████████████████ TAMAM
-Katman 0.4 (alamet sistemi)      ░░░░░░░░░░░░░░░░░░░ sirada <<<
-Katman 0.5 (e2e test)            ░░░░░░░░░░░░░░░░░░░ bekliyor
+Katman 0.4 (alamet sistemi)      ████████████████████ TAMAM
+Katman 0.5 (e2e test)            ░░░░░░░░░░░░░░░░░░░ sirada <<<
 Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ baslamadi
 Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ baslamadi
 Katman 3   (gece + politik)      ░░░░░░░░░░░░░░░░░░░ baslamadi

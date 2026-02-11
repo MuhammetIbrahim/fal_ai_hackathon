@@ -1843,11 +1843,14 @@ async def run_morning(state: GameState) -> GameState:
     else:
         exile_text = "Gece sessiz gecti. Kimse surgun edilmedi."
 
-    # Omen
-    omen = ""
-    if ws and ws.get("daily_omens"):
-        omens = ws["daily_omens"]
-        omen = omens[min(round_n - 1, len(omens) - 1)]
+    # Omen — her gun 3 alamet sec (12'lik havuzdan)
+    day_omens = []
+    if OMENS:
+        rng_omen = random_module.Random(f"omen_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+        day_omens = rng_omen.sample(OMENS, min(3, len(OMENS)))
+    omen = ", ".join(o["label"] for o in day_omens) if day_omens else ""
+    # State'e kaydet (game_loop broadcast icin)
+    state["_day_omens"] = day_omens
 
     settlement = ws["place_variants"]["settlement_name"] if ws else "Yerlesim"
     scene_cards = render_scene_cards(WorldSeed(**ws)) if ws else {}

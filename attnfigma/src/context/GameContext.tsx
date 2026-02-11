@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import type {
   Phase, GamePlayer, ChatMessage, VoteEntry, LocationDecision,
-  WorldSeed, InputAction, HouseVisitState,
+  WorldSeed, InputAction, HouseVisitState, Omen,
 } from '../types/game'
 import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
 import { useAudioQueue } from '../hooks/useAudioQueue'
@@ -36,6 +36,7 @@ interface GameState {
 
   // Phase-specific (reset on phase change)
   morningText: string
+  omens: Omen[]
   messages: ChatMessage[]
   locationDecisions: LocationDecision[]
   houseVisit: HouseVisitState | null
@@ -83,6 +84,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     worldSeed: null,
     worldBrief: null,
     morningText: '',
+    omens: [],
     messages: [],
     locationDecisions: [],
     houseVisit: null,
@@ -116,6 +118,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dayLimit: (data.day_limit as number) ?? prev.dayLimit,
         // Reset phase-specific data
         ...(phase !== prev.phase ? {
+          morningText: '',
+          omens: [],
           messages: [],
           locationDecisions: [],
           houseVisit: null,
@@ -128,11 +132,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }))
     }))
 
-    // morning → morning text
+    // morning → morning text + omens
     unsubs.push(ws.onEvent('morning', (data) => {
+      const omens = (data.omens as Omen[]) ?? []
       setState(prev => ({
         ...prev,
         morningText: (data.content as string) ?? '',
+        omens,
       }))
     }))
 

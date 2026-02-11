@@ -94,6 +94,12 @@ export interface InputAction {
   extraData?: Record<string, unknown>
 }
 
+export interface Omen {
+  id: string
+  label: string
+  icon: string
+}
+
 export interface HouseVisitState {
   visitor: string
   host: string

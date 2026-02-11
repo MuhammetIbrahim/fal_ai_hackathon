@@ -266,11 +266,18 @@ async def _game_loop_runner(game_id: str, state: Any):
             if state["campfire_history"]:
                 morning_msg = state["campfire_history"][-1]["content"]
 
+            # Gunun alametleri (run_morning state'e kaydetti)
+            day_omens = state.get("_day_omens", [])
+
             await manager.broadcast(game_id, {
                 "event": "morning",
                 "data": {
                     "round": round_n,
                     "content": morning_msg,
+                    "omens": [
+                        {"id": o["id"], "label": o["label"], "icon": o["icon"]}
+                        for o in day_omens
+                    ],
                 }
             })
 
