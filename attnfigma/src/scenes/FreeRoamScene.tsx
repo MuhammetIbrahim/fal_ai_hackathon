@@ -12,6 +12,7 @@ export const FreeRoamScene: React.FC = () => {
   const campfirePlayers = decisions.filter(d => d.choice === 'CAMPFIRE')
   const homePlayers = decisions.filter(d => d.choice === 'HOME')
   const visitors = decisions.filter(d => d.choice.startsWith('VISIT'))
+  const institutionGoers = decisions.filter(d => d.choice.startsWith('INSTITUTION'))
 
   const handleChoice = (choice: string) => {
     sendLocationChoice(choice)
@@ -107,13 +108,43 @@ export const FreeRoamScene: React.FC = () => {
                 Git
               </button>
             </div>
+
+            {/* Institution Locations */}
+            <div className="mt-4">
+              <p className="text-[10px] uppercase tracking-[2px] text-text-secondary/40 mb-2 font-semibold text-center">
+                Kurum Lokasyonlari
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'kiler', label: 'Kiler', icon: '🗝️' },
+                  { id: 'gecit_kulesi', label: 'Gecit Kulesi', icon: '🏰' },
+                  { id: 'kul_tapinagi', label: 'Kul Tapinagi', icon: '🕯️' },
+                  { id: 'sifahane', label: 'Sifahane', icon: '⚕️' },
+                  { id: 'demirhane', label: 'Demirhane', icon: '⚒️' },
+                  { id: 'gezgin_hani', label: 'Gezgin Hani', icon: '🍺' },
+                ].map(loc => (
+                  <button
+                    key={loc.id}
+                    onClick={() => handleChoice(`INSTITUTION|${loc.id}`)}
+                    className="flex flex-col items-center gap-1 px-3 py-3 rounded-xl transition-all duration-200 hover:scale-105"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <span className="text-lg">{loc.icon}</span>
+                    <span className="text-[10px] text-text-secondary/60 font-medium">{loc.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Decisions Grid */}
       {decisions.length > 0 && (
-        <div className="relative z-10 flex-1 grid grid-cols-3 gap-4 px-6 pb-6 max-w-4xl mx-auto w-full min-h-0 overflow-y-auto">
+        <div className="relative z-10 flex-1 grid grid-cols-4 gap-4 px-6 pb-6 max-w-5xl mx-auto w-full min-h-0 overflow-y-auto">
           {/* Ates Basi */}
           <div className="flex flex-col items-center">
             <div className="mb-3 flex flex-col items-center">
@@ -176,6 +207,29 @@ export const FreeRoamScene: React.FC = () => {
                     <span className="text-xs text-accent/70">{d.playerName}</span>
                     <span className="text-[10px] text-text-secondary/30 mx-1">&#8594;</span>
                     <span className="text-xs text-accent/50">{target}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Kurumlar */}
+          <div className="flex flex-col items-center">
+            <div className="mb-3 flex flex-col items-center">
+              <span className="text-2xl mb-1 opacity-60">&#127970;</span>
+              <p className="text-xs font-semibold text-text-secondary/50 tracking-wider uppercase">Kurumlar</p>
+              <p className="text-[10px] text-text-secondary/30">{institutionGoers.length} kisi</p>
+            </div>
+            <div className="space-y-1.5 w-full">
+              {institutionGoers.map(d => {
+                const locId = d.choice.replace('INSTITUTION|', '')
+                const player = players.find(p => p.name === d.playerName)
+                return (
+                  <div key={d.playerName} className="flex items-center gap-2 px-3 py-2 rounded-lg animate-fade-in"
+                       style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                    {player && <div className="w-5 h-5 rounded-full shrink-0" style={{ backgroundColor: player.avatarColor, border: '1px solid rgba(255,255,255,0.1)' }} />}
+                    <span className="text-xs text-text-primary/70">{d.playerName}</span>
+                    <span className="text-[10px] text-text-secondary/30 ml-auto">{locId}</span>
                   </div>
                 )
               })}

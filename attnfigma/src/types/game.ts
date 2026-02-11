@@ -4,6 +4,7 @@ export type Phase =
   | 'campfire_open'
   | 'free_roam'
   | 'house'
+  | 'institution'
   | 'campfire_close'
   | 'vote'
   | 'exile'
@@ -57,7 +58,7 @@ export interface VoteEntry {
   target: string
 }
 
-export type LocationChoice = 'CAMPFIRE' | 'HOME' | `VISIT|${string}`
+export type LocationChoice = 'CAMPFIRE' | 'HOME' | `VISIT|${string}` | `INSTITUTION|${string}`
 
 export interface LocationDecision {
   playerName: string
@@ -120,9 +121,11 @@ export interface SinamaEvent {
 
 export interface OcakTepki {
   speaker: string
-  type: 'kivilcim'
+  type: 'kivilcim' | 'kul_kaymasi'
+  tier?: 'T1' | 'T2'
   message: string
   contradictionHint?: string
+  forcedQuestion?: string
 }
 
 export interface HouseVisitState {
@@ -135,4 +138,25 @@ export interface HouseVisitState {
     content: string
     turn: number
   }[]
+}
+
+// ── Katman 2 Types ──────────────────────────────────
+
+export interface InstitutionVisitState {
+  player: string
+  locationId: string
+  narrative: string | null
+}
+
+export interface UIObject {
+  id: string
+  label: string
+  icon: string
+  state: Record<string, unknown>
+}
+
+export interface MiniEvent {
+  id: string
+  content: string
+  uiObject: string
 }

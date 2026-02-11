@@ -8,6 +8,7 @@ import { HouseScene } from './HouseScene'
 import { VoteScene } from './VoteScene'
 import { ExileScene } from './ExileScene'
 import { GameOverScene } from './GameOverScene'
+import { LocationScene } from './LocationScene'
 
 const SceneSwitch: React.FC = () => {
   const { phase } = useGame()
@@ -33,6 +34,7 @@ const SceneSwitch: React.FC = () => {
       case 'campfire_open':  return <CampfireScene />
       case 'campfire_close': return <CampfireScene />
       case 'free_roam':      return <FreeRoamScene />
+      case 'institution':    return <LocationScene />
       case 'house':          return <HouseScene />
       case 'vote':           return <VoteScene />
       case 'exile':          return <ExileScene />

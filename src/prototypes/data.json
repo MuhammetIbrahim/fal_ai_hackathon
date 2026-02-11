@@ -167,5 +167,29 @@
     {"id": "esik_haritasi", "label": "Esik Haritasi", "icon": "🗺️", "prompt_hint": "Yerlesimde eski bir harita parcasi ortaya cikti. Uzerindeki isaretler bazi yolculuklari ya da bulusmalari isaret ediyor. Bu harita birinin alibi'sini dogrulayabilir ya da curutebilir."},
     {"id": "kor_bedeli", "label": "Kor Bedeli", "icon": "🔥", "prompt_hint": "Ocak bu sabah beklenmedik bir bedel istedi. Birinin bir seyden vazgecmesi gerekiyor. Bu fedakarlik kimin gercek, kimin sahte oldugunu gosterebilir."},
     {"id": "sessiz_soru", "label": "Sessiz Soru", "icon": "❓", "prompt_hint": "Havada cevaplanmamis bir soru asili kaldi. Kimse sormadi ama herkes duydu. Bu sessizlik icinde biri rahatsiz olacak."}
+  ],
+  "institution_locations": [
+    {"id": "kiler", "label": "Kiler", "icon": "🗝️", "kurum_id": "kilerci", "description": "Erzak deposu. Agir kapı, pasli kilit, raflar dolusu tahil."},
+    {"id": "gecit_kulesi", "label": "Gecit Kulesi", "icon": "🏰", "kurum_id": "gecitci", "description": "Giris-cikis noktasi. Nobet levhasi, puslu cam."},
+    {"id": "kul_tapinagi", "label": "Kul Tapinagi", "icon": "🕯️", "kurum_id": "kul_rahibi", "description": "Ocagin kutsal mekani. Kul kasesi, titrek mumlar."},
+    {"id": "sifahane", "label": "Sifahane", "icon": "⚕️", "kurum_id": "sifaci_kurum", "description": "Tedavi kulubesi. Ot kokusu, sise dolu dolap."},
+    {"id": "demirhane", "label": "Demirhane", "icon": "⚒️", "kurum_id": "demirci_kurum", "description": "Demirci ocagi. Kivilcimlar, alet duvari, kayit defteri."},
+    {"id": "gezgin_hani", "label": "Gezgin Hani", "icon": "🍺", "kurum_id": "han_insani", "description": "Dedikodu merkezi. Ahsap masalar, gezgin notlari."}
+  ],
+  "ui_objects": [
+    {"id": "kiler_kapisi", "label": "Kiler Kapisi", "icon": "🚪", "location": "kiler", "default_state": {"state": "locked"}},
+    {"id": "anahtar_halkasi", "label": "Anahtar Halkasi", "icon": "🔑", "location": "kiler", "default_state": {"state": "present"}},
+    {"id": "kayit_defteri", "label": "Kayit Defteri", "icon": "📖", "location": "demirhane", "default_state": {"blurred_line": ""}},
+    {"id": "nobet_levhasi", "label": "Nobet Levhasi", "icon": "📋", "location": "gecit_kulesi", "default_state": {"names": [], "silik_satir": ""}},
+    {"id": "kul_kasesi", "label": "Kul Kasesi", "icon": "🥣", "location": "kul_tapinagi", "default_state": {"fill": 0.3}},
+    {"id": "sifahane_dolabi", "label": "Sifahane Dolabi", "icon": "💊", "location": "sifahane", "default_state": {"bottle_count": 5}}
+  ],
+  "mini_event_templates": [
+    {"id": "kiler_kilit", "type": "public", "omen_trigger": "pasli_anahtar", "text_hint": "Kilerin kilidi bu sabah farkli gorunuyor.", "ui_object": "kiler_kapisi"},
+    {"id": "anahtar_kayip", "type": "private", "location_trigger": "kiler", "text_hint": "Anahtar halkasi masanin ustunde yok.", "ui_object": "anahtar_halkasi"},
+    {"id": "kayit_satir", "type": "private", "location_trigger": "demirhane", "text_hint": "Kayit defterinde bulanik bir satir var.", "ui_object": "kayit_defteri"},
+    {"id": "nobet_degisimi", "type": "public", "omen_trigger": "kullu_el_izi", "text_hint": "Nobet levhasinda silik bir isim var.", "ui_object": "nobet_levhasi"},
+    {"id": "kul_doluluk", "type": "public", "omen_trigger": "soguk_kor", "text_hint": "Kul kasesi beklenenden dolu.", "ui_object": "kul_kasesi"},
+    {"id": "sise_eksik", "type": "private", "location_trigger": "sifahane", "text_hint": "Sifahane dolabinda bir sise eksik.", "ui_object": "sifahane_dolabi"}
   ]
 }

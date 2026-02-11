@@ -5,11 +5,13 @@ import type { Message } from '../components/campfire/ChatLog'
 import { QueuePanel } from '../components/campfire/QueuePanel'
 import type { Player } from '../components/campfire/QueuePanel'
 import { OmenBar } from '../components/campfire/OmenBar'
+import { GameObjects } from '../components/campfire/GameObjects'
 
 export const CampfireScene: React.FC = () => {
-  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, selfPlayerName, ocakTepki } = useGame()
+  const { phase, round, messages, players, worldSeed, inputRequired, sendSpeak, ocakTepki, kulKaymasi, uiObjects } = useGame()
   const [inputText, setInputText] = useState('')
   const [showFlash, setShowFlash] = useState(false)
+  const [showKulFlash, setShowKulFlash] = useState(false)
 
   // Ocak tepki flash effect
   useEffect(() => {
@@ -18,6 +20,14 @@ export const CampfireScene: React.FC = () => {
     const t = setTimeout(() => setShowFlash(false), 3000)
     return () => clearTimeout(t)
   }, [ocakTepki])
+
+  // Kul kaymasi flash effect
+  useEffect(() => {
+    if (!kulKaymasi) return
+    setShowKulFlash(true)
+    const t = setTimeout(() => setShowKulFlash(false), 5000)
+    return () => clearTimeout(t)
+  }, [kulKaymasi])
 
   const isClosing = phase === 'campfire_close'
   const label = isClosing ? 'Kapanis Ates Basi' : 'Ates Basi'
@@ -66,6 +76,8 @@ export const CampfireScene: React.FC = () => {
 
       {/* Ocak tepki flash */}
       {showFlash && <div className="ocak-flash" />}
+      {/* Kul kaymasi flash */}
+      {showKulFlash && <div className="kul-kaymasi-flash" />}
 
       {/* Top bar */}
       <header className="cf-topbar">
@@ -114,6 +126,9 @@ export const CampfireScene: React.FC = () => {
           currentSpeaker={currentSpeaker}
         />
       </div>
+
+      {/* UI Objects HUD */}
+      <GameObjects uiObjects={uiObjects} />
     </div>
   )
 }

@@ -1052,3 +1052,120 @@ html, body {
     box-shadow: 0 0 30px rgba(255,140,0,0.25);
   }
 }
+
+/* ========================================
+   KATMAN 2 — Lokasyonlar, Mini Event, UI Objeleri, Kül Kayması
+   ======================================== */
+
+/* --- Kül Kayması Flash --- */
+.kul-kaymasi-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  animation: kulFlash 5s ease-out forwards;
+}
+
+@keyframes kulFlash {
+  0% {
+    opacity: 0;
+    background: transparent;
+  }
+  10% {
+    opacity: 1;
+    background: radial-gradient(
+      ellipse at center bottom,
+      rgba(120, 120, 120, 0.25) 0%,
+      rgba(80, 80, 80, 0.12) 30%,
+      transparent 70%
+    );
+  }
+  80% {
+    opacity: 0.8;
+    background: radial-gradient(
+      ellipse at center bottom,
+      rgba(100, 100, 100, 0.15) 0%,
+      rgba(60, 60, 60, 0.08) 30%,
+      transparent 70%
+    );
+  }
+  100% {
+    opacity: 0;
+    background: transparent;
+  }
+}
+
+/* --- Institution Scene Badge --- */
+.institution-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,191,0,0.04) 100%);
+  border: 1px solid rgba(255,191,0,0.1);
+  backdrop-filter: blur(8px);
+}
+
+/* --- Mini Event Card --- */
+.mini-event-card {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,191,0,0.06) 0%, rgba(180,80,0,0.04) 100%);
+  border: 1px solid rgba(255,191,0,0.12);
+  backdrop-filter: blur(8px);
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+/* --- Game Objects HUD Bar --- */
+.game-objects-bar {
+  position: relative;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 1.5rem;
+  flex-shrink: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
+}
+
+.game-object-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* --- Kül Kayması Chat Bubble --- */
+.cf-bubble.kul-kaymasi {
+  align-self: center;
+  max-width: 85%;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(120,120,120,0.12) 0%, rgba(80,80,80,0.08) 100%);
+  border: 1px solid rgba(160,160,160,0.2);
+  box-shadow: 0 0 15px rgba(120,120,120,0.15);
+  animation: kulBubblePulse 3s ease-in-out;
+}
+
+.cf-bubble.kul-kaymasi .cf-bubble-sender {
+  color: #a0a0a0;
+  font-weight: 700;
+}
+
+.cf-bubble.kul-kaymasi .cf-bubble-text {
+  font-style: italic;
+  color: #c0c0c0;
+}
+
+@keyframes kulBubblePulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(120,120,120,0.1);
+  }
+  30% {
+    box-shadow: 0 0 30px rgba(120,120,120,0.3);
+  }
+}

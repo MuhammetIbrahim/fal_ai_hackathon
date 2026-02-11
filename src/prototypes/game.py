@@ -122,6 +122,9 @@ NAMES_POOL = DATA["names_pool"]
 INSTITUTIONS = DATA["institutions"]
 OMENS = DATA["omens"]
 SINAMA_TYPES = DATA.get("sinama_types", [])
+INSTITUTION_LOCATIONS = DATA.get("institution_locations", [])
+UI_OBJECTS_DEF = DATA.get("ui_objects", [])
+MINI_EVENT_TEMPLATES = DATA.get("mini_event_templates", [])
 
 
 # ══════════════════════════════════════════════════════
@@ -822,7 +825,7 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
     return "NEXT", wanters[0]["name"]
 
 
-def _build_card_context(player: Player) -> str:
+def _build_card_context(player: Player, state: GameState | None = None) -> str:
     """Karakter kartindan campfire prompt'una eklenecek context."""
     parts = []
     if player.institution_label:
@@ -833,6 +836,12 @@ def _build_card_context(player: Player) -> str:
         parts.append(f"Gunluk rutinin (alibi): {player.alibi_anchor}")
     if player.speech_color:
         parts.append(f"Konusma tarzin: {player.speech_color}")
+    # Katman 2: Son kurum ziyareti alibi
+    if state:
+        visits = [v for v in state.get("_institution_visits", []) if v["player"] == player.name]
+        if visits:
+            last = visits[-1]
+            parts.append(f"Son kurum ziyaretin: {last['location']} (Gun {last['round']})")
     return "\n".join(parts) if parts else ""
 
 
@@ -882,7 +891,7 @@ async def _character_speak(player: Player, state: GameState) -> str:
         alive_names=alive_names,
         exiled_context=_get_exiled_context(state),
         cumulative_context=cumulative_context,
-        card_context=_build_card_context(player),
+        card_context=_build_card_context(player, state),
         spotlight_context=_build_spotlight_context(player, state),
         history=history_text,
         own_last=own_last,
@@ -1202,7 +1211,7 @@ async def _character_speak_1v1(
         day_limit=state.get("day_limit", 5),
         exiled_context=_get_exiled_context(state),
         cumulative_context=cumulative_context,
-        card_context=_build_card_context(player),
+        card_context=_build_card_context(player, state),
         campfire_summary=campfire_summary,
         visit_history=visit_history,
         own_last=own_last,
@@ -1348,6 +1357,11 @@ VISIT|<isim> — Birinin evine git.
   + Gizli ittifak kur veya boz
   - Campfire'i kacirirsin, kisi evde degilse kapisi kapali
 
+INSTITUTION|<lokasyon_id> — Bir kuruma git.
+  + Alibi olustur + lokasyona ozel bilgi edin
+  - Campfire'i kacirirsin
+Gecerli lokasyonlar: kiler, gecit_kulesi, kul_tapinagi, sifahane, demirhane, gezgin_hani
+
 KRITIK STRATEJI BILGISI:
 - Oylama oncesi 1v1 gorusme yapmayanlar bilgi dezavantajinda kalir
 - Suphelendigin biriyle 1v1 konusmamak = onu test etme firsatini kaybetmek
@@ -1359,7 +1373,9 @@ CAMPFIRE
 veya
 HOME
 veya
-VISIT|<isim>"""
+VISIT|<isim>
+veya
+INSTITUTION|<lokasyon_id>"""
 
 
 async def _get_location_decision(
@@ -1411,6 +1427,12 @@ async def _get_location_decision(
             else:
                 return {"name": player.name, "decision": "campfire", "target": None}
         return {"name": player.name, "decision": "visit", "target": target}
+    elif text.startswith("INSTITUTION") and "|" in text:
+        loc_id = text.split("|", 1)[1].strip().lower()
+        valid_ids = [l["id"] for l in INSTITUTION_LOCATIONS]
+        if loc_id in valid_ids:
+            return {"name": player.name, "decision": "institution", "target": loc_id}
+        return {"name": player.name, "decision": "campfire", "target": None}
     else:
         return {"name": player.name, "decision": "campfire", "target": None}
 
@@ -1937,6 +1959,11 @@ def init_state(
     state["campfire_rolling_summary"] = ""
     state["_summary_cursor"] = 0
     state["cumulative_summary"] = ""
+    # Katman 2 state
+    state["_ui_objects"] = {o["id"]: dict(o["default_state"]) for o in UI_OBJECTS_DEF}
+    state["_institution_visits"] = []
+    state["_mini_events"] = []
+    state["_kul_kaymasi_queue"] = []
     return state
 
 
@@ -2088,16 +2115,19 @@ oath: Ocagin onunde soylecegi yemin cumlesi — iddiali, dogrulanabilir (1 cumle
 SINAMA_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir "sinama" olayini 2-3 cumleyle anlat.
 Sade, gotik, kisa. Edebiyat yapma. Sadece olayı anlat. Turkce yaz."""
 
-TEPKI_SYSTEM = """Bir konusmayi analiz et. Kamu bilgisiyle ACIKCA celisen KESIN bir iddia var mi?
+TEPKI_SYSTEM = """Bir konusmayi iki boyuttan analiz et:
+
+T1 — KAMU BILGISI CELISKISI: Konusma, kamu bilgisiyle celisiyor mu?
+T2 — OZ-CELISKI: Konusma, bu kisinin KENDI onceki sozleriyle celisiyor mu?
 
 KURALLAR:
 - SADECE kesin, dogrudan celiskiler icin "true" de.
 - Belirsiz, dolayli veya yoruma acik durumlar icin "false" de.
 - Kisi sadece farkli bir konu actiysa bu celiski DEGILDIR.
-- Kisi onceki sozlerinin TERSINI soyluyorsa bu celiskidir.
+- Kisi onceki sozlerinin TERSINI soyluyorsa bu T2 celiskidir.
 
 SADECE JSON dondur:
-{"contradiction": true/false, "hint": "kisa aciklama"}"""
+{"t1": {"contradiction": true/false, "hint": "kisa aciklama"}, "t2": {"contradiction": true/false, "hint": "kisa aciklama"}}"""
 
 
 async def generate_spotlight_cards(state: GameState) -> list[dict]:
@@ -2218,7 +2248,7 @@ async def generate_sinama_event(state: GameState) -> dict | None:
 
 
 async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> dict | None:
-    """Campfire konusmasi sonrasi celiski kontrolu (Flash LLM)."""
+    """Campfire konusmasi sonrasi celiski kontrolu (Flash LLM). T1 + T2 + Kul Kaymasi."""
     # Kamu canon ozeti: son surgunler + onceki iddialar
     canon_parts = []
 
@@ -2248,7 +2278,7 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
     prompt = (
         f"KONUSMA ({speaker_name}):\n\"{speech}\"\n\n"
         f"KAMU BILGISI:\n{canon}\n\n"
-        f"Bu konusmada kamu bilgisiyle celisen kesin bir iddia var mi?"
+        f"Bu konusmayi T1 (kamu celiskisi) ve T2 (oz-celiski) boyutlarindan analiz et."
     )
 
     result = await llm_generate(
@@ -2264,19 +2294,266 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
         end = raw.rfind("}") + 1
         if start >= 0 and end > start:
             data = json.loads(raw[start:end])
-            if data.get("contradiction") is True:
-                hint = data.get("hint", "")
-                print(f"  [Ocak Tepki] KIVILCIM! {speaker_name}: {hint}")
+
+            # T1 — Kamu bilgisi celiskisi → kivilcim
+            t1 = data.get("t1", {})
+            if isinstance(t1, dict) and t1.get("contradiction") is True:
+                hint = t1.get("hint", "")
+                print(f"  [Ocak Tepki] T1 KIVILCIM! {speaker_name}: {hint}")
                 return {
                     "speaker": speaker_name,
                     "type": "kivilcim",
+                    "tier": "T1",
                     "message": "Ocak kisa kivilcim atti; kalabalik huzursuzlandi.",
                     "contradiction_hint": hint,
                 }
+
+            # T2 — Oz-celiski → %70 kivilcim, %30 kul kaymasi
+            t2 = data.get("t2", {})
+            if isinstance(t2, dict) and t2.get("contradiction") is True:
+                hint = t2.get("hint", "")
+                rng = random_module.Random(f"tepki_{speaker_name}_{len(state['campfire_history'])}")
+                roll = rng.random()
+                if roll < 0.7:
+                    print(f"  [Ocak Tepki] T2 KIVILCIM! {speaker_name}: {hint}")
+                    return {
+                        "speaker": speaker_name,
+                        "type": "kivilcim",
+                        "tier": "T2",
+                        "message": "Ocak'in koru parladi; soylediklerin birbiriyle celisiyor.",
+                        "contradiction_hint": hint,
+                    }
+                else:
+                    # Kul Kaymasi — zorunlu soru uret
+                    forced_q = await _generate_kul_kaymasi_question(speaker_name, hint, state)
+                    print(f"  [Ocak Tepki] KUL KAYMASI! {speaker_name}: {forced_q}")
+                    state["_kul_kaymasi_queue"].append({
+                        "speaker": speaker_name,
+                        "question": forced_q,
+                        "round": state.get("round_number", 1),
+                    })
+                    return {
+                        "speaker": speaker_name,
+                        "type": "kul_kaymasi",
+                        "tier": "T2",
+                        "message": "Kuller kaymaya basladi... Ocak sana bir soru soruyor.",
+                        "contradiction_hint": hint,
+                        "forced_question": forced_q,
+                    }
     except (json.JSONDecodeError, KeyError):
         pass
 
     return None
+
+
+KUL_KAYMASI_SYSTEM = """Ocak Bekcisi olarak bir soru sor. Konusanin oz-celiskisi tespit edildi.
+
+KURALLAR:
+- 1 soru sor, kisa ve net.
+- Celiskiyi dogrudan isaret etme ama konusanin aciklamak zorunda kalacagi bir soru sor.
+- Mistik ama anlasilir olsun. Max 2 cumle.
+- Turkce yaz."""
+
+
+async def _generate_kul_kaymasi_question(speaker_name: str, hint: str, state: GameState) -> str:
+    """Kul Kaymasi icin zorunlu soru uret."""
+    prompt = (
+        f"Konusan: {speaker_name}\n"
+        f"Celiski ipucu: {hint}\n\n"
+        f"Ocak Bekcisi olarak bu kisiye bir soru sor."
+    )
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=KUL_KAYMASI_SYSTEM,
+        model=MODEL,
+        temperature=0.7,
+    )
+    return result.output.strip()
+
+
+# ══════════════════════════════════════════════════════
+#  10. KATMAN 2 — LOKASYONLAR + MINI EVENT
+# ══════════════════════════════════════════════════════
+
+INSTITUTION_SCENE_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir kurum lokasyonunu anlat.
+
+KURALLAR:
+- 2-3 cumle sahne. Kisa, gotik, somut.
+- Lokasyondaki UI objesine dikkat cek.
+- Eger obje durumunda degisiklik varsa JSON'da belirt.
+- Turkce yaz. Edebiyat yapma.
+
+SADECE JSON dondur:
+{"narrative": "2-3 cumle sahne", "ui_update": null}
+veya
+{"narrative": "2-3 cumle sahne", "ui_update": {"object_id": "...", "new_state": {...}}}"""
+
+
+async def generate_institution_scene(
+    player: Player,
+    location_id: str,
+    state: GameState,
+) -> dict:
+    """Kurum lokasyonu ziyareti icin sahne uret."""
+    loc = next((l for l in INSTITUTION_LOCATIONS if l["id"] == location_id), None)
+    if not loc:
+        return {"narrative": "Bos bir alan.", "ui_update": None}
+
+    # Lokasyondaki UI objeleri
+    loc_objects = [o for o in UI_OBJECTS_DEF if o["location"] == location_id]
+    obj_states = []
+    for obj in loc_objects:
+        current = state.get("_ui_objects", {}).get(obj["id"], obj["default_state"])
+        obj_states.append(f"{obj['label']} ({obj['icon']}): {json.dumps(current, ensure_ascii=False)}")
+
+    # Gunun omenleri
+    day_omens = state.get("_day_omens", [])
+    omen_text = ", ".join(o["label"] for o in day_omens) if day_omens else "yok"
+
+    prompt = (
+        f"Lokasyon: {loc['label']} — {loc['description']}\n"
+        f"Ziyaretci: {player.name} ({player.role_title})\n"
+        f"Gunun alametleri: {omen_text}\n"
+        f"Lokasyondaki objeler:\n" + "\n".join(obj_states) + "\n\n"
+        f"Bu lokasyonu 2-3 cumleyle anlat. Eger bir objede degisiklik mantikli ise belirt."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=INSTITUTION_SCENE_SYSTEM,
+        model=MODEL,
+        temperature=0.7,
+    )
+
+    try:
+        raw = result.output.strip()
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start >= 0 and end > start:
+            data = json.loads(raw[start:end])
+            narrative = data.get("narrative", "")
+            ui_update = data.get("ui_update")
+
+            # UI update varsa uygula
+            if ui_update and isinstance(ui_update, dict):
+                obj_id = ui_update.get("object_id")
+                new_state = ui_update.get("new_state")
+                if obj_id and new_state and obj_id in state.get("_ui_objects", {}):
+                    state["_ui_objects"][obj_id].update(new_state)
+                    print(f"  [UI] {obj_id} guncellendi: {new_state}")
+
+            # Ziyareti kaydet
+            state["_institution_visits"].append({
+                "player": player.name,
+                "location": location_id,
+                "round": state.get("round_number", 1),
+                "narrative": narrative,
+            })
+
+            return {"narrative": narrative, "ui_update": ui_update}
+    except (json.JSONDecodeError, KeyError):
+        pass
+
+    fallback = f"{player.name}, {loc['label']}'e girdi. Karanlik bir kosede bekliyor."
+    state["_institution_visits"].append({
+        "player": player.name,
+        "location": location_id,
+        "round": state.get("round_number", 1),
+        "narrative": fallback,
+    })
+    return {"narrative": fallback, "ui_update": None}
+
+
+MINI_EVENT_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Kisa bir mini olay anlat.
+- 2 cumle, sade, gotik. Turkce.
+- Ipucunu kullan ama gizle — dogrudan cevap verme.
+- Edebiyat yapma. Somut ve kisa."""
+
+
+async def generate_public_mini_event(state: GameState) -> dict | None:
+    """Gunun omenlerine gore kamu mini event uret."""
+    day_omens = state.get("_day_omens", [])
+    if not day_omens:
+        return None
+
+    omen_ids = [o["id"] for o in day_omens]
+    matching = [t for t in MINI_EVENT_TEMPLATES
+                if t["type"] == "public" and t.get("omen_trigger") in omen_ids]
+
+    if not matching:
+        return None
+
+    # Deterministik secim
+    round_n = state.get("round_number", 1)
+    rng = random_module.Random(f"mini_pub_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+    template = rng.choice(matching)
+
+    settlement = state.get("world_seed", {}).get("place_variants", {}).get("settlement_name", "Yerlesim")
+    prompt = (
+        f"Yerlesim: {settlement}\n"
+        f"Gun: {round_n}\n"
+        f"Ipucu: {template['text_hint']}\n\n"
+        f"Bu olayı 2 cumleyle anlat."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=MINI_EVENT_SYSTEM,
+        model=MODEL,
+        temperature=0.7,
+    )
+
+    mini_event = {
+        "id": template["id"],
+        "content": result.output.strip(),
+        "ui_object": template.get("ui_object", ""),
+    }
+    state["_mini_events"].append(mini_event)
+    print(f"  [Mini Event] Kamu: {template['id']}: {mini_event['content'][:60]}...")
+    return mini_event
+
+
+async def generate_private_mini_event(
+    player: Player,
+    location_id: str,
+    state: GameState,
+) -> dict | None:
+    """Lokasyona gore ozel mini event uret. %50 tetiklenme."""
+    matching = [t for t in MINI_EVENT_TEMPLATES
+                if t["type"] == "private" and t.get("location_trigger") == location_id]
+
+    if not matching:
+        return None
+
+    # %50 sans (deterministik)
+    round_n = state.get("round_number", 1)
+    rng = random_module.Random(f"mini_priv_{player.name}_{location_id}_{round_n}")
+    if rng.random() > 0.5:
+        return None
+
+    template = rng.choice(matching)
+    prompt = (
+        f"Oyuncu: {player.name} ({player.role_title})\n"
+        f"Lokasyon: {location_id}\n"
+        f"Ipucu: {template['text_hint']}\n\n"
+        f"Bu olayı 1-2 cumleyle anlat."
+    )
+
+    result = await llm_generate(
+        prompt=prompt,
+        system_prompt=MINI_EVENT_SYSTEM,
+        model=MODEL,
+        temperature=0.7,
+    )
+
+    mini_event = {
+        "id": template["id"],
+        "content": result.output.strip(),
+        "ui_object": template.get("ui_object", ""),
+    }
+    state["_mini_events"].append(mini_event)
+    print(f"  [Mini Event] Ozel ({player.name}): {template['id']}: {mini_event['content'][:60]}...")
+    return mini_event
 
 
 # ══════════════════════════════════════════════════════

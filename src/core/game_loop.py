@@ -199,9 +199,11 @@ async def _game_loop_runner(game_id: str, state: Any):
             maybe_update_campfire_summary, update_cumulative_summary,
             get_reaction, orchestrator_pick, check_moderation,
             generate_spotlight_cards, generate_sinama_event, check_ocak_tepki,
+            generate_institution_scene, generate_public_mini_event,
+            generate_private_mini_event,
             INITIAL_CAMPFIRE_TURNS, FREE_ROAM_ROUNDS,
             CAMPFIRE_TURNS_PER_ROUND, CLOSING_CAMPFIRE_TURNS,
-            ROOM_EXCHANGES,
+            ROOM_EXCHANGES, INSTITUTION_LOCATIONS,
         )
     except ImportError as e:
         logger.error(f"Failed to import game engine: {e}")
@@ -295,6 +297,18 @@ async def _game_loop_runner(game_id: str, state: Any):
                     await asyncio.sleep(1)
             except Exception as e:
                 logger.warning(f"Sinama generation failed: {e}")
+
+            # ── KAMU MINI EVENT (Katman 2) ──
+            try:
+                mini_event = await generate_public_mini_event(state)
+                if mini_event:
+                    await manager.broadcast(game_id, {
+                        "event": "mini_event",
+                        "data": mini_event,
+                    })
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.warning(f"Mini event generation failed: {e}")
 
             # ── SPOTLIGHT KARTLARI (Katman 1) ──
             try:
@@ -400,6 +414,8 @@ async def _game_loop_runner(game_id: str, state: Any):
                         locations[name] = "home"
                     elif decision["decision"] == "visit":
                         locations[name] = f"visiting:{decision['target']}"
+                    elif decision["decision"] == "institution":
+                        locations[name] = f"institution:{decision['target']}"
                     else:
                         locations[name] = "campfire"
 
@@ -413,6 +429,13 @@ async def _game_loop_runner(game_id: str, state: Any):
                         target = choice.split("|", 1)[1].strip()
                         if target in alive_names and target != player.name:
                             locations[player.name] = f"visiting:{target}"
+                        else:
+                            locations[player.name] = "campfire"
+                    elif choice.upper().startswith("INSTITUTION") and "|" in choice:
+                        loc_id = choice.split("|", 1)[1].strip().lower()
+                        valid_ids = [l["id"] for l in INSTITUTION_LOCATIONS]
+                        if loc_id in valid_ids:
+                            locations[player.name] = f"institution:{loc_id}"
                         else:
                             locations[player.name] = "campfire"
                     else:
@@ -450,6 +473,8 @@ async def _game_loop_runner(game_id: str, state: Any):
                 home_people = [n for n, l in locations.items() if l == "home"]
                 visits = [(n, l.split(":")[1]) for n, l in locations.items()
                           if l.startswith("visiting:")]
+                institution_visits = [(n, l.split(":")[1]) for n, l in locations.items()
+                                      if l.startswith("institution:")]
 
                 # Broadcast konum kararlari
                 decisions_data = []
@@ -462,6 +487,9 @@ async def _game_loop_runner(game_id: str, state: Any):
                     elif loc.startswith("visiting:"):
                         target = loc.split(":")[1]
                         decisions_data.append({"player": name, "choice": f"VISIT|{target}"})
+                    elif loc.startswith("institution:"):
+                        loc_id = loc.split(":")[1]
+                        decisions_data.append({"player": name, "choice": f"INSTITUTION|{loc_id}"})
 
                 await manager.broadcast(game_id, {
                     "event": "location_decisions",
@@ -471,6 +499,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                         "campfire_people": campfire_people,
                         "home_people": home_people,
                         "visits": [{"visitor": v, "host": h} for v, h in visits],
+                        "institution_visits": [{"player": p, "location": l} for p, l in institution_visits],
                     }
                 })
 
@@ -480,6 +509,10 @@ async def _game_loop_runner(game_id: str, state: Any):
                     movement_parts.append(f"{n} evine cekildi")
                 for visitor_name, host_name in visits:
                     movement_parts.append(f"{visitor_name}, {host_name}'in evine gitti")
+                for p_name, loc_id in institution_visits:
+                    loc_info = next((l for l in INSTITUTION_LOCATIONS if l["id"] == loc_id), None)
+                    loc_label = loc_info["label"] if loc_info else loc_id
+                    movement_parts.append(f"{p_name}, {loc_label}'e gitti")
 
                 if movement_parts:
                     movement_msg = "Serbest dolasim: " + ". ".join(movement_parts) + "."
@@ -523,11 +556,28 @@ async def _game_loop_runner(game_id: str, state: Any):
                             )
                         )
 
-                # Campfire + Room tasks paralel calistir
+                # Institution visit tasks
+                institution_tasks = []
+                for p_name, loc_id in institution_visits:
+                    p_obj = find_player(state, p_name)
+                    if p_obj:
+                        institution_tasks.append(
+                            _run_institution_visit_ws(
+                                game_id=game_id,
+                                state=state,
+                                player=p_obj,
+                                location_id=loc_id,
+                                generate_institution_scene=generate_institution_scene,
+                                generate_private_mini_event=generate_private_mini_event,
+                            )
+                        )
+
+                # Campfire + Room + Institution tasks paralel calistir
                 all_tasks = []
                 if campfire_task:
                     all_tasks.append(campfire_task)
                 all_tasks.extend(room_tasks)
+                all_tasks.extend(institution_tasks)
                 if all_tasks:
                     await asyncio.gather(*all_tasks)
 
@@ -899,7 +949,7 @@ async def _run_campfire_segment_ws(
             if not first.is_human:
                 asyncio.create_task(_generate_and_broadcast_audio(game_id, first.name, message))
 
-            # Ocak Tepki kontrolu (Katman 1)
+            # Ocak Tepki kontrolu (Katman 1+2)
             if check_ocak_tepki:
                 try:
                     tepki = await check_ocak_tepki(first.name, message, state)
@@ -912,6 +962,15 @@ async def _run_campfire_segment_ws(
                             "event": "ocak_tepki",
                             "data": tepki,
                         })
+                        # Kul Kaymasi ise ozel flash broadcast
+                        if tepki.get("type") == "kul_kaymasi":
+                            await manager.broadcast(game_id, {
+                                "event": "kul_kaymasi",
+                                "data": {
+                                    "speaker": tepki["speaker"],
+                                    "question": tepki.get("forced_question", ""),
+                                },
+                            })
                 except Exception as e:
                     logger.warning(f"Ocak tepki check failed: {e}")
 
@@ -1017,7 +1076,7 @@ async def _run_campfire_segment_ws(
         if not speaker.is_human:
             asyncio.create_task(_generate_and_broadcast_audio(game_id, speaker.name, message))
 
-        # Ocak Tepki kontrolu (Katman 1)
+        # Ocak Tepki kontrolu (Katman 1+2)
         if check_ocak_tepki:
             try:
                 tepki = await check_ocak_tepki(speaker.name, message, state)
@@ -1030,6 +1089,15 @@ async def _run_campfire_segment_ws(
                         "event": "ocak_tepki",
                         "data": tepki,
                     })
+                    # Kul Kaymasi ise ozel flash broadcast
+                    if tepki.get("type") == "kul_kaymasi":
+                        await manager.broadcast(game_id, {
+                            "event": "kul_kaymasi",
+                            "data": {
+                                "speaker": tepki["speaker"],
+                                "question": tepki.get("forced_question", ""),
+                            },
+                        })
             except Exception as e:
                 logger.warning(f"Ocak tepki check failed: {e}")
 
@@ -1142,3 +1210,82 @@ async def _run_room_conversation_ws(
         })
 
     logger.info(f"Room visit done: {visitor.name} -> {owner.name} ({len(exchanges)} exchanges)")
+
+
+# ═══════════════════════════════════════════════════
+# HELPER: Institution Visit (Katman 2)
+# ═══════════════════════════════════════════════════
+
+async def _run_institution_visit_ws(
+    game_id: str,
+    state: Any,
+    player: Any,
+    location_id: str,
+    generate_institution_scene,
+    generate_private_mini_event,
+) -> None:
+    """
+    Kurum lokasyonu ziyareti — sahne uret, UI guncelle, broadcast et.
+    """
+    # Baslangic bildir
+    await manager.send_to(game_id, player.slot_id, {
+        "event": "institution_visit_start",
+        "data": {
+            "player": player.name,
+            "location_id": location_id,
+        }
+    })
+
+    # Sahne uret
+    try:
+        scene_result = await generate_institution_scene(player, location_id, state)
+        narrative = scene_result.get("narrative", "")
+        ui_update = scene_result.get("ui_update")
+
+        # UI update varsa broadcast et
+        if ui_update and isinstance(ui_update, dict):
+            await manager.broadcast(game_id, {
+                "event": "ui_object_update",
+                "data": ui_update,
+            })
+
+        # Sahne narrative gonder
+        await manager.send_to(game_id, player.slot_id, {
+            "event": "institution_visit_scene",
+            "data": {
+                "player": player.name,
+                "location_id": location_id,
+                "narrative": narrative,
+            }
+        })
+
+        # TTS fire-and-forget
+        if narrative:
+            asyncio.create_task(_generate_and_broadcast_audio(
+                game_id, "Anlatici", narrative, target_player_id=player.slot_id
+            ))
+
+        # Ozel mini event kontrolu
+        try:
+            private_event = await generate_private_mini_event(player, location_id, state)
+            if private_event:
+                await manager.send_to(game_id, player.slot_id, {
+                    "event": "mini_event",
+                    "data": private_event,
+                })
+        except Exception as e:
+            logger.warning(f"Private mini event failed: {e}")
+
+    except Exception as e:
+        logger.warning(f"Institution scene generation failed: {e}")
+
+    # Bitis bildir
+    await manager.send_to(game_id, player.slot_id, {
+        "event": "institution_visit_end",
+        "data": {
+            "player": player.name,
+            "location_id": location_id,
+        }
+    })
+
+    logger.info(f"Institution visit done: {player.name} -> {location_id}")

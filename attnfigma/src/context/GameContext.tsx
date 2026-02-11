@@ -3,6 +3,7 @@ import type {
   Phase, GamePlayer, ChatMessage, VoteEntry, LocationDecision,
   WorldSeed, InputAction, HouseVisitState, Omen,
   SpotlightCard, SinamaEvent, SinamaType, OcakTepki,
+  InstitutionVisitState, UIObject, MiniEvent,
 } from '../types/game'
 import { useWebSocket, type ConnectionStatus } from '../hooks/useWebSocket'
 import { useAudioQueue } from '../hooks/useAudioQueue'
@@ -52,6 +53,12 @@ interface GameState {
   spotlightCards: SpotlightCard[]
   sinama: SinamaEvent | null
   ocakTepki: OcakTepki | null
+
+  // Katman 2
+  uiObjects: Record<string, UIObject>
+  miniEvent: MiniEvent | null
+  institutionVisit: InstitutionVisitState | null
+  kulKaymasi: { speaker: string; question: string } | null
 
   // UI
   inputRequired: InputAction | null
@@ -103,6 +110,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     spotlightCards: [],
     sinama: null,
     ocakTepki: null,
+    uiObjects: {},
+    miniEvent: null,
+    institutionVisit: null,
+    kulKaymasi: null,
     inputRequired: null,
   })
 
@@ -138,6 +149,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           spotlightCards: [],
           sinama: null,
           ocakTepki: null,
+          miniEvent: null,
+          institutionVisit: null,
+          kulKaymasi: null,
           exiledRole: null,
           inputRequired: null,
         } : {}),
@@ -167,6 +181,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }))
     }))
 
+    // mini_event → mini event card (Katman 2)
+    unsubs.push(ws.onEvent('mini_event', (data) => {
+      setState(prev => ({
+        ...prev,
+        miniEvent: {
+          id: data.id as string,
+          content: data.content as string,
+          uiObject: (data.ui_object as string) ?? '',
+        },
+      }))
+    }))
+
     // spotlight_cards → spotlight cards for morning display (Katman 1)
     unsubs.push(ws.onEvent('spotlight_cards', (data) => {
       const rawCards = (data.cards as Array<{
@@ -181,7 +207,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState(prev => ({ ...prev, spotlightCards: cards }))
     }))
 
-    // ocak_tepki → contradiction spark during campfire (Katman 1)
+    // ocak_tepki → contradiction spark during campfire (Katman 1+2)
     unsubs.push(ws.onEvent('ocak_tepki', (data) => {
       msgCounter.current++
       setState(prev => ({
@@ -196,11 +222,81 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }],
         ocakTepki: {
           speaker: data.speaker as string,
-          type: 'kivilcim' as const,
+          type: (data.type as 'kivilcim' | 'kul_kaymasi') ?? 'kivilcim',
+          tier: data.tier as 'T1' | 'T2' | undefined,
           message: data.message as string,
           contradictionHint: data.contradiction_hint as string | undefined,
+          forcedQuestion: data.forced_question as string | undefined,
         },
       }))
+    }))
+
+    // kul_kaymasi → ash shift event (Katman 2)
+    unsubs.push(ws.onEvent('kul_kaymasi', (data) => {
+      msgCounter.current++
+      const question = data.question as string
+      setState(prev => ({
+        ...prev,
+        kulKaymasi: {
+          speaker: data.speaker as string,
+          question,
+        },
+        messages: [...prev.messages, {
+          id: `ws-kul-${msgCounter.current}`,
+          sender: 'Ocak',
+          text: question,
+          isSelf: false,
+          isSystem: true,
+          timestamp: Date.now(),
+        }],
+      }))
+    }))
+
+    // institution_visit_start → switch to institution phase (Katman 2)
+    unsubs.push(ws.onEvent('institution_visit_start', (data) => {
+      setState(prev => ({
+        ...prev,
+        phase: 'institution',
+        institutionVisit: {
+          player: data.player as string,
+          locationId: data.location_id as string,
+          narrative: null,
+        },
+      }))
+    }))
+
+    // institution_visit_scene → narrative arrives (Katman 2)
+    unsubs.push(ws.onEvent('institution_visit_scene', (data) => {
+      setState(prev => ({
+        ...prev,
+        institutionVisit: prev.institutionVisit
+          ? { ...prev.institutionVisit, narrative: data.narrative as string }
+          : null,
+      }))
+    }))
+
+    // institution_visit_end → (scene handles transition)
+    unsubs.push(ws.onEvent('institution_visit_end', () => {
+      // Scene will naturally transition when next phase_change arrives
+    }))
+
+    // ui_object_update → update specific UI object state (Katman 2)
+    unsubs.push(ws.onEvent('ui_object_update', (data) => {
+      const objectId = data.object_id as string
+      const newState = data.new_state as Record<string, unknown>
+      if (objectId && newState) {
+        setState(prev => ({
+          ...prev,
+          uiObjects: {
+            ...prev.uiObjects,
+            [objectId]: {
+              ...prev.uiObjects[objectId],
+              id: objectId,
+              state: newState,
+            } as UIObject,
+          },
+        }))
+      }
     }))
 
     // campfire_speech → append to messages
@@ -236,7 +332,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }))
 
     // free_roam_start → switch to free_roam phase
-    unsubs.push(ws.onEvent('free_roam_start', (data) => {
+    unsubs.push(ws.onEvent('free_roam_start', (_data) => {
       setState(prev => ({
         ...prev,
         phase: 'free_roam',
@@ -527,6 +623,7 @@ function mapPhase(backendPhase: string): Phase {
     campfire: 'campfire_open',
     free_roam: 'free_roam',
     house: 'house',
+    institution: 'institution',
     vote: 'vote',
     exile: 'exile',
     game_over: 'game_over',
@@ -540,6 +637,10 @@ function formatLocationText(player: string, choice: string): string {
   if (choice.startsWith('VISIT|')) {
     const target = choice.split('|')[1]
     return `${player}, ${target}'in evine gitti.`
+  }
+  if (choice.startsWith('INSTITUTION|')) {
+    const locId = choice.split('|')[1]
+    return `${player}, ${locId} lokasyonuna gitti.`
   }
   return `${player} bir yer secti.`
 }

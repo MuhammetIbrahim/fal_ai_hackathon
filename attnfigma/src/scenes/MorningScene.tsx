@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useGame } from '../context/GameContext'
 import { SpotlightCardDisplay } from '../components/spotlight/SpotlightCardDisplay'
+import { MiniEventCard } from '../components/campfire/MiniEventCard'
 import type { SinamaType } from '../types/game'
 
 function getSinamaColor(type: SinamaType): string {
@@ -12,7 +13,7 @@ function getSinamaColor(type: SinamaType): string {
 }
 
 export const MorningScene: React.FC = () => {
-  const { round, dayLimit, morningText, omens, sinama, spotlightCards, selfPlayerName } = useGame()
+  const { round, dayLimit, morningText, omens, sinama, spotlightCards, selfPlayerName, miniEvent } = useGame()
   const [displayed, setDisplayed] = useState('')
   const [showOmens, setShowOmens] = useState(false)
   const [cursorVisible, setCursorVisible] = useState(true)
@@ -20,6 +21,7 @@ export const MorningScene: React.FC = () => {
   // Katman 1 state
   const [showSinama, setShowSinama] = useState(false)
   const [sinamaDisplayed, setSinamaDisplayed] = useState('')
+  const [showMiniEvent, setShowMiniEvent] = useState(false)
   const [showSpotlight, setShowSpotlight] = useState(false)
 
   // Typewriter efekti
@@ -29,6 +31,7 @@ export const MorningScene: React.FC = () => {
     setShowOmens(false)
     setShowSinama(false)
     setSinamaDisplayed('')
+    setShowMiniEvent(false)
     setShowSpotlight(false)
     setCursorVisible(true)
     let i = 0
@@ -64,8 +67,10 @@ export const MorningScene: React.FC = () => {
       setSinamaDisplayed(sinama.content.slice(0, i))
       if (i >= sinama.content.length) {
         clearInterval(iv)
-        // After sinama finishes, show spotlight cards
-        if (spotlightCards.length > 0) {
+        // After sinama finishes, show mini event (if any), then spotlight
+        if (miniEvent) {
+          setTimeout(() => setShowMiniEvent(true), 1500)
+        } else if (spotlightCards.length > 0) {
           setTimeout(() => setShowSpotlight(true), 2000)
         }
       }
@@ -73,13 +78,26 @@ export const MorningScene: React.FC = () => {
     return () => clearInterval(iv)
   }, [showSinama, sinama, spotlightCards.length])
 
-  // If no sinama but spotlight cards exist, show them after omens
+  // Show spotlight after mini event
   useEffect(() => {
-    if (showOmens && !sinama && spotlightCards.length > 0) {
+    if (showMiniEvent && spotlightCards.length > 0) {
       const delay = setTimeout(() => setShowSpotlight(true), 3000)
       return () => clearTimeout(delay)
     }
-  }, [showOmens, sinama, spotlightCards.length])
+  }, [showMiniEvent, spotlightCards.length])
+
+  // If no sinama but has mini event or spotlight, chain them after omens
+  useEffect(() => {
+    if (showOmens && !sinama) {
+      if (miniEvent) {
+        const delay = setTimeout(() => setShowMiniEvent(true), 2000)
+        return () => clearTimeout(delay)
+      } else if (spotlightCards.length > 0) {
+        const delay = setTimeout(() => setShowSpotlight(true), 3000)
+        return () => clearTimeout(delay)
+      }
+    }
+  }, [showOmens, sinama, miniEvent, spotlightCards.length])
 
   return (
     <div className="relative flex flex-col items-center justify-center h-screen bg-[#050302] overflow-hidden">
@@ -169,6 +187,13 @@ export const MorningScene: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Mini Event Card (Katman 2) */}
+      {showMiniEvent && miniEvent && (
+        <div className="relative z-10 mt-6 max-w-md mx-auto px-8">
+          <MiniEventCard event={miniEvent} />
+        </div>
+      )}
 
       {/* Spotlight Cards Overlay (Katman 1) */}
       {showSpotlight && spotlightCards.length > 0 && (

@@ -23,11 +23,12 @@ export const ChatLog: React.FC<ChatLogProps> = ({ messages }) => {
     return (
         <div className="cf-chat-log">
             {messages.map((msg) => {
-                const isTepki = msg.isSystem && msg.sender === 'Ocak'
+                const isKulKaymasi = msg.isSystem && msg.sender === 'Ocak' && msg.text.includes('KÜL KAYMASI')
+                const isTepki = msg.isSystem && msg.sender === 'Ocak' && !isKulKaymasi
                 return (
                     <div
                         key={msg.id}
-                        className={`cf-bubble ${isTepki ? 'tepki' : msg.isSystem ? 'system' : msg.isSelf ? 'self' : 'other'}`}
+                        className={`cf-bubble ${isKulKaymasi ? 'kul-kaymasi' : isTepki ? 'tepki' : msg.isSystem ? 'system' : msg.isSelf ? 'self' : 'other'}`}
                     >
                         <span className="cf-bubble-sender">{msg.sender}</span>
                         <p className="cf-bubble-text">{msg.text}</p>
