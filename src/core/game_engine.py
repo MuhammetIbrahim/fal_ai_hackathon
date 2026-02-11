@@ -446,10 +446,11 @@ def _deserialize_state(state_dict: dict) -> GameState:
     
     Player dict'lerini Pydantic model'e geri çevir.
     """
-    # Player dict'lerini Player objesine çevir
+    # Player dict'lerini Player objesine çevir (zaten Player ise dokunma)
     if "players" in state_dict:
         state_dict["players"] = [
-            Player(**p) for p in state_dict["players"]
+            p if isinstance(p, Player) else Player(**p)
+            for p in state_dict["players"]
         ]
     
     return state_dict

@@ -51,12 +51,13 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 - [x] Frontend `GameContext.tsx` — `omens: Omen[]` state + morning event parse + phase_change reset
 - [x] Frontend `MorningScene.tsx` — OmenBar: typewriter bittikten sonra 3 alamet ikonu + isim gosterir
 
-### 0.5 End-to-End Test
-- [ ] Backend + Frontend birlikte calistir
-- [ ] Yeni oyun olustur, tum fazlari oyna
-- [ ] Karakter kartlarinda yeni alanlar gorunuyor mu kontrol et
-- [ ] Morning'de alametler gorunuyor mu kontrol et
-- [ ] TTS hala calisiyor mu kontrol et
+### 0.5 End-to-End Test (TAMAMLANDI)
+- [x] Backend + Frontend birlikte calistir
+- [x] Yeni oyun olustur, tum fazlari oyna (4 gun, 4 surgun, game over)
+- [x] Karakter kartlarinda yeni alanlar gorunuyor mu kontrol et (acting_prompt, public_tick, alibi_anchor, speech_color LLM uretimi OK)
+- [x] Morning'de alametler gorunuyor mu kontrol et (gun bazli 3 alamet secimi OK)
+- [x] TTS hala calisiyor mu kontrol et (broadcast calisiyor, WS baglantisi olmadan test)
+- [x] BUG FIX: `_deserialize_state()` — Player objeleri zaten Player ise tekrar `Player(**p)` yapmamali
 
 ---
 
@@ -183,8 +184,8 @@ Katman 0.1 (temel altyapi)       ███████████████�
 Katman 0.2 (karakter karti)      ████████████████████ TAMAM
 Katman 0.3 (kurum dagilimi)      ████████████████████ TAMAM
 Katman 0.4 (alamet sistemi)      ████████████████████ TAMAM
-Katman 0.5 (e2e test)            ░░░░░░░░░░░░░░░░░░░ sirada <<<
-Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ baslamadi
+Katman 0.5 (e2e test)            ████████████████████ TAMAM
+Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ sirada <<<
 Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ baslamadi
 Katman 3   (gece + politik)      ░░░░░░░░░░░░░░░░░░░ baslamadi
 ```
