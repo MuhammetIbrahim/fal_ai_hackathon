@@ -131,6 +131,9 @@ export class MorningScene implements Scene {
     const w = ctx.canvas.width
     const h = ctx.canvas.height
 
+    // Sync camera viewport to actual canvas size
+    this.camera.resize(w, h)
+
     // ── Clear ──
     ctx.fillStyle = COLORS.BG_DARK
     ctx.fillRect(0, 0, w, h)

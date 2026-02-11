@@ -151,6 +151,9 @@ export class NightScene implements Scene {
     const w = ctx.canvas.width
     const h = ctx.canvas.height
 
+    // Sync camera viewport to actual canvas size
+    this.camera.resize(w, h)
+
     // ── Night sky background ──
     ctx.fillStyle = COLORS.NIGHT_BLUE
     ctx.fillRect(0, 0, w, h)

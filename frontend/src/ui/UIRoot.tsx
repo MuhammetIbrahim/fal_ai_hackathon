@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react'
 import { useGameStore } from '../state/GameStore'
 import { createLobby, joinLobby, startLobby, createGame, startGame } from '../net/api'
 import { wsManager } from '../net/websocket'
+import { audioQueue } from '../audio/AudioQueue'
 
 import StatusHUD from './StatusHUD'
 import ActionBar from './ActionBar'
 import ChatLog from './ChatLog'
+import RoomChatOverlay from './RoomChatOverlay'
 import OmenDisplay from './OmenDisplay'
 import VoteOverlay from './VoteOverlay'
 import ParchmentModal from './ParchmentModal'
@@ -76,6 +78,7 @@ const LobbyUI: React.FC = () => {
   }, [joinCode, playerName, setLobbyCode, setConnection, setMyName, setNotification])
 
   const handleStartGame = useCallback(async () => {
+    audioQueue.unlock()
     if (!lobbyCode) return
     const name = playerName.trim()
     if (!name) return
@@ -104,19 +107,23 @@ const LobbyUI: React.FC = () => {
   }, [lobbyCode, playerId, playerName, setConnection, setNotification])
 
   const handleAIDemo = useCallback(async () => {
+    audioQueue.unlock()
     try {
       setLoading(true)
-      // Create a game with all AI players (6 players, 6 AI)
-      const result = await createGame()
+      // Create a game with all AI players (6 players, 6 AI, 3 days)
+      const result = await createGame(6, 6, 3)
       const gId = result.game_id
+
+      // Connect WS BEFORE starting game to avoid missing the first phase_change
+      wsManager.connect(gId, 'spectator')
+      setConnection(gId, 'spectator')
+      setMyName('Seyirci')
+
+      // Wait for WS connection to establish
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Start the game (generates characters + starts game loop)
       await startGame(gId)
-
-      // Connect WS as spectator (P0)
-      wsManager.connect(gId, 'P0')
-      setConnection(gId, 'P0')
-      setMyName('Seyirci')
     } catch (err) {
       setNotification({
         message: `Demo baslatilamadi: ${(err as Error).message}`,
@@ -312,7 +319,7 @@ const GameOverUI: React.FC = () => {
         <div className="space-y-2">
           {gameOver.players.map((p) => (
             <div
-              key={p.slot_id}
+              key={p.name}
               className="flex items-center justify-between px-3 py-1.5 border-2 border-wood/30 bg-[#c4a876]/50"
             >
               <div className="flex items-center gap-2">
@@ -410,7 +417,7 @@ export const UIRoot: React.FC = () => {
       {phase === 'campfire' && (
         <>
           <div className="pointer-events-auto">
-            <ChatLog />
+            <RoomChatOverlay />
           </div>
           <div className="pointer-events-auto">
             <ActionBar />
@@ -425,9 +432,14 @@ export const UIRoot: React.FC = () => {
       )}
 
       {phase === 'houses' && (
-        <div className="pointer-events-auto">
-          <ActionBar />
-        </div>
+        <>
+          <div className="pointer-events-auto">
+            <RoomChatOverlay />
+          </div>
+          <div className="pointer-events-auto">
+            <ActionBar />
+          </div>
+        </>
       )}
 
       {phase === 'vote' && (

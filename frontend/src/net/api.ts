@@ -52,8 +52,16 @@ function post<T>(path: string, body?: Record<string, unknown>): Promise<T> {
 
 // ── Game endpoints ──
 
-export function createGame(): Promise<{ game_id: string; world_brief: string }> {
-  return post('/game/')
+export function createGame(
+  playerCount = 6,
+  aiCount = 6,
+  dayLimit = 3,
+): Promise<{ game_id: string; settlement_name: string }> {
+  return post('/game/', {
+    player_count: playerCount,
+    ai_count: aiCount,
+    day_limit: dayLimit,
+  })
 }
 
 export function getGameState(gameId: string): Promise<any> {

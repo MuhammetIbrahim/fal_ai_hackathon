@@ -29,7 +29,7 @@ export class HouseScene implements Scene {
 
     // Get house visit data from the store
     const state = useGameStore.getState()
-    const visit = state.houseVisit
+    const visit = state.houseVisits[0] ?? null
     const players = state.players
 
     if (visit) {

@@ -6,9 +6,8 @@ import { Camera } from './engine/Camera'
 import { sceneManager } from './scenes/SceneManager'
 import { LobbyScene } from './scenes/LobbyScene'
 import { MorningScene } from './scenes/MorningScene'
-import { CampfireScene } from './scenes/CampfireScene'
+import { VillageMapScene } from './scenes/VillageMapScene'
 import { FreeRoamScene } from './scenes/FreeRoamScene'
-import { HouseScene } from './scenes/HouseScene'
 import { InstitutionScene } from './scenes/InstitutionScene'
 import { VoteScene } from './scenes/VoteScene'
 import { NightScene } from './scenes/NightScene'
@@ -33,9 +32,10 @@ function App() {
   const initScenes = useCallback(() => {
     sceneManager.registerScene('lobby', new LobbyScene())
     sceneManager.registerScene('morning', new MorningScene())
-    sceneManager.registerScene('campfire', new CampfireScene())
+    const villageScene = new VillageMapScene()
+    sceneManager.registerScene('campfire', villageScene)
     sceneManager.registerScene('day', new FreeRoamScene())
-    sceneManager.registerScene('houses', new HouseScene())
+    sceneManager.registerScene('houses', villageScene)
     sceneManager.registerScene('vote', new VoteScene())
     sceneManager.registerScene('night', new NightScene())
     sceneManager.registerScene('exile', new ExileScene())
@@ -74,10 +74,24 @@ function App() {
     }
     window.addEventListener('resize', handleResize)
 
+    // Canvas click → forward to active scene (for VillageMapScene room selection)
+    const handleCanvasClick = (e: MouseEvent) => {
+      const dpr = window.devicePixelRatio || 1
+      const scene = sceneManager.getCurrentScene()
+      if (scene && 'handleClick' in scene) {
+        (scene as { handleClick: (x: number, y: number) => void }).handleClick(
+          e.offsetX * dpr,
+          e.offsetY * dpr,
+        )
+      }
+    }
+    canvas.addEventListener('click', handleCanvasClick)
+
     return () => {
       renderer?.stop()
       inputManager.destroy()
       window.removeEventListener('resize', handleResize)
+      canvas.removeEventListener('click', handleCanvasClick)
       renderer = null
     }
   }, [initScenes])

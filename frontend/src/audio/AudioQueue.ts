@@ -3,6 +3,26 @@ class AudioQueue {
   private currentAudio: HTMLAudioElement | null = null
   private playing = false
   private volume = 1.0
+  private unlocked = false
+
+  /**
+   * Unlock audio playback. Must be called from a user gesture (click/tap).
+   * Creates and resumes an AudioContext to satisfy browser autoplay policy.
+   */
+  unlock(): void {
+    if (this.unlocked) return
+    try {
+      const ctx = new AudioContext()
+      ctx.resume().then(() => ctx.close())
+      // Also play a silent audio element to warm up HTMLAudioElement path
+      const silent = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=')
+      silent.volume = 0
+      silent.play().then(() => silent.pause()).catch(() => {})
+      this.unlocked = true
+    } catch {
+      // Best-effort
+    }
+  }
 
   /**
    * Add an audio URL to the end of the queue.

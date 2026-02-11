@@ -4,6 +4,7 @@ import type {
   ExileResult, NightResult, SpotlightCard, Sinama, OcakTepki,
   Proposal, SozBorcu, UIObject, InputAction, GameOverData,
 } from './types'
+import { audioQueue } from '../audio/AudioQueue'
 
 export interface GameStore {
   // Connection
@@ -24,7 +25,7 @@ export interface GameStore {
   omens: Omen[]
   speeches: Speech[]
   locationDecisions: LocationDecision[]
-  houseVisit: HouseVisit | null
+  houseVisits: HouseVisit[]
   votes: Record<string, string>
   exileResult: ExileResult | null
   nightResult: NightResult | null
@@ -39,6 +40,10 @@ export interface GameStore {
   sozBorcu: SozBorcu | null
   baskiTarget: string | null
   canUseKalkan: boolean
+
+  // Village map state
+  selectedRoom: string | null      // 'campfire' | player name (house owner) | null
+  playerLocations: Record<string, string>  // name → 'campfire' | 'home' | 'visiting:TargetName'
 
   // UI control
   inputRequired: InputAction | null
@@ -57,7 +62,7 @@ export interface GameStore {
   setOmens: (omens: Omen[]) => void
   addSpeech: (speech: Speech) => void
   clearSpeeches: () => void
-  setHouseVisit: (visit: HouseVisit | null) => void
+  setHouseVisits: (visits: HouseVisit[]) => void
   addVote: (voter: string, target: string) => void
   clearVotes: () => void
   setExileResult: (result: ExileResult | null) => void
@@ -67,6 +72,8 @@ export interface GameStore {
   setSinama: (sinama: Sinama | null) => void
   setOcakTepki: (tepki: OcakTepki | null) => void
   setProposal: (proposal: Proposal | null) => void
+  setSelectedRoom: (room: string | null) => void
+  setPlayerLocations: (locs: Record<string, string>) => void
   setInputRequired: (input: InputAction | null) => void
   setNotification: (notification: { message: string; type: 'info' | 'warning' | 'error' } | null) => void
   setTransitioning: (transitioning: boolean) => void
@@ -91,7 +98,7 @@ const initialState = {
   omens: [],
   speeches: [],
   locationDecisions: [],
-  houseVisit: null,
+  houseVisits: [],
   votes: {},
   exileResult: null,
   nightResult: null,
@@ -104,6 +111,8 @@ const initialState = {
   sozBorcu: null,
   baskiTarget: null,
   canUseKalkan: true,
+  selectedRoom: 'campfire' as string | null,
+  playerLocations: {} as Record<string, string>,
   inputRequired: null,
   notification: null,
   transitioning: false,
@@ -123,7 +132,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setOmens: (omens) => set({ omens }),
   addSpeech: (speech) => set((s) => ({ speeches: [...s.speeches, speech] })),
   clearSpeeches: () => set({ speeches: [] }),
-  setHouseVisit: (visit) => set({ houseVisit: visit }),
+  setHouseVisits: (visits) => set({ houseVisits: visits }),
   addVote: (voter, target) => set((s) => ({ votes: { ...s.votes, [voter]: target } })),
   clearVotes: () => set({ votes: {} }),
   setExileResult: (result) => set({ exileResult: result }),
@@ -133,6 +142,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setSinama: (sinama) => set({ sinama }),
   setOcakTepki: (tepki) => set({ ocakTepki: tepki }),
   setProposal: (proposal) => set({ proposal }),
+  setSelectedRoom: (room) => set({ selectedRoom: room }),
+  setPlayerLocations: (locs) => set({ playerLocations: locs }),
   setInputRequired: (input) => set({ inputRequired: input }),
   setNotification: (notification) => set({ notification }),
   setTransitioning: (transitioning) => set({ transitioning }),
@@ -155,7 +166,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
 
       case 'phase_change': {
-        const phase = data.phase as Phase
+        const rawPhase = data.phase as string
+        // Map backend phase names to frontend phase names
+        const phaseMap: Record<string, Phase> = {
+          campfire_open: 'campfire',
+          campfire_close: 'campfire',
+        }
+        const phase = (phaseMap[rawPhase] ?? rawPhase) as Phase
         const round = (data.round as number) ?? store.round
         set({
           phase,
@@ -165,10 +182,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         })
         // Clear phase-specific data on phase change
         if (phase === 'morning') {
-          set({ speeches: [], votes: {}, exileResult: null, houseVisit: null })
+          set({ speeches: [], votes: {}, exileResult: null, houseVisits: [], spotlightCards: [], sinama: null })
         }
         if (phase === 'campfire') {
-          set({ showParchment: false })
+          const allAtCampfire: Record<string, string> = {}
+          for (const p of store.players) allAtCampfire[p.name] = 'campfire'
+          set({ playerLocations: allAtCampfire, selectedRoom: 'campfire', houseVisits: [], showParchment: false })
         }
         if (phase === 'vote') {
           set({ votes: {} })
@@ -180,11 +199,92 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'morning':
         set({
-          morningText: (data.narrator as string) ?? '',
+          morningText: (data.content as string) ?? '',
           omens: (data.omens as Omen[]) ?? [],
           showParchment: true,
-          spotlightCards: (data.spotlight_cards as SpotlightCard[]) ?? [],
         })
+        break
+
+      case 'spotlight_cards':
+        set({
+          spotlightCards: (data.cards as SpotlightCard[]) ?? [],
+        })
+        break
+
+      case 'free_roam_start':
+        // Free roam is part of campfire flow — keep phase, show notification
+        set({
+          notification: {
+            message: `Serbest Dolaşım ${data.roam_round ?? ''}/${data.total_roam_rounds ?? ''}`,
+            type: 'info',
+          },
+        })
+        setTimeout(() => set({ notification: null }), 3000)
+        break
+
+      case 'location_decisions': {
+        const decisions = (data.decisions as LocationDecision[]) ?? []
+        const locs: Record<string, string> = {}
+        for (const d of decisions) {
+          if (d.choice === 'CAMPFIRE') locs[d.player_id] = 'campfire'
+          else if (d.choice === 'HOME') locs[d.player_id] = 'home'
+          else if (d.choice.startsWith('VISIT|')) locs[d.player_id] = `visiting:${d.choice.split('|')[1]}`
+          else locs[d.player_id] = 'campfire'
+        }
+        set({ playerLocations: locs, locationDecisions: decisions })
+        break
+      }
+
+      case 'mini_event':
+        set({
+          notification: {
+            message: (data.content as string) ?? 'Bir olay oldu',
+            type: 'info',
+          },
+        })
+        setTimeout(() => set({ notification: null }), 5000)
+        break
+
+      case 'morning_crisis':
+        set({
+          notification: {
+            message: (data.crisis_text as string) ?? 'Büyük kriz!',
+            type: 'warning',
+          },
+        })
+        setTimeout(() => set({ notification: null }), 6000)
+        break
+
+      case 'sinama_echo':
+        store.addSpeech({
+          speaker: 'Sınama',
+          content: (data.content as string) ?? '',
+        })
+        break
+
+      case 'kul_kaymasi':
+        store.addSpeech({
+          speaker: 'Ocak',
+          content: `🔥 ${(data.question as string) ?? ''}`,
+        })
+        break
+
+      case 'proposal_result':
+        set({ proposal: null })
+        break
+
+      case 'soz_borcu':
+        set({
+          notification: {
+            message: `Söz borcu: ${((data.forced_speakers as string[]) ?? []).join(', ')}`,
+            type: 'warning',
+          },
+        })
+        setTimeout(() => set({ notification: null }), 5000)
+        break
+
+      case 'home_alone':
+        // Player stayed home alone — just a notification
         break
 
       case 'campfire_speech':
@@ -211,30 +311,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
       case 'exile':
         set({
           exileResult: {
-            exiled: data.exiled as string,
-            active_players: data.active_players as string[],
+            exiled: (data.exiled as string) ?? '',
+            active_players: (data.active_players as string[]) ?? [],
           },
+          votes: (data.votes as Record<string, string>) ?? store.votes,
           phase: 'exile',
         })
         break
 
       case 'game_over':
         set({
-          gameOver: data as unknown as GameOverData,
+          gameOver: {
+            winner: data.winner as 'et_can' | 'yanki_dogmus',
+            players: (data.all_players as GameOverData['players']) ?? [],
+          },
           phase: 'game_over',
         })
         break
 
-      case 'speech_audio':
+      case 'speech_audio': {
+        const audioUrl = data.audio_url as string
         // Update the matching speech with audio_url
         set((s) => ({
           speeches: s.speeches.map((sp) =>
             sp.speaker === data.speaker
-              ? { ...sp, audio_url: data.audio_url as string }
+              ? { ...sp, audio_url: audioUrl }
               : sp
           ),
         }))
+        // Enqueue for playback
+        if (audioUrl) {
+          audioQueue.enqueue(audioUrl)
+        }
         break
+      }
 
       case 'ocak_tepki':
         set({
@@ -248,33 +358,57 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
 
       case 'house_visit':
-        set({
-          houseVisit: {
-            host: data.host as string,
-            visitor: data.visitor as string,
-            speeches: [],
-            turn: 0,
-          },
-        })
+      case 'house_visit_start': {
+        const newVisit: HouseVisit = {
+          host: data.host as string,
+          visitor: data.visitor as string,
+          speeches: [],
+          turn: 0,
+        }
+        set((s) => ({
+          houseVisits: [...s.houseVisits, newVisit],
+        }))
         break
+      }
 
       case 'visit_speech':
-        if (store.houseVisit) {
-          set({
-            houseVisit: {
-              ...store.houseVisit,
-              speeches: [
-                ...store.houseVisit.speeches,
-                {
-                  speaker: data.speaker as string,
-                  content: data.content as string,
-                  audio_url: data.audio_url as string | undefined,
-                },
-              ],
-            },
-          })
-        }
+      case 'house_visit_exchange': {
+        const exHost = data.host as string
+        const exVisitor = data.visitor as string
+        set((s) => ({
+          houseVisits: s.houseVisits.map((hv) =>
+            hv.host === exHost && hv.visitor === exVisitor
+              ? {
+                  ...hv,
+                  speeches: [
+                    ...hv.speeches,
+                    {
+                      speaker: data.speaker as string,
+                      content: data.content as string,
+                      audio_url: data.audio_url as string | undefined,
+                    },
+                  ],
+                  turn: (data.turn as number) ?? hv.turn,
+                }
+              : hv
+          ),
+        }))
         break
+      }
+
+      case 'house_visit_end': {
+        const endHost = data.host as string
+        const endVisitor = data.visitor as string
+        // Remove this visit after a brief delay
+        setTimeout(() => {
+          set((s) => ({
+            houseVisits: s.houseVisits.filter(
+              (hv) => !(hv.host === endHost && hv.visitor === endVisitor)
+            ),
+          }))
+        }, 3000)
+        break
+      }
 
       case 'sinama':
         set({

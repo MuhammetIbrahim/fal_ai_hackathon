@@ -557,6 +557,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                 home_people = [n for n, l in locations.items() if l == "home"]
                 visits = [(n, l.split(":")[1]) for n, l in locations.items()
                           if l.startswith("visiting:")]
+                logger.info(f"Free roam {roam_round}: campfire={campfire_people}, home={home_people}, visits={visits}")
                 institution_visits = [(n, l.split(":")[1]) for n, l in locations.items()
                                       if l.startswith("institution:")]
 
@@ -1439,16 +1440,16 @@ async def _run_room_conversation_ws(
     exchanges = []
     speakers = [visitor, owner]  # Misafir once konusur
 
-    # Gorusme basladigini bildir
-    for p in [visitor, owner]:
-        await manager.send_to(game_id, p.slot_id, {
-            "event": "house_visit_start",
-            "data": {
-                "visitor": visitor.name,
-                "host": owner.name,
-                "max_exchanges": max_exchanges,
-            }
-        })
+    # Gorusme basladigini bildir (broadcast — spectator dahil herkes gorur)
+    logger.info(f"🏠 Room visit START: {visitor.name} → {owner.name} (broadcast)")
+    await manager.broadcast(game_id, {
+        "event": "house_visit_start",
+        "data": {
+            "visitor": visitor.name,
+            "host": owner.name,
+            "max_exchanges": max_exchanges,
+        }
+    })
 
     # ── HOUSE ENTRY EVENT (Katman 4) ──
     try:
@@ -1456,11 +1457,10 @@ async def _run_room_conversation_ws(
             raise ValueError("generate_house_entry_event not passed")
         entry_event = await generate_house_entry_event(state, visitor.name, owner.name)
         if entry_event:
-            for p in [visitor, owner]:
-                await manager.send_to(game_id, p.slot_id, {
-                    "event": "house_entry_event",
-                    "data": {"content": entry_event},
-                })
+            await manager.broadcast(game_id, {
+                "event": "house_entry_event",
+                "data": {"content": entry_event, "visitor": visitor.name, "host": owner.name},
+            })
     except Exception as e:
         logger.warning(f"House entry event failed: {e}")
 
@@ -1491,20 +1491,19 @@ async def _run_room_conversation_ws(
         exchanges.append(exchange_entry)
         current.add_message("assistant", speech_content)
 
-        # Unicast: sadece 2 oyuncuya gonder
-        for p in [visitor, owner]:
-            await manager.send_to(game_id, p.slot_id, {
-                "event": "house_visit_exchange",
-                "data": {
-                    "speaker": current.name,
-                    "role_title": current.role_title,
-                    "content": speech_content,
-                    "turn": turn + 1,
-                    "max_exchanges": max_exchanges,
-                    "visitor": visitor.name,
-                    "host": owner.name,
-                }
-            })
+        # Broadcast: herkes gorur (spectator dahil)
+        await manager.broadcast(game_id, {
+            "event": "house_visit_exchange",
+            "data": {
+                "speaker": current.name,
+                "role_title": current.role_title,
+                "content": speech_content,
+                "turn": turn + 1,
+                "max_exchanges": max_exchanges,
+                "visitor": visitor.name,
+                "host": owner.name,
+            }
+        })
 
         # TTS fire-and-forget (AI only, unicast to human player)
         if not current.is_human:
@@ -1523,16 +1522,15 @@ async def _run_room_conversation_ws(
     }
     state["house_visits"].append(visit_data)
 
-    # Gorusme bitti
-    for p in [visitor, owner]:
-        await manager.send_to(game_id, p.slot_id, {
-            "event": "house_visit_end",
-            "data": {
-                "visitor": visitor.name,
-                "host": owner.name,
-                "exchange_count": len(exchanges),
-            }
-        })
+    # Gorusme bitti (broadcast)
+    await manager.broadcast(game_id, {
+        "event": "house_visit_end",
+        "data": {
+            "visitor": visitor.name,
+            "host": owner.name,
+            "exchange_count": len(exchanges),
+        }
+    })
 
     logger.info(f"Room visit done: {visitor.name} -> {owner.name} ({len(exchanges)} exchanges)")
 
