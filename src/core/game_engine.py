@@ -142,8 +142,8 @@ async def create_new_game(
     # ═══ 2. Validation ═══
     if player_count < 3:
         raise ValueError("Minimum 3 oyuncu gerekli")
-    if ai_count >= player_count:
-        raise ValueError("En az 1 insan oyuncu olmalı")
+    if ai_count > player_count:
+        raise ValueError("AI sayisi oyuncu sayisindan fazla olamaz")
     if ai_count < 1:
         raise ValueError("En az 1 AI oyuncu olmalı")
     if day_limit < 1:

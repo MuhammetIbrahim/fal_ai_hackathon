@@ -245,7 +245,8 @@ def _format_campfire_context(state: GameState, viewer: str | None = None) -> str
     lines = []
     for msg in recent:
         if msg["type"] == "speech":
-            lines.append(f"[{msg['name']}] ({msg['role_title']}): {msg['content']}")
+            role = msg.get('role_title', '?')
+            lines.append(f"[{msg['name']}] ({role}): {msg['content']}")
         elif msg["type"] == "moderator":
             lines.append(f"[Ocak Bekcisi]: {msg['content']}")
         elif msg["type"] == "narrator":
@@ -733,7 +734,8 @@ def _format_campfire_history(state: GameState, last_n: int | None = None) -> str
     lines = []
     for msg in speeches:
         if msg["type"] == "speech":
-            lines.append(f"[{msg['name']}] ({msg['role_title']}): {msg['content']}")
+            role = msg.get('role_title', '?')
+            lines.append(f"[{msg['name']}] ({role}): {msg['content']}")
         elif msg["type"] == "moderator":
             lines.append(f"[Ocak Bekcisi]: {msg['content']}")
         elif msg["type"] == "narrator":

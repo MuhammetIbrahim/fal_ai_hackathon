@@ -637,6 +637,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                                 visitor=visitor_player,
                                 max_exchanges=ROOM_EXCHANGES,
                                 generate_1v1_speech=generate_1v1_speech,
+                                generate_house_entry_event=generate_house_entry_event,
                             )
                         )
 
@@ -705,7 +706,8 @@ async def _game_loop_runner(game_id: str, state: Any):
                             if isinstance(speech, str):
                                 state["campfire_history"].append({
                                     "type": "speech",
-                                    "speaker": p.name,
+                                    "name": p.name,
+                                    "role_title": p.role_title,
                                     "content": speech,
                                 })
                                 await manager.broadcast(game_id, {
@@ -1200,7 +1202,7 @@ async def _run_campfire_segment_ws(
 
     # ── Ilk konusmaci (onceki konusma yoksa random sec) ──
     recent_speeches = [m for m in state["campfire_history"]
-                       if m["type"] == "speech" and m["name"] in participant_names]
+                       if m.get("type") == "speech" and m.get("name") in participant_names]
 
     if not recent_speeches:
         # AI olmayan (human) ilk konusmaci olabilir
@@ -1289,7 +1291,7 @@ async def _run_campfire_segment_ws(
         turns_done += 1
 
         last_speeches = [m for m in state["campfire_history"]
-                         if m["type"] == "speech" and m["name"] in participant_names]
+                         if m.get("type") == "speech" and m.get("name") in participant_names]
         if not last_speeches:
             break
         last_speech = last_speeches[-1]
@@ -1427,6 +1429,7 @@ async def _run_room_conversation_ws(
     visitor: Any,
     max_exchanges: int,
     generate_1v1_speech,
+    generate_house_entry_event=None,
 ) -> None:
     """
     1v1 oda gorusmesi — her exchange ilgili 2 oyuncuya unicast edilir.
@@ -1449,6 +1452,8 @@ async def _run_room_conversation_ws(
 
     # ── HOUSE ENTRY EVENT (Katman 4) ──
     try:
+        if generate_house_entry_event is None:
+            raise ValueError("generate_house_entry_event not passed")
         entry_event = await generate_house_entry_event(state, visitor.name, owner.name)
         if entry_event:
             for p in [visitor, owner]:
