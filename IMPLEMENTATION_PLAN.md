@@ -25,20 +25,23 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 - [x] TTS ses uretimi (fal.ai tts_generate -> audio URL -> frontend playback)
 - [x] UI polish (dark fantasy tema, tum sahneler)
 
-### 0.2 Karakter Karti Genisletme
-- [ ] `data.json` — kamu tik'i havuzu ekle (15+ tik)
-- [ ] `data.json` — alibi capasi kaliplari ekle (15+ kalip)
-- [ ] `data.json` — konusma rengi ornekleri ekle
-- [ ] `game_state.py` — Player modeline yeni alanlar: `institution`, `institution_label`, `public_tick`, `alibi_anchor`, `speech_color`
-- [ ] `game.py` — `create_character_slots()` yeni alanlari ata
-- [ ] `game.py` — `_build_acting_request()` yeni alanlari prompt'a ekle
-- [ ] `game_engine.py` — mock karakter uretimini guncelle (yeni alanlar)
+### 0.2 Karakter Karti Genisletme (TAMAMLANDI)
+- [x] `game_state.py` — Player modeline yeni alanlar: `institution`, `institution_label`, `public_tick`, `alibi_anchor`, `speech_color`
+- [x] `game.py` — `_build_acting_request()` structured JSON output istiyor (acting_prompt + public_tick + alibi_anchor + speech_color)
+- [x] `game.py` — `_parse_character_card()` LLM JSON ciktisini parse eder
+- [x] `game.py` — `_generate_acting_prompt()` dict dondurur (str yerine)
+- [x] `game.py` — `generate_players()` card dict'ten Player olusturur
+- [x] `game.py` — `_build_card_context()` karakter kartindan campfire/1v1 prompt'a eklenir
+- [x] `game.py` — CHARACTER_WRAPPER + VISIT_WRAPPER `{card_context}` placeholder eklendi
+- [x] `game_engine.py` — mock karakter uretimi yeni alanlarla guncellendi
+- [x] NOT: public_tick, alibi_anchor, speech_color hardcoded degil — LLM karakter basina uretir
 
-### 0.3 Kurum Dagilimi
-- [ ] `data.json` — 6 kurum tanimla (Kilerciler, Gecitciler, Kul Rahibi, Sifaci, Demirci, Han Insani)
-- [ ] `game.py` — `create_character_slots()` kurumlari dagit (8 oyuncu icin: 2+2+1+1+1+1)
-- [ ] `game.py` — acting prompt'a kurum bilgisi ekle
-- [ ] Frontend — `GamePlayer` tipine `institution` alani ekle
+### 0.3 Kurum Dagilimi (TAMAMLANDI)
+- [x] `data.json` — 6 kurum tanimlandi (Kilerci x2, Gecitci x2, Kul Rahibi, Sifaci, Demirci, Han Insani)
+- [x] `game.py` — `_build_institution_pool()` oyuncu sayisina gore kurum havuzu
+- [x] `game.py` — `create_character_slots()` her karaktere kurum atar
+- [x] `game.py` — acting prompt'a kurum bilgisi eklendi
+- [x] Frontend `types/game.ts` — `GamePlayer`'a `institution`, `institutionLabel`, `publicTick`, `alibiAnchor`, `speechColor` eklendi
 
 ### 0.4 Alamet (Omen) Sistemi — Atmosfer
 - [ ] `data.json` — 12 alamet tanimla (isim, ikon, atmosfer aciklamasi)
@@ -177,9 +180,9 @@ Oyuncularin kimligi kanit ile degil **davranis, tutarlilik, niyet-eylem uyumu, s
 
 ```
 Katman 0.1 (temel altyapi)       ████████████████████ TAMAM
-Katman 0.2 (karakter karti)      ░░░░░░░░░░░░░░░░░░░ sirada <<<
-Katman 0.3 (kurum dagilimi)      ░░░░░░░░░░░░░░░░░░░ bekliyor
-Katman 0.4 (alamet sistemi)      ░░░░░░░░░░░░░░░░░░░ bekliyor
+Katman 0.2 (karakter karti)      ████████████████████ TAMAM
+Katman 0.3 (kurum dagilimi)      ████████████████████ TAMAM
+Katman 0.4 (alamet sistemi)      ░░░░░░░░░░░░░░░░░░░ sirada <<<
 Katman 0.5 (e2e test)            ░░░░░░░░░░░░░░░░░░░ bekliyor
 Katman 1   (spotlight + sinama)  ░░░░░░░░░░░░░░░░░░░ baslamadi
 Katman 2   (lokasyon + event)    ░░░░░░░░░░░░░░░░░░░ baslamadi
