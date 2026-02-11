@@ -336,6 +336,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                 get_reaction=get_reaction,
                 orchestrator_pick=orchestrator_pick,
                 check_moderation=check_moderation,
+                check_ocak_tepki=check_ocak_tepki,
             )
 
             logger.info(f"Opening campfire completed — {INITIAL_CAMPFIRE_TURNS} turns")
@@ -503,6 +504,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                         get_reaction=get_reaction,
                         orchestrator_pick=orchestrator_pick,
                         check_moderation=check_moderation,
+                        check_ocak_tepki=check_ocak_tepki,
                     )
 
                 room_tasks = []
@@ -577,6 +579,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                 get_reaction=get_reaction,
                 orchestrator_pick=orchestrator_pick,
                 check_moderation=check_moderation,
+                check_ocak_tepki=check_ocak_tepki,
             )
 
             logger.info(f"Closing campfire completed")
@@ -811,6 +814,7 @@ async def _run_campfire_segment_ws(
     get_reaction=None,
     orchestrator_pick=None,
     check_moderation=None,
+    check_ocak_tepki=None,
 ) -> None:
     """
     Campfire tartisma segmenti — prototype akisinin birebir WS versiyonu.
@@ -896,19 +900,20 @@ async def _run_campfire_segment_ws(
                 asyncio.create_task(_generate_and_broadcast_audio(game_id, first.name, message))
 
             # Ocak Tepki kontrolu (Katman 1)
-            try:
-                tepki = await check_ocak_tepki(first.name, message, state)
-                if tepki:
-                    state["campfire_history"].append({
-                        "type": "narrator",
-                        "content": tepki["message"],
-                    })
-                    await manager.broadcast(game_id, {
-                        "event": "ocak_tepki",
-                        "data": tepki,
-                    })
-            except Exception as e:
-                logger.warning(f"Ocak tepki check failed: {e}")
+            if check_ocak_tepki:
+                try:
+                    tepki = await check_ocak_tepki(first.name, message, state)
+                    if tepki:
+                        state["campfire_history"].append({
+                            "type": "narrator",
+                            "content": tepki["message"],
+                        })
+                        await manager.broadcast(game_id, {
+                            "event": "ocak_tepki",
+                            "data": tepki,
+                        })
+                except Exception as e:
+                    logger.warning(f"Ocak tepki check failed: {e}")
 
         turns_done = 1
 
@@ -1013,19 +1018,20 @@ async def _run_campfire_segment_ws(
             asyncio.create_task(_generate_and_broadcast_audio(game_id, speaker.name, message))
 
         # Ocak Tepki kontrolu (Katman 1)
-        try:
-            tepki = await check_ocak_tepki(speaker.name, message, state)
-            if tepki:
-                state["campfire_history"].append({
-                    "type": "narrator",
-                    "content": tepki["message"],
-                })
-                await manager.broadcast(game_id, {
-                    "event": "ocak_tepki",
-                    "data": tepki,
-                })
-        except Exception as e:
-            logger.warning(f"Ocak tepki check failed: {e}")
+        if check_ocak_tepki:
+            try:
+                tepki = await check_ocak_tepki(speaker.name, message, state)
+                if tepki:
+                    state["campfire_history"].append({
+                        "type": "narrator",
+                        "content": tepki["message"],
+                    })
+                    await manager.broadcast(game_id, {
+                        "event": "ocak_tepki",
+                        "data": tepki,
+                    })
+            except Exception as e:
+                logger.warning(f"Ocak tepki check failed: {e}")
 
         # Rolling summary guncelle
         if maybe_update_campfire_summary:
