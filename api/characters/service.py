@@ -291,8 +291,8 @@ async def moderate(text: str, taboo_words: list[str], rules: dict | None) -> dic
 
 
 def _split_sentences(text: str) -> list[str]:
-    """Metni cumle sinirlarinda bol (. ! ?)."""
-    parts = re.split(r'(?<=[.!?])\s+', text.strip())
+    """Metni clause sinirlarinda bol (. ! ? , ; :) — TTS icin kisa parcalar."""
+    parts = re.split(r'(?<=[.!?,;:])\s+', text.strip())
     return [p.strip() for p in parts if p.strip()]
 
 
