@@ -203,9 +203,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const phase = (phaseMap[rawPhase] ?? rawPhase) as Phase
         const round = (data.round as number) ?? store.round
 
+        // Update players if provided in phase_change payload
+        if (data.players) {
+          const incomingPlayers = data.players as Player[]
+          const existingPlayers = store.players
+          const mergedPlayers = incomingPlayers.map((incoming) => {
+            const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+            if (existing) {
+              return { ...existing, ...incoming, x: incoming.x ?? existing.x, y: incoming.y ?? existing.y, color: incoming.color ?? existing.color }
+            }
+            return incoming
+          })
+          set({ players: mergedPlayers })
+        }
+
         // Only reset on actual phase TRANSITIONS (not sub-phases within campfire)
         const isSubPhase = rawPhase === 'campfire_close'
         const isNewPhase = phase !== store.phase
+
+        // Notify Renderer to update background for the new phase
+        if (isNewPhase) {
+          window.dispatchEvent(
+            new CustomEvent('phase-background-change', {
+              detail: { phase, sceneBackgrounds: store.sceneBackgrounds },
+            }),
+          )
+        }
 
         set({
           phase,
@@ -543,9 +566,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
         setTimeout(() => set({ notification: null }), 12000)
         break
 
-      case 'players_update':
-        set({ players: data.players as Player[] })
+      case 'players_update': {
+        const incomingPlayers = data.players as Player[]
+        const existingPlayers = store.players
+
+        // Merge incoming players with existing ones, preserving client-side fields (x, y, color)
+        // but updating server-side fields (avatar_url, alive, etc.)
+        const mergedPlayers = incomingPlayers.map((incoming) => {
+          const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+          if (existing) {
+            return {
+              ...existing,
+              ...incoming,
+              // Preserve client-side rendering fields if not provided by server
+              x: incoming.x ?? existing.x,
+              y: incoming.y ?? existing.y,
+              color: incoming.color ?? existing.color,
+            }
+          }
+          return incoming
+        })
+
+        // Detect avatar changes — notify Character system to invalidate cache
+        for (const incoming of incomingPlayers) {
+          const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+          if (existing && existing.avatar_url !== incoming.avatar_url && incoming.avatar_url) {
+            // Dispatch a custom event so Character/SpriteSheet can clear cached sprites
+            window.dispatchEvent(
+              new CustomEvent('avatar-changed', {
+                detail: { slotId: incoming.slot_id, name: incoming.name, url: incoming.avatar_url },
+              }),
+            )
+          }
+        }
+
+        set({ players: mergedPlayers })
         break
+      }
 
       case 'scene_backgrounds':
         set({ sceneBackgrounds: data as Record<string, string> })

@@ -741,6 +741,13 @@ BU BIR SES OYUNU — YASAKLAR:
 - ASLA metafor/siir/edebiyat yapma. YASAK.
 - Tek bilgi kaynagin: insanlarin SOYLEDIKLERI ve soylemedikleri.
 
+ROBOTIK KONUSMA YASAGI — KRITIK:
+- Listeli, madde isaretli veya numarali konusma YAPMA. Dogal akis icinde konus.
+- "Birincisi... Ikincisi... Ucuncusu..." gibi siralamali konusma YASAK.
+- "Ozetle", "Sonuc olarak", "Degerlendirecek olursak" gibi akademik/resmi ifadeler YASAK.
+- Her cumleyi ayni kalipla BASLAMA. Cumleler farkli sekilde baslamali.
+- Cok duzgun, cok parca, cok organize konusma = ROBOT. Dagnik, yarim, kesik konus.
+
 AI KOKUSUNU ENGELLE — KRITIK:
 - TARIHI REFERANS YAPMA. "X Isyani", "Y Donemi", "Z Efsanesi" gibi uydurma olaylara atif YASAK.
 - MESLEK METAFORU SPAM YAPMA. "iplik", "kumasi", "dikis", "veri", "sistem" gibi meslek terimlerini HER CUMLEDE kullanma. Max 1 kez.
@@ -769,11 +776,22 @@ FORMAT:
 - SADECE bu isimlere hitap et: {alive_names}
 
 DIL — COK ONEMLI:
-- Duz, sade, gunluk Turkce. Edebiyat YASAK. Siir YASAK. Felsefe YASAK.
-- Kisa cumleler, yarim dusunceler, devrik cumleler
-- "hani", "yani", "sey", "ya", "bak", "ne biliyim", "olm" gibi dolgu kelimeler
-- Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "mal misin"
-- Max 3-4 cumle. Monolog yapma.
+- Duz, sade, gunluk sokak Turkcesi. Edebiyat YASAK. Siir YASAK. Felsefe YASAK.
+- Kisa, kesik, bazen sinirli cumleler. Paragraf paragraf konusma YASAK.
+- Devrik cumleler, yarim dusunceler, cumleni bitirmeden baska seye atlama SERBEST.
+- "hani", "yani", "sey", "ya", "bak", "ne biliyim", "olm", "valla", "bi dk", "ulan" gibi dolgu kelimeler KULLAN.
+- Ornek tonlar: "Bilmiyorum abi ya", "Valla ben gormedim", "Ya bi git isine, ne anlatiyorsun?", "Hadi ordan be", "Ee napacaz simdi?", "Ulan sen de mi?"
+- Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "mal misin", "kafayi mi yedin", "yeter ulan"
+- Karakterine gore samimi hitap ZORUNLU: "usta", "hacim", "kanka", "evlat", "reis", "kardesim", "abi", "abla", "be adam", "hocam", "ulan" gibi. Resmi/kibar konusma YASAK.
+
+ANALIZ YASAGI — KRITIK:
+- "Analizlerime gore", "Su noktada tutarsizlik var", "Mantiksal olarak", "Dusunuyorum da", "Simdiye kadarki veriler" gibi HERHANGI BIR dedektif/analitik dil TAMAMEN YASAK.
+- Her seyi madde madde, sistematik aciklama YASAK. Dagnik konus.
+- Her zaman mantikli olmak ZORUNDA DEGILSIN. Bazen birinden gicik kaptin diye, cani oyle istedigi icin, o an kafasi karisik oldugu icin veya icgudusuyle mantik disi suclamalarda bulunabilirsin. Bu NORMAL VE KABUL EDILIYOR.
+- Konuyu saptirabilirsin. Alakasiz seylere takilibilirsin. Bu INSAN DOGASI.
+- "Benim teorime gore" yerine "Bence bu adam yalanci, icimden oyle geliyor" de.
+
+- Max 2-3 cumle. KISA TUT. Monolog yapma.
 - Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
 
 {history}
@@ -1136,6 +1154,11 @@ Gun {round_number}/{day_limit}.
 {cumulative_context}
 {card_context}
 
+BU GIZLI VE BIREBIR BIR GORUSMEDIR:
+- Sadece karsinidaki kisiyle konusuyorsun.
+- KESINLIKLE 'herkes sussun', 'sessizlik lutfen', 'sirayla konusalim' veya 'odadakiler dinlesin' gibi sanki kalabalik bir ortamdaymissin gibi davranan veya odayi yonetmeye calisan moderator cumleleri kurma.
+- Sadece karsinidakine hitap et ve diyalogu surdur.
+
 BU BIR SES OYUNU — YASAKLAR:
 - Fiziksel ortam YOK. Kimseyi goremez, dokunamaz, koklayamazsin.
 - ASLA fiziksel/gorsel gozlem yapma. Su kelimeleri KULLANMA: yuz, goz, el, ter, koku, nem, sicaklik, soguk, ates, gol, duman, golge, isik, renk, kiyafet, yirtik, leke, kan, durus, oturma.
@@ -1157,12 +1180,22 @@ AI KOKUSUNU ENGELLE — KRITIK:
 - Dogrudan sor: "Sence kim Yanki? Ben X'den supheleniyorum"
 - Campfire'da soylediklerini hatirla ve cakistirma yap
 
-DIL:
-- Duz, sade, gunluk Turkce. Edebi/felsefi/siirsel YASAK.
-- Kisa cumleler, devrik cumleler, yarim dusunceler
-- "hani", "yani", "bak", "olm", "ne biliyim", "ya"
-- Sert olabilirsin: "ne sacmaliyorsun", "birak ya"
-- Max 3-4 cumle.
+DIL — COK ONEMLI:
+- Duz, sade, gunluk sokak Turkcesi. Edebi/felsefi/siirsel YASAK.
+- Kisa, kesik, bazen sinirli cumleler. Paragraf konusma YASAK.
+- Devrik cumleler, yarim dusunceler, cumleni bitirmeden atlama SERBEST.
+- "hani", "yani", "bak", "olm", "ne biliyim", "ya", "valla", "bi dk", "ulan" gibi dolgu kelimeler KULLAN.
+- Ornek tonlar: "Bilmiyorum abi ya", "Valla ben gormedim", "Ya bi git isine", "Hadi ordan be", "Ulan sen de mi?"
+- Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "kafayi mi yedin", "yeter ulan"
+- Samimi hitap ZORUNLU: "usta", "hacim", "kanka", "evlat", "reis", "kardesim", "hocam", "ulan" gibi. Resmi konusma YASAK.
+
+ANALIZ YASAGI:
+- "Analizlerime gore", "Mantiksal olarak", "Su noktada tutarsizlik var", "Dusunuyorum da" gibi HERHANGI BIR dedektif/analitik dil TAMAMEN YASAK.
+- Dagnik konus. Her zaman mantikli olmak zorunda degilsin.
+- Icguduyle, hisle, giciklikla suclamalarda bulunabilirsin. "Icimden oyle geliyor" yeterli.
+- Konuyu saptirabilirsin. Bu INSAN DOGASI.
+
+- Max 2-3 cumle. KISA TUT.
 - Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
 
 ONCEKI TARTISMADAN BILGILER:
@@ -1970,7 +2003,40 @@ async def run_morning(state: GameState) -> GameState:
     scene_cards = render_scene_cards(WorldSeed(**ws)) if ws else {}
     scene = scene_cards.get("morning", "")
 
+    # Ilk gun giris metni: Ocak hikayesi + kurum gorevleri
+    first_day_intro = ""
+    if round_n == 1:
+        # Hayattaki oyuncularin kurumlarini topla
+        institution_lines = []
+        for p in alive:
+            if p.institution_label:
+                institution_lines.append(f"- {p.institution_label}: {p.name}")
+        institution_summary = "\n".join(institution_lines) if institution_lines else ""
+
+        # Kurum tanimlari
+        inst_descriptions = []
+        for inst in INSTITUTIONS:
+            inst_descriptions.append(f"- {inst['label']} ({inst['location']}): {inst['description']}")
+        inst_desc_text = "\n".join(inst_descriptions)
+
+        first_day_intro = (
+            f"--- OCAK HIKAYESI ---\n"
+            f"{settlement} kadim bir yerlesim. Ortasinda binlerce yildir sonmeyen bir ates yaniyor: Ocak.\n"
+            f"Ocak'in etrafinda yasayanlar iki turden olusur: Et-Can'lar — etten, kandan, hatiralardan yapilmis gercek insanlar; "
+            f"ve Yanki-Dogmuslar — sesi taklit eden, hafizayi kopyalayan ama icinde bir sey eksik olan sahte varliklar.\n"
+            f"Kimse kimin ne oldugunu bilmiyor. Tek yol: konusmak, sorgulamak, tutarsizlik aramak.\n"
+            f"Et-Can'lar tum Yanki-Dogmuslari surgun ederse kazanir. Yanki-Dogmuslar gun limitine kadar hayatta kalirsa kazanir.\n\n"
+            f"--- KURUMLAR VE TOPLUMSAL GOREVLER ---\n"
+            f"Bu yerlesimde herkesin bir gorevi var. Kurumlar kadim duzenin tasiyicilaridir:\n"
+            f"{inst_desc_text}\n\n"
+            f"Bu gunku kurum dagilimi:\n"
+            f"{institution_summary}\n\n"
+            f"Bekci olarak oyunculara hem icinde bulunduklari kadim duzeni hem de kurumlarinin bu duzenin devami icin ne kadar onemli oldugunu hatirlatmalisin.\n"
+            f"---\n\n"
+        )
+
     prompt = (
+        f"{first_day_intro}"
         f"Gun {round_n}. {settlement}.\n"
         f"Hayattakiler ({len(alive)} kisi): {alive_names}\n"
         f"{exile_text}\n"
