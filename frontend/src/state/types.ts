@@ -55,6 +55,7 @@ export interface LocationDecision {
 
 // ── House visit ──
 export interface HouseVisit {
+  visit_id: string
   host: string
   visitor: string
   speeches: Speech[]

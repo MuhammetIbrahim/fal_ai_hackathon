@@ -1373,6 +1373,7 @@ async def _run_single_visit(
 
     visit_data = {
         "type": "visit",
+        "visit_id": uuid.uuid4().hex,
         "visitor": visitor.name,
         "host": host.name,
         "visitor_reason": reason,
@@ -1673,6 +1674,7 @@ async def _run_room_conversation(
 
     visit_data = {
         "type": "room_visit",
+        "visit_id": uuid.uuid4().hex,
         "owner": owner.name,
         "visitor": visitor.name,
         "exchanges": exchanges,

@@ -13,6 +13,7 @@ import json
 import os
 import random
 import sys
+import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -413,6 +414,7 @@ async def run_visit(
 
     visit_data = {
         "type": "visit",
+        "visit_id": uuid.uuid4().hex,
         "visitor": visitor.name,
         "host": host.name,
         "visitor_reason": reason,

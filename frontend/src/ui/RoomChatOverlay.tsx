@@ -149,7 +149,7 @@ export const RoomChatOverlay: React.FC = () => {
       const isMyVisit =
         myName !== null && (visit.host === myName || visit.visitor === myName)
       result.push({
-        id: `visit:${visit.host}:${visit.visitor}`,
+        id: `visit:${visit.visit_id}`,
         label: `${visit.visitor} → ${visit.host}`,
         icon: isMyVisit ? '🏠' : '🏠',
         speeches: visit.speeches,
@@ -193,15 +193,17 @@ export const RoomChatOverlay: React.FC = () => {
     // Try to find a visit tab where selectedRoom matches host OR visitor
     const visitTab = tabs.find((t) => {
       if (t.id === 'campfire') return false
-      const parts = t.id.split(':')
-      const host = parts[1]
-      const visitor = parts[2]
-      return host === selectedRoom || visitor === selectedRoom
+      // Extract visit_id from tab id (format: 'visit:VISIT_ID')
+      const visitId = t.id.replace('visit:', '')
+      // Find the corresponding visit in houseVisits
+      const visit = houseVisits.find((hv) => hv.visit_id === visitId)
+      if (!visit) return false
+      return visit.host === selectedRoom || visit.visitor === selectedRoom
     })
     if (visitTab) return visitTab
 
     return tabs[0]
-  }, [selectedRoom, tabs])
+  }, [selectedRoom, tabs, houseVisits])
 
   // Immersive mode: when human is in a visit and viewing their visit tab
   const isImmersiveVisit = isInVisit && activeTab.isMine
