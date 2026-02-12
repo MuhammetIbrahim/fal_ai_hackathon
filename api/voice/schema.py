@@ -21,3 +21,9 @@ class VoiceInfo(BaseModel):
 
 class VoiceListResponse(BaseModel):
     voices: list[VoiceInfo]
+
+
+class TTSStreamRequest(BaseModel):
+    text: str = Field(..., description="Sese cevrilecek metin")
+    voice: str = Field("alloy", description="Ses ID (alloy, zeynep, ali)")
+    speed: float = Field(1.0, ge=0.5, le=2.0, description="Konusma hizi")

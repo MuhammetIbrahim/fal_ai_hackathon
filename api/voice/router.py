@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 
 from api.deps import get_tenant
 from api.jobs import job_manager
 from api.voice import service
-from api.voice.schema import TTSRequest, STTRequest, VoiceListResponse
+from api.voice.schema import TTSRequest, STTRequest, VoiceListResponse, TTSStreamRequest
 
 router = APIRouter(prefix="/v1/voice", tags=["voice"])
 
@@ -12,6 +13,15 @@ router = APIRouter(prefix="/v1/voice", tags=["voice"])
 async def text_to_speech(body: TTSRequest, tenant_id: str = Depends(get_tenant)):
     job = job_manager.submit(tenant_id, "tts", service.tts(body))
     return {"job_id": job.job_id, "status": job.status}
+
+
+@router.post("/tts/stream")
+async def text_to_speech_stream(body: TTSStreamRequest, tenant_id: str = Depends(get_tenant)):
+    return StreamingResponse(
+        service.tts_stream_sse(body),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/stt")

@@ -195,7 +195,7 @@ async def llm_stream(
 #  3. TTS — Metin -> Ses
 # ══════════════════════════════════════════════════════════
 
-async def tts_stream(text: str, speed: float = 1.0) -> AsyncGenerator[bytes, None]:
+async def tts_stream(text: str, speed: float = 1.0, voice: str = "alloy") -> AsyncGenerator[bytes, None]:
     """
     PCM16 audio chunk'lari yield eder (16kHz, mono).
     Her chunk geldiginde aninda WebSocket'e gonderilebilir.
@@ -207,7 +207,7 @@ async def tts_stream(text: str, speed: float = 1.0) -> AsyncGenerator[bytes, Non
     try:
         stream = fal_client.stream_async(
             TTS_ENDPOINT,
-            arguments={"input": text, "speed": speed},
+            arguments={"input": text, "speed": speed, "voice": voice},
             path="/stream",
         )
         async for event in stream:

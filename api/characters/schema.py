@@ -29,6 +29,16 @@ class SpeakRequest(BaseModel):
     system_prompt_override: str | None = Field(None, description="Gecici system prompt override")
 
 
+class SpeakStreamRequest(BaseModel):
+    message: str = Field(..., description="Kullanicinin mesaji")
+    context_messages: list[dict] | None = Field(None, description="Onceki konusma [{role, content}]")
+    game_context: str | None = Field(None, description="Ek oyun durum bilgisi")
+    mood: str | None = Field(None, description="Ruh hali override")
+    system_prompt_override: str | None = Field(None, description="Gecici system prompt override")
+    voice: str = Field("alloy", description="TTS ses ID (alloy, zeynep, ali)")
+    speed: float = Field(1.0, ge=0.5, le=2.0, description="TTS konusma hizi")
+
+
 class ReactRequest(BaseModel):
     message: str = Field(..., description="Tepki verilecek mesaj")
     context: str | None = Field(None, description="Ek baglam")

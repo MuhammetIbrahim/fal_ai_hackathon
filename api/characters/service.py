@@ -6,7 +6,10 @@ import random
 import uuid
 from pathlib import Path
 
-from fal_services import llm_generate
+import re
+import base64
+
+from fal_services import llm_generate, llm_stream, tts_stream
 from api.config import get_api_settings
 from api.errors import NotFoundError, ServiceError
 from api.prompts.character_gen import ACTING_PROMPT_SYSTEM, VALIDATOR_SYSTEM
@@ -144,8 +147,10 @@ async def create_batch(tenant_id: str, req: BatchCreateRequest) -> list[dict]:
     return await asyncio.gather(*tasks)
 
 
-async def generate_speech(tenant_id: str, character_id: str, req: SpeakRequest) -> dict:
-    settings = get_api_settings()
+async def _prepare_speech_context(tenant_id: str, character_id: str, message: str,
+                                   context_messages=None, game_context=None,
+                                   mood=None, system_prompt_override=None) -> tuple[dict, str]:
+    """Karakter ve prompt hazirla. (char_dict, formatted_prompt) doner."""
     char = await store.get_character(tenant_id, character_id)
     if not char:
         raise NotFoundError("CHAR_NOT_FOUND", f"Karakter '{character_id}' bulunamadi")
@@ -163,34 +168,45 @@ async def generate_speech(tenant_id: str, character_id: str, req: SpeakRequest) 
                 parts.append(f"Atmosfer: {world['tone']}")
             world_context = ". ".join(parts)
 
-    if req.game_context:
-        world_context = f"{world_context}\n{req.game_context}" if world_context else req.game_context
+    if game_context:
+        world_context = f"{world_context}\n{game_context}" if world_context else game_context
 
     history_lines = []
-    if req.context_messages:
-        for msg in req.context_messages:
+    if context_messages:
+        for msg in context_messages:
             r = msg.get("role", "kullanici")
             c = msg.get("content", "")
             history_lines.append(f"[{r}]: {c}")
-    history_lines.append(f"[kullanici]: {req.message}")
+    history_lines.append(f"[kullanici]: {message}")
     conversation_history = "\n".join(history_lines)
 
-    system_prompt = req.system_prompt_override or char["acting_prompt"]
+    system_prompt = system_prompt_override or char["acting_prompt"]
 
     prompt = CHARACTER_WRAPPER.format(
         name=char["name"],
         role_title=char["role"],
         acting_prompt=system_prompt,
         world_context=world_context or "Belirtilmedi.",
-        mood=req.mood or "notr",
+        mood=mood or "notr",
         conversation_history=conversation_history,
     )
+    return char, prompt
+
+
+async def generate_speech(tenant_id: str, character_id: str, req: SpeakRequest) -> dict:
+    settings = get_api_settings()
+    char, prompt = await _prepare_speech_context(
+        tenant_id, character_id, req.message,
+        context_messages=req.context_messages,
+        game_context=req.game_context,
+        mood=req.mood,
+        system_prompt_override=req.system_prompt_override,
+    )
+    system_prompt = req.system_prompt_override or char["acting_prompt"]
 
     result = await llm_generate(
-        prompt=prompt,
-        system_prompt=system_prompt,
-        model=settings.DIALOGUE_MODEL,
-        temperature=settings.DIALOGUE_TEMPERATURE,
+        prompt=prompt, system_prompt=system_prompt,
+        model=settings.DIALOGUE_MODEL, temperature=settings.DIALOGUE_TEMPERATURE,
     )
     message = result.output.strip()
 
@@ -272,3 +288,93 @@ async def moderate(text: str, taboo_words: list[str], rules: dict | None) -> dic
         reason = output.removeprefix("VIOLATION:").strip() if output.startswith("VIOLATION") else output
 
     return {"passed": passed, "reason": reason}
+
+
+def _split_sentences(text: str) -> list[str]:
+    """Metni cumle sinirlarinda bol (. ! ?)."""
+    parts = re.split(r'(?<=[.!?])\s+', text.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+
+async def generate_speech_stream(tenant_id: str, character_id: str, req):
+    """SSE: LLM token stream → cumle split → TTS audio chunk pipeline."""
+    settings = get_api_settings()
+    char, prompt = await _prepare_speech_context(
+        tenant_id, character_id, req.message,
+        context_messages=req.context_messages,
+        game_context=req.game_context,
+        mood=req.mood,
+        system_prompt_override=req.system_prompt_override,
+    )
+    system_prompt = req.system_prompt_override or char["acting_prompt"]
+
+    full_text = ""
+    sentence_buffer = ""
+    sent_sentence_count = 0
+    audio_chunk_index = 0
+
+    try:
+        async for token in llm_stream(
+            prompt=prompt,
+            system_prompt=system_prompt,
+            model=settings.DIALOGUE_MODEL,
+            temperature=settings.DIALOGUE_TEMPERATURE,
+        ):
+            full_text += token
+            sentence_buffer += token
+
+            payload = json.dumps({"token": token})
+            yield f"event: text_token\ndata: {payload}\n\n"
+
+            sentences = _split_sentences(sentence_buffer)
+            if len(sentences) > 1:
+                ready = sentences[:-1]
+                sentence_buffer = sentences[-1]
+
+                for sent in ready:
+                    sent_sentence_count += 1
+                    async for pcm_chunk in tts_stream(
+                        text=sent, speed=req.speed, voice=req.voice,
+                    ):
+                        chunk_payload = json.dumps({
+                            "chunk_index": audio_chunk_index,
+                            "audio_base64": base64.b64encode(pcm_chunk).decode("ascii"),
+                            "format": "pcm16",
+                            "sample_rate": 16000,
+                            "channels": 1,
+                            "sentence_index": sent_sentence_count - 1,
+                        })
+                        yield f"event: audio_chunk\ndata: {chunk_payload}\n\n"
+                        audio_chunk_index += 1
+
+        if sentence_buffer.strip():
+            sent_sentence_count += 1
+            async for pcm_chunk in tts_stream(
+                text=sentence_buffer.strip(), speed=req.speed, voice=req.voice,
+            ):
+                chunk_payload = json.dumps({
+                    "chunk_index": audio_chunk_index,
+                    "audio_base64": base64.b64encode(pcm_chunk).decode("ascii"),
+                    "format": "pcm16",
+                    "sample_rate": 16000,
+                    "channels": 1,
+                    "sentence_index": sent_sentence_count - 1,
+                })
+                yield f"event: audio_chunk\ndata: {chunk_payload}\n\n"
+                audio_chunk_index += 1
+
+        await store.add_exchange(tenant_id, character_id, {"role": "kullanici", "content": req.message})
+        await store.add_exchange(tenant_id, character_id, {"role": "karakter", "content": full_text.strip(), "name": char["name"]})
+
+        done_payload = json.dumps({
+            "character_id": character_id,
+            "character_name": char["name"],
+            "full_text": full_text.strip(),
+            "total_audio_chunks": audio_chunk_index,
+            "total_sentences": sent_sentence_count,
+        })
+        yield f"event: done\ndata: {done_payload}\n\n"
+
+    except Exception as e:
+        error_payload = json.dumps({"code": "SPEAK_STREAM_ERROR", "message": str(e)})
+        yield f"event: error\ndata: {error_payload}\n\n"

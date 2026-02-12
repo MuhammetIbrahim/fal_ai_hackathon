@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 
 from api.deps import get_tenant
 from api.errors import NotFoundError
@@ -9,6 +9,7 @@ from api.characters.schema import (
     CreateCharacterRequest,
     BatchCreateRequest,
     SpeakRequest,
+    SpeakStreamRequest,
     ReactRequest,
     UpdateCharacterRequest,
     CharacterResponse,
@@ -74,6 +75,15 @@ async def delete_character(char_id: str, tenant_id: str = Depends(get_tenant)):
 @router.post("/{char_id}/speak", response_model=SpeechResponse)
 async def speak(char_id: str, body: SpeakRequest, tenant_id: str = Depends(get_tenant)):
     return await service.generate_speech(tenant_id, char_id, body)
+
+
+@router.post("/{char_id}/speak/stream")
+async def speak_stream(char_id: str, body: SpeakStreamRequest, tenant_id: str = Depends(get_tenant)):
+    return StreamingResponse(
+        service.generate_speech_stream(tenant_id, char_id, body),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/{char_id}/react", response_model=ReactionResponse)
