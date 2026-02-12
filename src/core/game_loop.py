@@ -58,7 +58,7 @@ _tts_path_added = False
 async def _generate_audio_url(
     content: str,
     voice: str = "alloy",
-    speed: float = 0.9,
+    speed: float = 1.0,
 ) -> tuple[str | None, float]:
     """TTS uret, (audio_url, duration_sec) don. Hata → (None, 0).
     Senkron: await et, text ile birlikte gonder.
@@ -825,7 +825,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                                 # Sync TTS for proposal speeches too
                                 p_audio_url, p_audio_dur = await _generate_audio_url(
                                     speech, voice=getattr(p, 'voice_id', 'alloy'),
-                                    speed=getattr(p, 'voice_speed', 0.9),
+                                    speed=getattr(p, 'voice_speed', 1.0),
                                 )
                                 await manager.broadcast(game_id, {
                                     "event": "campfire_speech",
@@ -1376,7 +1376,7 @@ async def _run_campfire_segment_ws(
             if not first.is_human:
                 audio_url, audio_duration = await _generate_audio_url(
                     message, voice=getattr(first, 'voice_id', 'alloy'),
-                    speed=getattr(first, 'voice_speed', 0.9),
+                    speed=getattr(first, 'voice_speed', 1.0),
                 )
 
             await manager.broadcast(game_id, {
@@ -1528,7 +1528,7 @@ async def _run_campfire_segment_ws(
         if not speaker.is_human:
             audio_url, audio_duration = await _generate_audio_url(
                 message, voice=getattr(speaker, 'voice_id', 'alloy'),
-                speed=getattr(speaker, 'voice_speed', 0.9),
+                speed=getattr(speaker, 'voice_speed', 1.0),
             )
 
         # Broadcast text + audio together
@@ -1659,7 +1659,7 @@ async def _run_room_conversation_ws(
         if not current.is_human:
             audio_url, audio_duration = await _generate_audio_url(
                 speech_content, voice=getattr(current, 'voice_id', 'alloy'),
-                speed=getattr(current, 'voice_speed', 0.9),
+                speed=getattr(current, 'voice_speed', 1.0),
             )
 
         visit_context = f"visit:{owner.name}:{visitor.name}"

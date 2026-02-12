@@ -590,14 +590,14 @@ async def generate_players(
     print(f"  🎨 {len(avatar_tasks)} avatar uretiliyor (paralel)...")
     avatar_urls = await asyncio.gather(*avatar_tasks)
 
-    # 6 ses profili: 3 voice x 2 speed varyasyonu
+    # 6 ses profili: 3 voice x 2 speed varyasyonu (0.95-1.1 arasi — dogal prozodi)
     VOICE_PROFILES = [
-        {"voice_id": "alloy",  "voice_speed": 0.9},   # Alloy normal
-        {"voice_id": "zeynep", "voice_speed": 0.85},   # Zeynep yavas
-        {"voice_id": "ali",    "voice_speed": 0.95},   # Ali normal
-        {"voice_id": "alloy",  "voice_speed": 1.05},   # Alloy hizli
-        {"voice_id": "zeynep", "voice_speed": 1.0},    # Zeynep normal
-        {"voice_id": "ali",    "voice_speed": 0.8},    # Ali yavas
+        {"voice_id": "alloy",  "voice_speed": 1.0},    # Alloy normal
+        {"voice_id": "zeynep", "voice_speed": 0.95},   # Zeynep sakin
+        {"voice_id": "ali",    "voice_speed": 1.0},    # Ali normal
+        {"voice_id": "alloy",  "voice_speed": 1.1},    # Alloy enerjik
+        {"voice_id": "zeynep", "voice_speed": 1.05},   # Zeynep canli
+        {"voice_id": "ali",    "voice_speed": 0.95},   # Ali agir
     ]
 
     players = []

@@ -421,42 +421,37 @@ export class VillageMapScene implements Scene {
   handleClick(canvasX: number, canvasY: number): void {
     const world = this.camera.screenToWorld(canvasX, canvasY)
     const store = useGameStore.getState()
-    const CLICK_RADIUS = 30 // px hit area for character clicks
+    const CLICK_RADIUS = 24 // px hit area for character clicks
 
-    // Check character clicks first (highest priority)
-    const alivePlayers = store.players.filter(p => p.alive)
-    for (const player of alivePlayers) {
-      const anim = this.charAnims.get(player.name)
-      if (!anim) continue
-      if (distance(world.x, world.y, anim.currentX, anim.currentY) < CLICK_RADIUS) {
-        // Toggle: click same player again to close
-        if (store.inspectedPlayer === player.name) {
-          store.setInspectedPlayer(null)
-        } else {
-          store.setInspectedPlayer(player.name)
-        }
-        return
-      }
-    }
-
-    // Close player card if clicking elsewhere
+    // Close player card if open
     if (store.inspectedPlayer) {
       store.setInspectedPlayer(null)
     }
 
-    // Check campfire click
+    // 1. Campfire click (game mechanic — highest priority)
     if (distance(world.x, world.y, VILLAGE_CENTER.x, VILLAGE_CENTER.y) < CAMPFIRE_CLICK_RADIUS) {
       store.setSelectedRoom('campfire')
       return
     }
 
-    // Check house clicks
+    // 2. House clicks (game mechanic — before characters)
     for (const house of this.houses) {
       if (
         world.x >= house.x && world.x <= house.x + HOUSE_SIZE &&
         world.y >= house.y && world.y <= house.y + HOUSE_SIZE
       ) {
         store.setSelectedRoom(house.owner)
+        return
+      }
+    }
+
+    // 3. Character clicks (info card — lowest priority, only in open space)
+    const alivePlayers = store.players.filter(p => p.alive)
+    for (const player of alivePlayers) {
+      const anim = this.charAnims.get(player.name)
+      if (!anim) continue
+      if (distance(world.x, world.y, anim.currentX, anim.currentY) < CLICK_RADIUS) {
+        store.setInspectedPlayer(player.name)
         return
       }
     }

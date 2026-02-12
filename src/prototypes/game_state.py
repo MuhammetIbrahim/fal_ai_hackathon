@@ -64,7 +64,7 @@ class Player(BaseModel):
 
     # TTS ses profili
     voice_id: str = "alloy"                             # 'alloy' | 'zeynep' | 'ali'
-    voice_speed: float = 0.9                            # TTS hızı (0.7-1.1 arası)
+    voice_speed: float = 1.0                            # TTS hızı (0.9-1.1 arası)
 
     @property
     def is_echo_born(self) -> bool:

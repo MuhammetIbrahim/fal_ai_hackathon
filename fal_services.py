@@ -230,7 +230,7 @@ async def tts_stream(text: str, speed: float = 1.0) -> AsyncGenerator[bytes, Non
 async def tts_generate(
     text: str,
     speed: float = 1.0,
-    response_format: str = "wav",
+    response_format: str = "mp3",
     voice: str = "alloy",
 ) -> TTSResult:
     """Sesi uret, CDN URL dondur. Streaming gerekmiyorsa bunu kullan.
