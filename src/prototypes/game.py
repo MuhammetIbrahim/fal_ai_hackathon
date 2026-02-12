@@ -21,7 +21,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from fal_services import llm_generate, configure, tts_stream
+from fal_services import llm_generate, configure, tts_stream, generate_avatar
 from game_state import (
     Player, PlayerType, Phase, GameState,
     get_alive_players, get_alive_names, find_player,
@@ -462,7 +462,7 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
         f"Konusma Tarzi: {arch['speech_style']}\n\n"
         f"KIMLIK:\n{identity}\n"
         f"{tier_block}\n\n"
-        f"Asagidaki 4 alani JSON olarak uret. Baska hicbir sey yazma, SADECE JSON:\n\n"
+        f"Asagidaki 5 alani JSON olarak uret. Baska hicbir sey yazma, SADECE JSON:\n\n"
         f'{{"acting_prompt": "2-3 paragraf acting talimati (yukaridaki kurallara uygun)",\n'
         f' "public_tick": "Bu karakterin herkesin fark edecegi 1 konusma aliskanligi. '
         f'Ornek: her cumleye bir soru ile baslar, surekli yani der, cumlelerini yarida keser. '
@@ -471,7 +471,10 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
         f'Kurum ve unvanina uygun olsun. Ornek: her sabah kilere erzak sayar, aksam nobetini tutar. '
         f'Somut zaman + yer + eylem icersin.",\n'
         f' "speech_color": "Bu karakterin konusma tonu 1-2 cumle. '
-        f'Ornek: kisa kesik cumleler kurar, gereksiz kelime kullanmaz. Veya: hikayeci tarzi, her seyi bir aniyla anlatir."}}'
+        f'Ornek: kisa kesik cumleler kurar, gereksiz kelime kullanmaz. Veya: hikayeci tarzi, her seyi bir aniyla anlatir.",\n'
+        f' "avatar_description": "Karakterin fiziksel gorunusu, 1-2 cumle INGILIZCE. '
+        f'Yas, sac rengi, yuz yapisi, meslegine uygun kiyafet. '
+        f'Ornek: 50 year old man with white beard, tired eyes, wearing blacksmith apron"}}'
     )
     return prompt, ACTING_PROMPT_SYSTEM
 
@@ -504,6 +507,7 @@ def _parse_character_card(raw_output: str) -> dict:
             "public_tick": data.get("public_tick", ""),
             "alibi_anchor": data.get("alibi_anchor", ""),
             "speech_color": data.get("speech_color", ""),
+            "avatar_description": data.get("avatar_description", ""),
         }
     except json.JSONDecodeError:
         # Fallback: tum metni acting_prompt olarak kullan
@@ -512,12 +516,13 @@ def _parse_character_card(raw_output: str) -> dict:
             "public_tick": "",
             "alibi_anchor": "",
             "speech_color": "",
+            "avatar_description": "",
         }
 
 
 async def _generate_acting_prompt(character: dict, world_seed: WorldSeed) -> dict:
     """Tek karakter icin acting prompt + kart alanlari uret (Pro model).
-    Returns: {"acting_prompt": str, "public_tick": str, "alibi_anchor": str, "speech_color": str}
+    Returns: {"acting_prompt": str, "public_tick": str, "alibi_anchor": str, "speech_color": str, "avatar_description": str}
     """
     name = character["name"]
     prompt, system = _build_acting_request(character, world_seed)
@@ -531,13 +536,32 @@ async def _generate_acting_prompt(character: dict, world_seed: WorldSeed) -> dic
         reasoning=True,
     )
     card = _parse_character_card(result.output)
-    has_all = all(card.get(k) for k in ("acting_prompt", "public_tick", "alibi_anchor", "speech_color"))
+    has_all = all(card.get(k) for k in ("acting_prompt", "public_tick", "alibi_anchor", "speech_color", "avatar_description"))
     if has_all:
         print(f"  ✅ [{name}] Kart tamam — acting:{len(card['acting_prompt'])}c, tick:{card['public_tick'][:30]}...")
     else:
-        missing = [k for k in ("public_tick", "alibi_anchor", "speech_color") if not card.get(k)]
+        missing = [k for k in ("public_tick", "alibi_anchor", "speech_color", "avatar_description") if not card.get(k)]
         print(f"  ⚠️  [{name}] Eksik alanlar: {missing} — fallback acting prompt kullanildi")
     return card
+
+
+async def _generate_avatar_safe(
+    description: str,
+    player_name: str,
+    world_tone: str = "dark fantasy medieval",
+) -> str | None:
+    """Avatar uret, hata olursa None dondur (oyunu bloklamasin)."""
+    if not description:
+        print(f"  ⚠️  [{player_name}] Avatar description bos, atlaniyor")
+        return None
+    try:
+        print(f"  🎨 [{player_name}] Avatar uretiliyor...")
+        result = await generate_avatar(description, world_tone=world_tone)
+        print(f"  ✅ [{player_name}] Avatar hazir")
+        return result.image_url
+    except Exception as e:
+        print(f"  ⚠️  [{player_name}] Avatar uretimi basarisiz: {e}")
+        return None
 
 
 async def generate_players(
@@ -546,12 +570,25 @@ async def generate_players(
     player_count: int = 6,
     ai_count: int = 4,
 ) -> list[Player]:
-    """Tam pipeline: slot olustur → acting prompt uret → Player listesi dondur."""
+    """Tam pipeline: slot olustur → acting prompt uret → avatar uret → Player listesi dondur."""
     slots = create_character_slots(rng, player_count, ai_count)
 
     # Concurrent karakter karti uretimi
     tasks = [_generate_acting_prompt(c, world_seed) for c in slots]
     cards = await asyncio.gather(*tasks)
+
+    # Concurrent avatar uretimi (paralel — ~5 saniye ekstra)
+    world_tone = f"{world_seed.tone} dark fantasy medieval"
+    avatar_tasks = [
+        _generate_avatar_safe(
+            card.get("avatar_description", ""),
+            slot["name"],
+            world_tone,
+        )
+        for slot, card in zip(slots, cards)
+    ]
+    print(f"  🎨 {len(avatar_tasks)} avatar uretiliyor (paralel)...")
+    avatar_urls = await asyncio.gather(*avatar_tasks)
 
     # 6 ses profili: 3 voice x 2 speed varyasyonu
     VOICE_PROFILES = [
@@ -564,7 +601,7 @@ async def generate_players(
     ]
 
     players = []
-    for i, (slot, card) in enumerate(zip(slots, cards)):
+    for i, (slot, card, avatar_url) in enumerate(zip(slots, cards, avatar_urls)):
         voice = VOICE_PROFILES[i % len(VOICE_PROFILES)]
         players.append(Player(
             slot_id=slot["slot_id"],
@@ -582,6 +619,7 @@ async def generate_players(
             public_tick=card.get("public_tick") or None,
             alibi_anchor=card.get("alibi_anchor") or None,
             speech_color=card.get("speech_color") or None,
+            avatar_url=avatar_url,
             voice_id=voice["voice_id"],
             voice_speed=voice["voice_speed"],
         ))

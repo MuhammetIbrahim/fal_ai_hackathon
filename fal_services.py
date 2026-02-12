@@ -261,19 +261,49 @@ async def tts_generate(
 #  4. FLUX — Avatar Uretimi
 # ══════════════════════════════════════════════════════════
 
-async def generate_avatar(description: str) -> AvatarResult:
-    """Karakter icin avatar goruntusu uretir."""
+async def generate_avatar(
+    description: str,
+    world_tone: str = "dark fantasy medieval",
+) -> AvatarResult:
+    """Karakter icin pixel-art avatar goruntusu uretir."""
+    prompt = (
+        f"2D pixel art game character portrait, {description}, "
+        f"{world_tone} setting, clean solid dark background, "
+        f"front-facing bust shot, detailed pixel art style"
+    )
     try:
         handler = await fal_client.submit_async(
             FLUX_ENDPOINT,
             arguments={
-                "prompt": f"Portrait of {description}, digital art style, game character avatar, clean background",
+                "prompt": prompt,
                 "image_size": "square",
                 "num_images": 1,
             },
         )
         result = await handler.get()
         return AvatarResult(image_url=result["images"][0]["url"])
+    except Exception as e:
+        raise FalServiceError("flux", str(e)) from e
+
+
+@dataclass
+class BackgroundResult:
+    image_url: str
+
+
+async def generate_background(prompt: str) -> BackgroundResult:
+    """Sahne arka plani goruntusu uretir."""
+    try:
+        handler = await fal_client.submit_async(
+            FLUX_ENDPOINT,
+            arguments={
+                "prompt": prompt,
+                "image_size": "landscape_16_9",
+                "num_images": 1,
+            },
+        )
+        result = await handler.get()
+        return BackgroundResult(image_url=result["images"][0]["url"])
     except Exception as e:
         raise FalServiceError("flux", str(e)) from e
 

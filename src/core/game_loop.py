@@ -285,6 +285,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                     "public_tick": p.public_tick,
                     "alibi_anchor": p.alibi_anchor,
                     "speech_color": p.speech_color,
+                    "avatar_url": p.avatar_url,
                 }
             })
 
@@ -301,11 +302,24 @@ async def _game_loop_runner(game_id: str, state: Any):
                     "color": None,
                     "institution_label": p.institution_label,
                     "public_tick": p.public_tick,
+                    "alibi_anchor": p.alibi_anchor,
+                    "speech_color": p.speech_color,
+                    "lore": p.lore,
+                    "archetype_label": p.archetype_label,
+                    "avatar_url": p.avatar_url,
                 }
                 for p in state["players"]
             ]
         }
     })
+
+    # Sahne arka planlarini gonder
+    scene_backgrounds = state.get("scene_backgrounds", {})
+    if scene_backgrounds:
+        await manager.broadcast(game_id, {
+            "event": "scene_backgrounds",
+            "data": scene_backgrounds,
+        })
 
     await asyncio.sleep(2)  # Karakter gösterimini okumak için bekle
 

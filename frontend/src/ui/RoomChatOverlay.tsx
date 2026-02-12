@@ -7,10 +7,10 @@ const FALLBACK_COLORS = [
   '#8B5E3C', '#6B6B6B', '#5A6672', '#C2B280', '#8B0000',
 ]
 
-function usePlayerColor() {
+function usePlayerLookup() {
   const players = useGameStore((s) => s.players)
 
-  return (speakerName: string): string => {
+  const getColor = (speakerName: string): string => {
     const player = players.find((p) => p.name === speakerName)
     if (player?.speech_color) return player.speech_color
     if (player?.color) return player.color
@@ -20,6 +20,13 @@ function usePlayerColor() {
     }
     return FALLBACK_COLORS[Math.abs(hash) % FALLBACK_COLORS.length]
   }
+
+  const getAvatar = (speakerName: string): string | undefined => {
+    const player = players.find((p) => p.name === speakerName)
+    return player?.avatar_url
+  }
+
+  return { getColor, getAvatar }
 }
 
 // ── Chat message list for a single room ──
@@ -29,7 +36,7 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
   large,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const getColor = usePlayerColor()
+  const { getColor, getAvatar } = usePlayerLookup()
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -40,6 +47,7 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
   const textSize = large ? 'text-[11px]' : 'text-[8px]'
   const nameSize = large ? 'text-[12px]' : 'text-[8px]'
   const sepSize = large ? 'text-[9px]' : 'text-[7px]'
+  const avatarSize = large ? 'w-7 h-7' : 'w-5 h-5'
 
   return (
     <div
@@ -66,17 +74,39 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
           )
         }
 
+        const avatarUrl = getAvatar(speech.speaker)
+
         return (
-          <div key={idx} className="flex flex-col gap-0.5">
-            <span
-              className={`${nameSize} font-pixel font-bold`}
-              style={{ color: getColor(speech.speaker) }}
-            >
-              {speech.speaker}
-            </span>
-            <p className={`text-text-light ${textSize} font-pixel leading-relaxed pl-2 border-l-2 border-wood/30`}>
-              {speech.content}
-            </p>
+          <div key={idx} className="flex gap-2">
+            {/* Avatar */}
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={speech.speaker}
+                className={`${avatarSize} rounded-full flex-shrink-0 object-cover border border-wood/40 mt-0.5`}
+              />
+            ) : (
+              <div
+                className={`${avatarSize} rounded-full flex-shrink-0 flex items-center justify-center border border-wood/40 mt-0.5`}
+                style={{ backgroundColor: getColor(speech.speaker) + '33' }}
+              >
+                <span className="text-[7px] font-pixel font-bold" style={{ color: getColor(speech.speaker) }}>
+                  {speech.speaker.charAt(0)}
+                </span>
+              </div>
+            )}
+            {/* Message */}
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span
+                className={`${nameSize} font-pixel font-bold`}
+                style={{ color: getColor(speech.speaker) }}
+              >
+                {speech.speaker}
+              </span>
+              <p className={`text-text-light ${textSize} font-pixel leading-relaxed`}>
+                {speech.content}
+              </p>
+            </div>
           </div>
         )
       })}

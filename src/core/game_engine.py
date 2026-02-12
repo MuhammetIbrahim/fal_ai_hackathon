@@ -27,6 +27,7 @@ KULLANIM:
     state = await start_game("game123")
 """
 
+import asyncio
 import sys
 import uuid
 from datetime import datetime
@@ -90,6 +91,53 @@ from game import (
 # DATABASE IMPORTS
 # ═══════════════════════════════════════════════════
 from src.core.database import db, GAMES
+from fal_services import generate_background
+
+
+# ═══════════════════════════════════════════════════
+# SCENE BACKGROUND GENERATION
+# ═══════════════════════════════════════════════════
+
+async def generate_scene_backgrounds(world_seed: WorldSeed) -> dict[str, str | None]:
+    """4 sahne arka planini paralel uret. Hata olursa None dondurur (oyunu bloklamaz)."""
+    settlement = world_seed.place_variants.settlement_name
+    tone = world_seed.tone
+    season = world_seed.season
+
+    prompts = {
+        "campfire": (
+            f"Dark fantasy campfire scene at night, {settlement} village, "
+            f"{tone} atmosphere, {season} season, medieval setting, "
+            f"warm fire glow, surrounding stone circle, pixel art style, wide shot"
+        ),
+        "village": (
+            f"2D isometric village map, {settlement}, medieval dark fantasy, "
+            f"{season} season, {tone} atmosphere, 6 small houses around a central fire, "
+            f"dirt paths, pixel art style, top-down view"
+        ),
+        "house_interior": (
+            f"Interior of medieval house, warm candlelight, dark fantasy, "
+            f"wooden furniture, stone walls, {tone} atmosphere, pixel art style"
+        ),
+        "night": (
+            f"Night scene of {settlement} village, moonlit, {tone} atmosphere, "
+            f"{season} season, dark fantasy medieval, eerie fog, pixel art style"
+        ),
+    }
+
+    async def _safe_generate(key: str, prompt: str) -> tuple[str, str | None]:
+        try:
+            print(f"  🖼️  [{key}] Arka plan uretiliyor...")
+            result = await generate_background(prompt)
+            print(f"  ✅ [{key}] Arka plan hazir")
+            return key, result.image_url
+        except Exception as e:
+            print(f"  ⚠️  [{key}] Arka plan uretimi basarisiz: {e}")
+            return key, None
+
+    tasks = [_safe_generate(k, p) for k, p in prompts.items()]
+    results = await asyncio.gather(*tasks)
+    return {k: url for k, url in results}
 
 
 # ═══════════════════════════════════════════════════
@@ -294,7 +342,18 @@ async def start_game(game_id: str) -> dict:
         )
         
         print(f"✅ {len(players)} karakter oluşturuldu")
-    
+
+    # ═══ 4b. Sahne Arka Planları Üret (Paralel) ═══
+    scene_backgrounds: dict[str, str | None] = {}
+    if settings.FAL_KEY:
+        try:
+            print(f"🖼️  Sahne arka planlari uretiliyor (paralel)...")
+            scene_backgrounds = await generate_scene_backgrounds(world_seed)
+            bg_count = sum(1 for v in scene_backgrounds.values() if v)
+            print(f"✅ {bg_count}/{len(scene_backgrounds)} arka plan hazir")
+        except Exception as e:
+            print(f"⚠️  Arka plan uretimi basarisiz: {e}")
+
     # ═══ 5. Game State Initialize ═══
     """
     GameState, oyunun anlık durumunu içerir:
@@ -308,7 +367,10 @@ async def start_game(game_id: str) -> dict:
         world_seed=world_seed,
         day_limit=config["day_limit"],
     )
-    
+
+    # Arka planlari state'e ekle
+    state["scene_backgrounds"] = scene_backgrounds
+
     # ═══ 6. Database Güncelle ═══
     """
     State'i JSON olarak sakla.
@@ -317,11 +379,11 @@ async def start_game(game_id: str) -> dict:
     game_data["state"] = _serialize_state(state)
     game_data["status"] = "running"
     game_data["started_at"] = datetime.utcnow().isoformat()
-    
+
     db.update(GAMES, game_id, game_data)
-    
+
     print(f"✅ Oyun başlatıldı: {game_id}")
-    
+
     return {
         "game_id": game_id,
         "state": state,
@@ -402,6 +464,7 @@ async def get_public_game_info(game_id: str) -> dict | None:
                     "name": p.name,
                     "role_title": p.role_title,
                     "alive": p.alive,
+                    "avatar_url": p.avatar_url,
                     # AI mi değil mi GİZLİ (oyun sırasında belli olmamalı)
                 }
                 for p in state.get("players", [])

@@ -22,6 +22,9 @@ export interface Player {
   speech_color?: string
   alibi_anchor?: string
   player_type?: 'et_can' | 'yanki_dogmus'
+  lore?: string
+  archetype_label?: string
+  avatar_url?: string
   // Client-side rendering
   x?: number
   y?: number

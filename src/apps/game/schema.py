@@ -87,6 +87,7 @@ class PlayerPublic(BaseModel):
     name: str = Field(description="Karakter adı")
     role_title: str = Field(description="Karakter rolü (Demirci, Avcı vb.)")
     alive: bool = Field(description="Hayatta mı?")
+    avatar_url: str | None = Field(default=None, description="FLUX-generated portrait URL")
 
 
 class GameStateResponse(BaseModel):

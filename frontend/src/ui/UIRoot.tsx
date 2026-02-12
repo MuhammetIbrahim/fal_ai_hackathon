@@ -16,6 +16,7 @@ import NotificationToast from './NotificationToast'
 import ProposalPanel from './ProposalPanel'
 import NightPanel from './NightPanel'
 import TransitionOverlay from './TransitionOverlay'
+import PlayerCardOverlay from './PlayerCardOverlay'
 import PixelButton from './PixelButton'
 
 // ── Lobby UI (inline) ──
@@ -145,153 +146,237 @@ const LobbyUI: React.FC = () => {
   }, [setConnection, setMyName, setNotification])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto py-8">
+      {/* Backdrop — dark with subtle vignette */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(ellipse at center, #1a1208 0%, #0a0804 100%)',
+          background: 'radial-gradient(ellipse at center, #1a1208 0%, #0d0a04 60%, #050302 100%)',
+        }}
+      />
+      {/* Ambient fire glow at bottom center */}
+      <div
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at bottom center, rgba(255,140,0,0.08) 0%, transparent 70%)',
         }}
       />
 
-      <div className="relative flex flex-col items-center gap-6">
-        {/* Title */}
-        <div className="flex flex-col items-center gap-2 mb-4">
-          <h1 className="text-text-gold text-[16px] font-pixel tracking-wider">
-            Ocak Yemini
-          </h1>
-          <p className="text-stone text-[8px] font-pixel">
-            Sosyal Deduksiyon Oyunu
-          </p>
-        </div>
+      {/* ── Main card ── */}
+      <div className="relative w-[420px] max-w-[92vw]">
+        {/* Outer ornamental border */}
+        <div
+          className="absolute -inset-[6px] pointer-events-none"
+          style={{
+            border: '3px solid #5C3A1E',
+            boxShadow: '0 0 0 1px #3a2210, 0 0 40px rgba(255,140,0,0.08)',
+          }}
+        />
 
-        {/* If not in a lobby yet */}
-        {!lobbyCode && (
-          <div className="flex flex-col items-center gap-4">
-            {/* Name input */}
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Oyuncu adin..."
-              className="px-4 py-2 bg-[#2a1f10] border-4 border-wood text-text-light font-pixel text-[10px] outline-none focus:border-text-gold placeholder:text-stone w-64 text-center"
-            />
+        {/* Inner card */}
+        <div
+          className="relative border-2 border-wood/60"
+          style={{
+            background: 'linear-gradient(180deg, #1a1208 0%, #14100a 50%, #1a1208 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(218,165,32,0.1), 0 12px 40px rgba(0,0,0,0.7)',
+          }}
+        >
+          {/* Top decorative bar */}
+          <div className="h-[3px] bg-gradient-to-r from-transparent via-text-gold/40 to-transparent" />
 
-            {/* Create lobby */}
-            <PixelButton
-              label="Lobi Olustur"
-              onClick={handleCreateLobby}
-              variant="fire"
-              size="lg"
-              disabled={loading || !playerName.trim()}
-            />
+          {/* Corner ornaments */}
+          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-text-gold/50" />
+          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-text-gold/50" />
+          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-text-gold/50" />
+          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-text-gold/50" />
 
-            {/* AI Demo */}
-            <PixelButton
-              label="AI Demo (Sadece Izle)"
-              onClick={handleAIDemo}
-              variant="stone"
-              size="lg"
-              disabled={loading}
-            />
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 w-64">
-              <div className="flex-1 h-0.5 bg-wood/30" />
-              <span className="text-stone text-[8px] font-pixel">veya</span>
-              <div className="flex-1 h-0.5 bg-wood/30" />
-            </div>
-
-            {/* Join lobby */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                placeholder="Lobi kodu..."
-                maxLength={8}
-                className="px-3 py-2 bg-[#2a1f10] border-4 border-stone text-text-light font-pixel text-[10px] outline-none focus:border-text-gold placeholder:text-stone w-40 text-center uppercase"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleJoinLobby()
-                }}
-              />
-              <PixelButton
-                label="Katil"
-                onClick={handleJoinLobby}
-                variant="stone"
-                disabled={loading || !joinCode.trim() || !playerName.trim()}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* If in a lobby */}
-        {lobbyCode && (
-          <div className="flex flex-col items-center gap-4">
-            {/* Lobby code display */}
-            <div className="border-4 border-wood bg-bg-dark/90 px-6 py-3 shadow-lg shadow-black/50">
-              <span className="text-stone text-[8px] font-pixel block text-center mb-1">
-                Lobi Kodu
-              </span>
-              <span className="text-text-gold text-[14px] font-pixel tracking-[0.3em]">
-                {lobbyCode}
-              </span>
-            </div>
-
-            {/* Player list */}
-            <div className="border-4 border-stone bg-bg-dark/90 px-4 py-3 min-w-[200px] shadow-lg shadow-black/50">
-              <span className="text-stone text-[8px] font-pixel block mb-2">
-                Oyuncular ({players.length})
-              </span>
-              <div className="space-y-1">
-                {players.length === 0 && (
-                  <span className="text-stone/50 text-[8px] font-pixel">
-                    Oyuncu bekleniyor...
-                  </span>
-                )}
-                {players.map((p) => (
-                  <div key={p.slot_id} className="flex items-center gap-2">
-                    <div
-                      className="w-2 h-2 rounded-full bg-green-400"
-                      style={p.color ? { backgroundColor: p.color } : undefined}
-                    />
-                    <span className="text-text-light text-[9px] font-pixel">
-                      {p.name}
-                    </span>
-                  </div>
-                ))}
+          {/* Content */}
+          <div className="px-10 py-8 flex flex-col items-center">
+            {/* ── Title section ── */}
+            <div className="flex flex-col items-center gap-3 mb-8">
+              {/* Fire emoji as logo */}
+              <div className="text-[32px] mb-1" style={{ textShadow: '0 0 20px rgba(255,140,0,0.5)' }}>
+                🔥
+              </div>
+              <h1
+                className="text-text-gold text-[20px] font-pixel tracking-[0.15em]"
+                style={{ textShadow: '0 0 12px rgba(218,165,32,0.3)' }}
+              >
+                Ocak Yemini
+              </h1>
+              <p className="text-stone text-[9px] font-pixel tracking-wider">
+                Sosyal Deduksiyon Oyunu
+              </p>
+              {/* Decorative divider under title */}
+              <div className="flex items-center gap-3 w-full mt-2">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/40" />
+                <div className="w-1.5 h-1.5 rotate-45 border border-text-gold/40" />
+                <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/40" />
               </div>
             </div>
 
-            {/* Connection status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-fire-red'}`}
-              />
-              <span className="text-stone text-[7px] font-pixel">
-                {connected ? 'Bagli' : 'Baglanti bekleniyor'}
-              </span>
-            </div>
+            {/* ── Not in lobby yet ── */}
+            {!lobbyCode && (
+              <div className="flex flex-col items-center gap-5 w-full">
+                {/* Name input */}
+                <div className="w-full max-w-[280px]">
+                  <label className="block text-stone text-[8px] font-pixel mb-2 text-center tracking-wider uppercase">
+                    Karakter Adin
+                  </label>
+                  <input
+                    type="text"
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value)}
+                    placeholder="Isim gir..."
+                    className="w-full px-5 py-3 bg-[#0f0b06] border-2 border-wood/50 text-text-light font-pixel text-[11px] outline-none focus:border-text-gold/80 placeholder:text-stone/40 text-center transition-colors"
+                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)' }}
+                  />
+                </div>
 
-            {/* Start game button (host only) */}
-            {isHost && (
-              <PixelButton
-                label="Oyunu Baslat"
-                onClick={handleStartGame}
-                variant="fire"
-                size="lg"
-                disabled={loading || players.length < 1}
-              />
+                {/* Action buttons */}
+                <div className="flex flex-col items-center gap-3 w-full max-w-[280px]">
+                  <PixelButton
+                    label="Lobi Olustur"
+                    onClick={handleCreateLobby}
+                    variant="fire"
+                    size="lg"
+                    disabled={loading || !playerName.trim()}
+                  />
+
+                  <PixelButton
+                    label="AI Demo (Sadece Izle)"
+                    onClick={handleAIDemo}
+                    variant="stone"
+                    size="lg"
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4 w-full max-w-[280px] my-1">
+                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/30" />
+                  <span className="text-stone/60 text-[8px] font-pixel uppercase tracking-widest">veya</span>
+                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/30" />
+                </div>
+
+                {/* Join lobby */}
+                <div className="flex gap-3 items-end">
+                  <div>
+                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
+                      Lobi Kodu
+                    </label>
+                    <input
+                      type="text"
+                      value={joinCode}
+                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                      placeholder="ABCDEF"
+                      maxLength={8}
+                      className="px-4 py-3 bg-[#0f0b06] border-2 border-stone/40 text-text-light font-pixel text-[11px] outline-none focus:border-text-gold/80 placeholder:text-stone/30 w-[160px] text-center uppercase tracking-[0.2em] transition-colors"
+                      style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleJoinLobby()
+                      }}
+                    />
+                  </div>
+                  <PixelButton
+                    label="Katil"
+                    onClick={handleJoinLobby}
+                    variant="wood"
+                    disabled={loading || !joinCode.trim() || !playerName.trim()}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── In a lobby ── */}
+            {lobbyCode && (
+              <div className="flex flex-col items-center gap-5 w-full">
+                {/* Lobby code display */}
+                <div
+                  className="border-2 border-text-gold/30 px-8 py-4 text-center"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(218,165,32,0.06) 0%, transparent 100%)',
+                    boxShadow: '0 0 20px rgba(218,165,32,0.05)',
+                  }}
+                >
+                  <span className="text-stone text-[8px] font-pixel block mb-2 tracking-wider uppercase">
+                    Lobi Kodu
+                  </span>
+                  <span
+                    className="text-text-gold text-[18px] font-pixel tracking-[0.4em]"
+                    style={{ textShadow: '0 0 8px rgba(218,165,32,0.3)' }}
+                  >
+                    {lobbyCode}
+                  </span>
+                </div>
+
+                {/* Player list */}
+                <div className="w-full max-w-[280px] border-2 border-wood/30 bg-[#0f0b06]/60 px-5 py-4">
+                  <span className="text-stone text-[8px] font-pixel block mb-3 tracking-wider uppercase">
+                    Oyuncular ({players.length})
+                  </span>
+                  <div className="space-y-2">
+                    {players.length === 0 && (
+                      <span className="text-stone/40 text-[9px] font-pixel">
+                        Oyuncu bekleniyor...
+                      </span>
+                    )}
+                    {players.map((p, idx) => (
+                      <div key={p.slot_id} className="flex items-center gap-3 py-1 border-b border-wood/10 last:border-0">
+                        <span className="text-stone/40 text-[8px] font-pixel w-4">{idx + 1}.</span>
+                        <div className="w-2 h-2 rounded-full bg-green-400/80" />
+                        <span className="text-text-light text-[10px] font-pixel">
+                          {p.name}
+                        </span>
+                        {p.role_title && p.role_title !== 'Villager' && (
+                          <span className="text-stone/50 text-[8px] font-pixel ml-auto">
+                            {p.role_title}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Connection status */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-fire-red animate-pulse'}`}
+                  />
+                  <span className="text-stone text-[8px] font-pixel">
+                    {connected ? 'Baglanti kuruldu' : 'Baglanti bekleniyor...'}
+                  </span>
+                </div>
+
+                {/* Start game button (host only) */}
+                {isHost && (
+                  <div className="mt-2">
+                    <PixelButton
+                      label="Oyunu Baslat"
+                      onClick={handleStartGame}
+                      variant="fire"
+                      size="lg"
+                      disabled={loading || players.length < 1}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Loading indicator */}
+            {loading && (
+              <div className="mt-4 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-fire-orange animate-pulse" />
+                <span className="text-fire-orange text-[9px] font-pixel animate-pulse">
+                  Yukleniyor...
+                </span>
+              </div>
             )}
           </div>
-        )}
 
-        {/* Loading indicator */}
-        {loading && (
-          <div className="text-fire-orange text-[8px] font-pixel animate-pulse">
-            Yukleniyor...
-          </div>
-        )}
+          {/* Bottom decorative bar */}
+          <div className="h-[3px] bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
+        </div>
       </div>
     </div>
   )
@@ -474,6 +559,11 @@ export const UIRoot: React.FC = () => {
           <ProposalPanel />
         </div>
       )}
+
+      {/* Player card overlay (character inspection on map click) */}
+      <div className="pointer-events-auto">
+        <PlayerCardOverlay />
+      </div>
     </div>
   )
 }

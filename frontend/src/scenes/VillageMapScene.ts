@@ -67,6 +67,14 @@ export class VillageMapScene implements Scene {
   // Character animation positions (name → anim state)
   private charAnims: Map<string, CharAnim> = new Map()
 
+  // Avatar image cache (name → loaded HTMLImageElement)
+  private avatarImages: Map<string, HTMLImageElement> = new Map()
+  private avatarLoadingSet: Set<string> = new Set()
+
+  // Background image cache
+  private bgImage: HTMLImageElement | null = null
+  private bgImageUrl: string | null = null
+
   // Fire colors (tepki reactions)
   private currentFireColors: string[] = FIRE_COLORS_NORMAL
   private tepkiTimer = 0
@@ -291,59 +299,102 @@ export class VillageMapScene implements Scene {
     // ── Characters ──
     const { players, myName } = useGameStore.getState()
     const alivePlayers = players.filter(p => p.alive)
+    const AVATAR_DISPLAY_SIZE = 48 // px — avatar replaces placeholder square
     for (let i = 0; i < alivePlayers.length; i++) {
       const player = alivePlayers[i]
       const anim = this.charAnims.get(player.name)
       if (!anim) continue
 
-      const charSize = CHAR_SIZE * CHAR_SCALE
       const color = player.color ?? getPlayerColor(i)
-
-      // Determine facing direction based on movement
-      const dx = anim.targetX - anim.currentX
-      const dy = anim.targetY - anim.currentY
-      const moving = Math.abs(dx) > 2 || Math.abs(dy) > 2
-      let dir: 'up' | 'down' | 'left' | 'right' = 'down'
-      if (moving) {
-        dir = Math.abs(dx) > Math.abs(dy)
-          ? (dx > 0 ? 'right' : 'left')
-          : (dy > 0 ? 'down' : 'up')
-      } else {
-        // Face campfire when idle
-        const cx = VILLAGE_CENTER.x - anim.currentX
-        const cy = VILLAGE_CENTER.y - anim.currentY
-        dir = Math.abs(cx) > Math.abs(cy)
-          ? (cx > 0 ? 'right' : 'left')
-          : (cy > 0 ? 'down' : 'up')
-      }
-
-      // Highlight human player with a gold glow
       const isMe = player.name === myName
+      const half = AVATAR_DISPLAY_SIZE / 2
+
+      // Load avatar if needed
+      const avatarImg = this.avatarImages.get(player.name)
+      if (!avatarImg) this.loadAvatar(player.name, player.avatar_url)
+
+      // Gold glow for human player
       if (isMe) {
         ctx.save()
         ctx.shadowColor = COLORS.TEXT_GOLD
-        ctx.shadowBlur = 12
+        ctx.shadowBlur = 14
         ctx.strokeStyle = COLORS.TEXT_GOLD
-        ctx.lineWidth = 2
-        ctx.strokeRect(
-          anim.currentX - charSize / 2 - 2,
-          anim.currentY - charSize / 2 - 2,
-          charSize + 4,
-          charSize + 4,
-        )
+        ctx.lineWidth = 2.5
+        ctx.beginPath()
+        ctx.arc(anim.currentX, anim.currentY, half + 3, 0, Math.PI * 2)
+        ctx.stroke()
         ctx.restore()
       }
 
-      SpriteSheet.drawPlaceholderCharacter(
-        ctx,
-        anim.currentX - charSize / 2,
-        anim.currentY - charSize / 2,
-        color, dir,
-        moving ? Math.floor(this.time * 4) % 2 : 0,
-        player.alive,
-      )
+      if (avatarImg) {
+        // ── Draw avatar image as the character (circular) ──
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(anim.currentX, anim.currentY, half, 0, Math.PI * 2)
+        ctx.clip()
+        ctx.drawImage(
+          avatarImg,
+          anim.currentX - half,
+          anim.currentY - half,
+          AVATAR_DISPLAY_SIZE,
+          AVATAR_DISPLAY_SIZE,
+        )
+        ctx.restore()
 
-      // Name tag
+        // Border ring
+        ctx.save()
+        ctx.strokeStyle = isMe ? COLORS.TEXT_GOLD : COLORS.WOOD
+        ctx.lineWidth = isMe ? 2.5 : 1.5
+        ctx.beginPath()
+        ctx.arc(anim.currentX, anim.currentY, half, 0, Math.PI * 2)
+        ctx.stroke()
+        ctx.restore()
+
+        // Dead overlay
+        if (!player.alive) {
+          ctx.save()
+          ctx.globalAlpha = 0.5
+          ctx.fillStyle = '#000'
+          ctx.beginPath()
+          ctx.arc(anim.currentX, anim.currentY, half, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.globalAlpha = 1
+          ctx.fillStyle = '#FF4444'
+          ctx.font = 'bold 20px monospace'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText('X', anim.currentX, anim.currentY)
+          ctx.restore()
+        }
+      } else {
+        // ── Fallback: colored placeholder square ──
+        const charSize = CHAR_SIZE * CHAR_SCALE
+        const dx = anim.targetX - anim.currentX
+        const dy = anim.targetY - anim.currentY
+        const moving = Math.abs(dx) > 2 || Math.abs(dy) > 2
+        let dir: 'up' | 'down' | 'left' | 'right' = 'down'
+        if (moving) {
+          dir = Math.abs(dx) > Math.abs(dy)
+            ? (dx > 0 ? 'right' : 'left')
+            : (dy > 0 ? 'down' : 'up')
+        } else {
+          const cx = VILLAGE_CENTER.x - anim.currentX
+          const cy = VILLAGE_CENTER.y - anim.currentY
+          dir = Math.abs(cx) > Math.abs(cy)
+            ? (cx > 0 ? 'right' : 'left')
+            : (cy > 0 ? 'down' : 'up')
+        }
+        SpriteSheet.drawPlaceholderCharacter(
+          ctx,
+          anim.currentX - charSize / 2,
+          anim.currentY - charSize / 2,
+          color, dir,
+          moving ? Math.floor(this.time * 4) % 2 : 0,
+          player.alive,
+        )
+      }
+
+      // Name tag below character
       ctx.fillStyle = isMe ? COLORS.TEXT_GOLD : COLORS.TEXT_LIGHT
       ctx.font = isMe ? 'bold 12px monospace' : 'bold 11px monospace'
       ctx.textAlign = 'center'
@@ -351,8 +402,13 @@ export class VillageMapScene implements Scene {
       ctx.fillText(
         isMe ? `${player.name} (SEN)` : player.name,
         anim.currentX,
-        anim.currentY + charSize / 2 + 4,
+        anim.currentY + half + 4,
       )
+
+      // Role title subtitle
+      ctx.fillStyle = COLORS.STONE
+      ctx.font = '9px monospace'
+      ctx.fillText(player.role_title, anim.currentX, anim.currentY + half + 18)
     }
 
     // ── Room activity indicators (speech bubble icon) ──
@@ -364,10 +420,33 @@ export class VillageMapScene implements Scene {
   /** Handle click event (called from canvas click handler in App.tsx) */
   handleClick(canvasX: number, canvasY: number): void {
     const world = this.camera.screenToWorld(canvasX, canvasY)
+    const store = useGameStore.getState()
+    const CLICK_RADIUS = 30 // px hit area for character clicks
+
+    // Check character clicks first (highest priority)
+    const alivePlayers = store.players.filter(p => p.alive)
+    for (const player of alivePlayers) {
+      const anim = this.charAnims.get(player.name)
+      if (!anim) continue
+      if (distance(world.x, world.y, anim.currentX, anim.currentY) < CLICK_RADIUS) {
+        // Toggle: click same player again to close
+        if (store.inspectedPlayer === player.name) {
+          store.setInspectedPlayer(null)
+        } else {
+          store.setInspectedPlayer(player.name)
+        }
+        return
+      }
+    }
+
+    // Close player card if clicking elsewhere
+    if (store.inspectedPlayer) {
+      store.setInspectedPlayer(null)
+    }
 
     // Check campfire click
     if (distance(world.x, world.y, VILLAGE_CENTER.x, VILLAGE_CENTER.y) < CAMPFIRE_CLICK_RADIUS) {
-      useGameStore.getState().setSelectedRoom('campfire')
+      store.setSelectedRoom('campfire')
       return
     }
 
@@ -377,7 +456,7 @@ export class VillageMapScene implements Scene {
         world.x >= house.x && world.x <= house.x + HOUSE_SIZE &&
         world.y >= house.y && world.y <= house.y + HOUSE_SIZE
       ) {
-        useGameStore.getState().setSelectedRoom(house.owner)
+        store.setSelectedRoom(house.owner)
         return
       }
     }
@@ -408,13 +487,33 @@ export class VillageMapScene implements Scene {
   }
 
   private drawGround(ctx: CanvasRenderingContext2D): void {
-    // Draw visible tiles as grass
+    // Try to use background image if available
+    const bgUrl = useGameStore.getState().sceneBackgrounds?.village
+    if (bgUrl && bgUrl !== this.bgImageUrl) {
+      this.bgImageUrl = bgUrl
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => { this.bgImage = img }
+      img.src = bgUrl
+    }
+
+    if (this.bgImage) {
+      // Draw background image covering the village area
+      const size = (HOUSE_RADIUS + HOUSE_SIZE) * 2 + 100
+      const ox = VILLAGE_CENTER.x - size / 2
+      const oy = VILLAGE_CENTER.y - size / 2
+      ctx.globalAlpha = 0.4
+      ctx.drawImage(this.bgImage, ox, oy, size, size)
+      ctx.globalAlpha = 1.0
+    }
+
+    // Draw visible tiles as grass (on top of or without bg)
     const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
     for (let row = minRow; row <= maxRow; row++) {
       for (let col = minCol; col <= maxCol; col++) {
         const x = col * SCALED_TILE
         const y = row * SCALED_TILE
-        ctx.fillStyle = COLORS.GRASS
+        ctx.fillStyle = this.bgImage ? rgba(COLORS.GRASS, 0.3) : COLORS.GRASS
         ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
         ctx.strokeStyle = rgba('#000000', 0.04)
         ctx.strokeRect(x, y, SCALED_TILE, SCALED_TILE)
@@ -644,5 +743,21 @@ export class VillageMapScene implements Scene {
       radius: randFloat(3, 9),
       color: colors[Math.floor(Math.random() * colors.length)],
     })
+  }
+
+  /** Lazy-load avatar image from URL */
+  private loadAvatar(name: string, url?: string): void {
+    if (!url || this.avatarLoadingSet.has(name)) return
+    this.avatarLoadingSet.add(name)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.avatarImages.set(name, img)
+    }
+    img.onerror = () => {
+      // Failed to load, don't retry
+      this.avatarLoadingSet.delete(name)
+    }
+    img.src = url
   }
 }

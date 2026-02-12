@@ -44,6 +44,10 @@ export interface GameStore {
   // Village map state
   selectedRoom: string | null      // 'campfire' | player name (house owner) | null
   playerLocations: Record<string, string>  // name → 'campfire' | 'home' | 'visiting:TargetName'
+  sceneBackgrounds: Record<string, string>  // campfire, village, house_interior, night → URL
+
+  // Character inspection
+  inspectedPlayer: string | null  // player name when clicking a character on the map
 
   // UI control
   inputRequired: InputAction | null
@@ -74,6 +78,7 @@ export interface GameStore {
   setProposal: (proposal: Proposal | null) => void
   setSelectedRoom: (room: string | null) => void
   setPlayerLocations: (locs: Record<string, string>) => void
+  setInspectedPlayer: (name: string | null) => void
   setInputRequired: (input: InputAction | null) => void
   setNotification: (notification: { message: string; type: 'info' | 'warning' | 'error' } | null) => void
   setTransitioning: (transitioning: boolean) => void
@@ -113,6 +118,8 @@ const initialState = {
   canUseKalkan: false,
   selectedRoom: 'campfire' as string | null,
   playerLocations: {} as Record<string, string>,
+  sceneBackgrounds: {} as Record<string, string>,
+  inspectedPlayer: null as string | null,
   inputRequired: null,
   notification: null,
   transitioning: false,
@@ -164,6 +171,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
   setPlayerLocations: (locs) => set({ playerLocations: locs }),
+  setInspectedPlayer: (name) => set({ inspectedPlayer: name }),
   setInputRequired: (input) => set({ inputRequired: input }),
   setNotification: (notification) => set({ notification }),
   setTransitioning: (transitioning) => set({ transitioning }),
@@ -537,6 +545,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'players_update':
         set({ players: data.players as Player[] })
+        break
+
+      case 'scene_backgrounds':
+        set({ sceneBackgrounds: data as Record<string, string> })
         break
 
       case 'error':

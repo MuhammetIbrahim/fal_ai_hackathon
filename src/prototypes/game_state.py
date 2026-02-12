@@ -59,6 +59,9 @@ class Player(BaseModel):
     alibi_anchor: str | None = None                     # test edilebilir günlük rutin iddiası (LLM üretir)
     speech_color: str | None = None                     # konuşma tonu/tarzı özeti (LLM üretir)
 
+    # Avatar
+    avatar_url: str | None = None                       # FLUX-generated portrait URL
+
     # TTS ses profili
     voice_id: str = "alloy"                             # 'alloy' | 'zeynep' | 'ali'
     voice_speed: float = 0.9                            # TTS hızı (0.7-1.1 arası)
@@ -96,6 +99,8 @@ class GameState(TypedDict, total=False):
     campfire_rolling_summary: str   # bu round icin rolling ozet
     _summary_cursor: int            # ozetlenen mesaj index'i
     cumulative_summary: str         # cross-round kumulatif ozet
+    # Visual assets
+    scene_backgrounds: dict         # key → URL (campfire, village, house_interior, night)
 
 
 # ── Helper'lar ────────────────────────────────────────────
