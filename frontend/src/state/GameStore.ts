@@ -472,12 +472,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'house_visit':
       case 'house_visit_start': {
-        const visitId = data.visit_id as string | undefined
+        const visitId = data.visit_id as string
+        
         // visit_id zorunlu - yoksa event yoksay
         if (!visitId) {
           console.warn('[GameStore] house_visit_start: visit_id eksik, event yoksayıldı')
           break
         }
+        
+        // Aynı visit_id zaten varsa duplicate, yoksay
+        const isDuplicate = store.houseVisits.some((v) => v.visit_id === visitId)
+        if (isDuplicate) {
+          console.warn(`[GameStore] house_visit_start: visit_id ${visitId} zaten var, duplicate event yoksayıldı`)
+          break
+        }
+        
         const newVisit: HouseVisit = {
           visit_id: visitId,
           host: data.host as string,
@@ -502,6 +511,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
           break
         }
         
+        // Store'da bu visit_id var mı kontrol et
+        const existingVisit = store.houseVisits.find((v) => v.visit_id === exVisitId)
+        if (!existingVisit) {
+          console.warn(`[GameStore] house_visit_exchange: visit_id ${exVisitId} store'da bulunamadı, event yoksayıldı`)
+          break
+        }
+        
         set((s) => ({
           houseVisits: s.houseVisits.map((hv) => {
             // Sadece visit_id ile eşleştir
@@ -522,14 +538,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }),
         }))
         
-        // Audio senkron: visit_id'den visit bulup oda kontrolü yap
-        if (visitAudioUrl) {
-          const visit = store.houseVisits.find((v) => v.visit_id === exVisitId)
-          if (visit) {
-            const currentRoom = store.selectedRoom ?? 'campfire'
-            if (currentRoom === visit.host || currentRoom === visit.visitor) {
-              audioQueue.enqueue(visitAudioUrl)
-            }
+        // Audio senkron: visit bulundu, oda kontrolü yap
+        if (visitAudioUrl && existingVisit) {
+          const currentRoom = store.selectedRoom ?? 'campfire'
+          if (currentRoom === existingVisit.host || currentRoom === existingVisit.visitor) {
+            audioQueue.enqueue(visitAudioUrl)
           }
         }
         break
@@ -541,6 +554,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // visit_id zorunlu - yoksa event yoksay
         if (!endVisitId) {
           console.warn('[GameStore] house_visit_end: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
+        // Store'da bu visit_id var mı kontrol et
+        const existingVisit = store.houseVisits.find((v) => v.visit_id === endVisitId)
+        if (!existingVisit) {
+          console.warn(`[GameStore] house_visit_end: visit_id ${endVisitId} store'da bulunamadı, event yoksayıldı`)
           break
         }
         
