@@ -36,6 +36,7 @@ class APISettings(BaseSettings):
     class Config:
         env_file = ".env"
         env_prefix = "API_"
+        extra = "ignore"
 
 
 _settings: APISettings | None = None
