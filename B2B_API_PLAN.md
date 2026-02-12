@@ -12,32 +12,40 @@ Mentör önerisi: Oyundaki karakter AI sistemini B2B API olarak paketleyip, diğ
 api/
 ├── main.py                    # FastAPI app factory + lifespan
 ├── config.py                  # Pydantic Settings (API_KEY auth, FAL_KEY, model config)
-├── deps.py                    # Dependency injection (API key validation + tenant)
+├── deps.py                    # Dependency injection (API key → tenant_id)
 ├── errors.py                  # Standart error schema + exception handlers
-├── jobs.py                    # Async job manager (submit, poll, callback)
-├── routers/
-│   ├── characters.py          # Karakter CRUD + konuşma
-│   ├── worlds.py              # Dünya üretimi
-│   ├── voice.py               # TTS / STT
-│   ├── images.py              # Avatar + Background üretimi (FLUX)
-│   └── jobs.py                # Job status polling endpoint
-├── schemas/
-│   ├── common.py              # ErrorResponse, PaginatedResponse, JobResponse
-│   ├── characters.py          # Request/Response modelleri
-│   ├── worlds.py
-│   ├── voice.py
-│   └── images.py              # Avatar/Background request/response (genişletilmiş)
-├── services/
-│   ├── character_service.py   # Karakter üretimi + diyalog + moderasyon
-│   ├── world_service.py       # Dünya seed üretimi
-│   ├── voice_service.py       # TTS/STT wrapper
-│   ├── image_service.py       # Avatar + Background üretimi (FLUX wrapper)
+├── jobs.py                    # Async job manager + GET /v1/jobs/{id} router
+├── store.py                   # Tenant-scoped in-memory store
+│
+├── shared/
+│   └── schemas.py             # ErrorResponse, PaginatedResponse, JobStatusResponse
+│
+├── characters/                # Karakter domain
+│   ├── router.py              # CRUD + speak + react endpoints
+│   ├── schema.py              # Request/Response modelleri
+│   ├── service.py             # Karakter üretimi + diyalog + moderasyon
 │   └── memory.py              # Karakter hafıza yönetimi
-├── prompts/
+│
+├── worlds/                    # Dünya domain
+│   ├── router.py              # World seed endpoints
+│   ├── schema.py
+│   └── service.py             # Dünya seed üretimi (world_gen.py wrap)
+│
+├── voice/                     # Ses domain
+│   ├── router.py              # TTS (async job) + STT (sync) + voice list
+│   ├── schema.py
+│   └── service.py             # TTS/STT wrapper (fal_services wrap)
+│
+├── images/                    # Görsel domain
+│   ├── router.py              # Avatar + Background (async job)
+│   ├── schema.py              # Genişletilmiş FLUX params
+│   └── service.py             # Avatar/Background üretimi (FLUX wrapper)
+│
+├── prompts/                   # Shared — tüm domain'ler kullanıyor
 │   ├── character_gen.py       # Acting prompt üretim system prompt'ları
 │   ├── dialogue.py            # Konuşma system prompt'ları
 │   └── moderation.py          # Moderasyon system prompt'ları
-├── store.py                   # Tenant-scoped in-memory store
+│
 └── data/
     └── defaults.json          # Varsayılan roller, arketipler, isimler (data.json'dan)
 ```
@@ -134,7 +142,7 @@ class JobManager:
 Tüm error'lar aynı formatta:
 
 ```python
-# api/schemas/common.py
+# api/shared/schemas.py
 class ErrorDetail(BaseModel):
     code: str          # "CHAR_NOT_FOUND", "INVALID_ROLE", "FAL_SERVICE_ERROR"
     message: str       # Human-readable açıklama
