@@ -1598,7 +1598,10 @@ async def _run_room_conversation_ws(
     """
     1v1 oda gorusmesi — her exchange ilgili 2 oyuncuya unicast edilir.
     """
+    import uuid
+    
     campfire_summary = state.get("campfire_rolling_summary", "") or "(Ozet yok)"
+    visit_id = uuid.uuid4().hex  # Benzersiz ziyaret ID'si
 
     exchanges = []
     speakers = [visitor, owner]  # Misafir once konusur
@@ -1608,6 +1611,7 @@ async def _run_room_conversation_ws(
     await manager.broadcast(game_id, {
         "event": "house_visit_start",
         "data": {
+            "visit_id": visit_id,
             "visitor": visitor.name,
             "host": owner.name,
             "max_exchanges": max_exchanges,
@@ -1668,6 +1672,7 @@ async def _run_room_conversation_ws(
         await manager.broadcast(game_id, {
             "event": "house_visit_exchange",
             "data": {
+                "visit_id": visit_id,
                 "speaker": current.name,
                 "role_title": current.role_title,
                 "content": speech_content,
@@ -1688,6 +1693,7 @@ async def _run_room_conversation_ws(
     # Visit data kaydet
     visit_data = {
         "type": "room_visit",
+        "visit_id": visit_id,
         "owner": owner.name,
         "visitor": visitor.name,
         "exchanges": exchanges,
@@ -1698,6 +1704,7 @@ async def _run_room_conversation_ws(
     await manager.broadcast(game_id, {
         "event": "house_visit_end",
         "data": {
+            "visit_id": visit_id,
             "visitor": visitor.name,
             "host": owner.name,
             "exchange_count": len(exchanges),

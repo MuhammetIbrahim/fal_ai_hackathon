@@ -1342,10 +1342,12 @@ async def _run_single_visit(
 ) -> dict:
     """Tek bir 1v1 gorusme."""
     ws = state.get("world_seed")
+    visit_id = uuid.uuid4().hex  # Benzersiz ziyaret ID'si
 
     print(f"\n  {'─' * 40}")
     print(f"  {visitor.name} ({visitor.role_title}) → {host.name} ({host.role_title})")
     print(f"  Sebep: {reason}")
+    print(f"  Visit ID: {visit_id[:8]}...")
     print(f"  {'─' * 40}")
 
     exchanges = []
@@ -1373,7 +1375,7 @@ async def _run_single_visit(
 
     visit_data = {
         "type": "visit",
-        "visit_id": uuid.uuid4().hex,
+        "visit_id": visit_id,
         "visitor": visitor.name,
         "host": host.name,
         "visitor_reason": reason,
@@ -1644,9 +1646,11 @@ async def _run_room_conversation(
     """Oda icinde 1v1 gorusme."""
     ws = state.get("world_seed")
     campfire_summary = state.get("campfire_rolling_summary", "") or "(Ozet yok)"
+    visit_id = uuid.uuid4().hex  # Benzersiz ziyaret ID'si
 
     print(f"\n  {'─' * 40}")
     print(f"  ODA: {owner.name} evi — Misafir: {visitor.name}")
+    print(f"  Visit ID: {visit_id[:8]}...")
     print(f"  {'─' * 40}")
 
     exchanges = []
@@ -1674,7 +1678,7 @@ async def _run_room_conversation(
 
     visit_data = {
         "type": "room_visit",
-        "visit_id": uuid.uuid4().hex,
+        "visit_id": visit_id,
         "owner": owner.name,
         "visitor": visitor.name,
         "exchanges": exchanges,
