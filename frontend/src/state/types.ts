@@ -46,7 +46,7 @@ export interface Speech {
 
 // ── Location decision ──
 export interface LocationDecision {
-  player_id: string
+  player: string   // player name (backend sends "player" not "player_id")
   choice: string
 }
 

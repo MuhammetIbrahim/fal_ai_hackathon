@@ -106,14 +106,38 @@ def create_app() -> FastAPI:
     # ═══════════════════════════════════════════════════
     # Request Timing Middleware (Debug için)
     # ═══════════════════════════════════════════════════
-    @app.middleware("http")
-    async def add_process_time_header(request: Request, call_next):
-        """Her request'in süresini header'a ekler."""
-        start_time = time.time()
-        response = await call_next(request)
-        process_time = time.time() - start_time
-        response.headers["X-Process-Time"] = f"{process_time:.4f}s"
-        return response
+    # NOT: @app.middleware("http") (BaseHTTPMiddleware) WebSocket
+    # bağlantılarını bozar — route handler'lar çalışmaz.
+    # Bunun yerine düşük seviye ASGI middleware kullanıyoruz.
+    from starlette.types import ASGIApp, Receive, Scope, Send
+
+    class TimingMiddleware:
+        """HTTP request timing — WebSocket'e dokunmaz."""
+        def __init__(self, app: ASGIApp):
+            self.app = app
+
+        async def __call__(self, scope: Scope, receive: Receive, send: Send):
+            if scope["type"] != "http":
+                # WebSocket ve diğer ASGI scope'ları olduğu gibi geçir
+                await self.app(scope, receive, send)
+                return
+
+            start_time = time.time()
+            async def send_with_timing(message):
+                if message["type"] == "http.response.start":
+                    headers = dict(message.get("headers", []))
+                    process_time = time.time() - start_time
+                    # Header ekle
+                    raw_headers = list(message.get("headers", []))
+                    raw_headers.append(
+                        (b"x-process-time", f"{process_time:.4f}s".encode())
+                    )
+                    message["headers"] = raw_headers
+                await send(message)
+
+            await self.app(scope, receive, send_with_timing)
+
+    app.add_middleware(TimingMiddleware)
     
     # ═══════════════════════════════════════════════════
     # Global Exception Handler

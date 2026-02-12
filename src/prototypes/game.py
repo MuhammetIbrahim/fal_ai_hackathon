@@ -142,10 +142,10 @@ def _sanitize_speech(text: str) -> str:
     text = re.sub(r'^\([^)]*,\s*[^)]*\)\s*:?\s*', '', text.strip())
     # Standalone [Name]: prefix
     text = re.sub(r'^\[.*?\]\s*:?\s*', '', text.strip())
-    # Bas kismi sahne yonergesi — (öfkeyle), (sakin bir tonla), (fisiltıyla) vb.
+    # Bas kismi sahne yonergesi — (öfkeyle), (sakin bir tonla) vb. (max 40 char)
     text = re.sub(r'^\([^)]{1,40}\)\s*', '', text.strip())
-    # Orta/son kisim uzun sahne yonergesi (20+ karakter)
-    text = re.sub(r'\([^)]{20,}\)', '', text)
+    # *italik sahne yonergesi* — *öfkeyle masaya vurur* vb.
+    text = re.sub(r'\*[^*]+\*', '', text)
     # Coklu newline temizle
     text = re.sub(r'\n{3,}', '\n\n', text).strip()
     return text
@@ -553,8 +553,19 @@ async def generate_players(
     tasks = [_generate_acting_prompt(c, world_seed) for c in slots]
     cards = await asyncio.gather(*tasks)
 
+    # 6 ses profili: 3 voice x 2 speed varyasyonu
+    VOICE_PROFILES = [
+        {"voice_id": "alloy",  "voice_speed": 0.9},   # Alloy normal
+        {"voice_id": "zeynep", "voice_speed": 0.85},   # Zeynep yavas
+        {"voice_id": "ali",    "voice_speed": 0.95},   # Ali normal
+        {"voice_id": "alloy",  "voice_speed": 1.05},   # Alloy hizli
+        {"voice_id": "zeynep", "voice_speed": 1.0},    # Zeynep normal
+        {"voice_id": "ali",    "voice_speed": 0.8},    # Ali yavas
+    ]
+
     players = []
-    for slot, card in zip(slots, cards):
+    for i, (slot, card) in enumerate(zip(slots, cards)):
+        voice = VOICE_PROFILES[i % len(VOICE_PROFILES)]
         players.append(Player(
             slot_id=slot["slot_id"],
             name=slot["name"],
@@ -571,6 +582,8 @@ async def generate_players(
             public_tick=card.get("public_tick") or None,
             alibi_anchor=card.get("alibi_anchor") or None,
             speech_color=card.get("speech_color") or None,
+            voice_id=voice["voice_id"],
+            voice_speed=voice["voice_speed"],
         ))
 
     return players
@@ -666,6 +679,7 @@ Gorevin:
 - Isteyenler arasindan EN uygun kisiyi sec (tartisma akisina gore)
 - Ayni kisi ust uste 2den fazla konusmasin
 - 3 turdur hic konusmayan varsa ona oncelik ver
+- INSAN OYUNCU soz hakki istiyorsa YUKSEK ONCELIK ver — sira ona gelsin. Insan oyuncular "insan oyuncu" etiketi ile gelir.
 - Kimse istemiyorsa veya tartisma dogal bitme noktasina geldiyse bitir
 
 SADECE su formatta cevap ver:
@@ -706,6 +720,11 @@ NE YAPMALSIN:
 - Baski yap: "Neden susuyorsun? Soylecek bir seyin yok mu?"
 - Detay iste: "Tamam degirmendeydin de, saat kacta gittin?"
 - FARKLI KONULAR AC. Tek konuya takilma. Birden fazla kisiyi sorgula.
+
+KRITIK — SON KONUSMACIYA TEPKI VER:
+- Senden hemen onceki kisinin soylediklerine MUTLAKA tepki ver.
+- Ismiyle hitap et. "X, sen soyle dedin ama..." veya "X'in dedigi gibi..."
+- Monolog yapma, DIYALOG yap. Karsi tarafa cevap ver, soru sor, onu zorlastir.
 
 FORMAT:
 - Direkt konus. Sadece diyalog.
@@ -876,9 +895,10 @@ def _build_spotlight_context(player: Player, state: GameState) -> str:
     return "\n".join(parts) if parts else ""
 
 
-async def _character_speak(player: Player, state: GameState) -> str:
+async def _character_speak(player: Player, state: GameState, visible_names: list[str] | None = None) -> str:
     history_text = _format_campfire_context(state, viewer=player.name)
-    alive_names = ", ".join(get_alive_names(state))
+    # Use visible_names (campfire participants) if provided, otherwise all alive
+    alive_names = ", ".join(visible_names) if visible_names else ", ".join(get_alive_names(state))
 
     own_msgs = [
         m["content"] for m in state["campfire_history"]
@@ -913,7 +933,7 @@ async def _character_speak(player: Player, state: GameState) -> str:
             prompt=prompt,
             system_prompt=player.acting_prompt,
             model=MODEL,
-            temperature=0.9 + (attempt * 0.1),
+            temperature=0.75 + (attempt * 0.1),
         )
         speech = _sanitize_speech(result.output)
         if not _is_duplicate(speech, own_recent):
@@ -1232,7 +1252,7 @@ async def _character_speak_1v1(
             prompt=prompt,
             system_prompt=player.acting_prompt,
             model=MODEL,
-            temperature=0.9 + (attempt * 0.1),
+            temperature=0.75 + (attempt * 0.1),
         )
         speech = _sanitize_speech(result.output)
         if not _is_duplicate(speech, own_recent):
@@ -2792,9 +2812,11 @@ def resolve_omen_choice(state: GameState, omen_votes: list[str], omen_options: l
 #  PUBLIC API — Backend game_loop icin export edilen fonksiyonlar
 # ══════════════════════════════════════════════════════
 
-async def generate_campfire_speech(state: GameState, player: Player) -> str:
-    """Tek bir karakter icin campfire konusmasi uret. Backend game_loop kullanir."""
-    return await _character_speak(player, state)
+async def generate_campfire_speech(state: GameState, player: Player, participant_names: list[str] | None = None) -> str:
+    """Tek bir karakter icin campfire konusmasi uret. Backend game_loop kullanir.
+    participant_names: sadece campfire'da olan kişiler (varsa AI sadece bunlara hitap eder).
+    """
+    return await _character_speak(player, state, visible_names=participant_names)
 
 
 async def get_reaction(player: Player, last_speech: dict, state: GameState) -> dict:

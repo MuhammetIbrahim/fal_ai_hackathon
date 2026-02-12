@@ -183,7 +183,11 @@ class ConnectionManager:
         exclude = exclude or []
         
         if game_id not in self.active_connections:
-            logger.warning(f"⚠️  No active connections for game {game_id}")
+            all_games = list(self.active_connections.keys())
+            logger.warning(
+                f"⚠️  No active connections for game {game_id}. "
+                f"Active games: {all_games}"
+            )
             return
         
         # Tüm oyunculara gönder (exclude hariç)

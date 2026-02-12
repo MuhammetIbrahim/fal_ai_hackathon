@@ -36,31 +36,72 @@ logger = logging.getLogger(__name__)
 # TTS Helper — fire-and-forget audio generation
 # ═══════════════════════════════════════════════════
 
+import re as _re
+
+def _clean_text_for_tts(text: str) -> str:
+    """TTS icin metni temizle — okunmasi zor karakterleri kaldir."""
+    # Remove bracketed content like [Fenris sessiz kaldi]
+    text = _re.sub(r'\[.*?\]', '', text)
+    # Remove asterisks (bold/italic markup)
+    text = _re.sub(r'\*+', '', text)
+    # Remove parenthetical stage directions
+    text = _re.sub(r'\([^)]{1,50}\)', '', text)
+    # Remove emoji
+    text = _re.sub(r'[^\w\s.,!?;:\'"…\-—]', '', text, flags=_re.UNICODE)
+    # Collapse multiple spaces
+    text = _re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+_tts_path_added = False
+
+async def _generate_audio_url(
+    content: str,
+    voice: str = "alloy",
+    speed: float = 0.9,
+) -> tuple[str | None, float]:
+    """TTS uret, (audio_url, duration_sec) don. Hata → (None, 0).
+    Senkron: await et, text ile birlikte gonder.
+    voice: 'alloy' | 'zeynep' | 'ali'
+    """
+    try:
+        global _tts_path_added
+        if not _tts_path_added:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+            _tts_path_added = True
+        from fal_services import tts_generate
+
+        clean_content = _clean_text_for_tts(content)
+        if not clean_content or len(clean_content) < 3:
+            return None, 0.0
+
+        result = await tts_generate(clean_content, speed=speed, voice=voice)
+        return result.audio_url, result.audio_duration_sec or 0.0
+    except Exception as e:
+        logger.warning(f"TTS generation failed: {e}")
+        return None, 0.0
+
+
 async def _generate_and_broadcast_audio(
     game_id: str,
     speaker: str,
     content: str,
-    target_player_id: str | None = None,
+    context: str = "campfire",
+    voice: str = "alloy",
+    speed: float = 0.9,
 ) -> None:
-    """TTS uret, audio URL'yi WS event olarak gonder. Hata olursa sessizce logla."""
-    try:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-        from fal_services import tts_generate
-        result = await tts_generate(content)
-        event = {
+    """Legacy fire-and-forget wrapper — sadece institution gibi eski kodlarda kullanilir."""
+    audio_url, duration = await _generate_audio_url(content, voice=voice, speed=speed)
+    if audio_url:
+        await manager.broadcast(game_id, {
             "event": "speech_audio",
             "data": {
                 "speaker": speaker,
-                "audio_url": result.audio_url,
-                "duration": result.audio_duration_sec,
+                "audio_url": audio_url,
+                "duration": duration,
+                "context": context,
             }
-        }
-        if target_player_id:
-            await manager.send_to(game_id, target_player_id, event)
-        else:
-            await manager.broadcast(game_id, event)
-    except Exception as e:
-        logger.warning(f"TTS failed for {speaker}: {e}")
+        })
 
 
 # ═══════════════════════════════════════════════════
@@ -227,6 +268,46 @@ async def _game_loop_runner(game_id: str, state: Any):
         return
 
     day_limit = state.get("day_limit", 5)
+
+    # ═══ Character Reveal — İnsan oyunculara karakterlerini göster ═══
+    for p in state["players"]:
+        if p.is_human:
+            await manager.send_to(game_id, p.slot_id, {
+                "event": "character_reveal",
+                "data": {
+                    "name": p.name,
+                    "role_title": p.role_title,
+                    "lore": p.lore,
+                    "archetype_label": p.archetype_label,
+                    "player_type": p.player_type.value,
+                    "institution": p.institution,
+                    "institution_label": p.institution_label,
+                    "public_tick": p.public_tick,
+                    "alibi_anchor": p.alibi_anchor,
+                    "speech_color": p.speech_color,
+                }
+            })
+
+    # Tüm bağlı oyunculara (spectator dahil) oyuncu listesini gönder
+    await manager.broadcast(game_id, {
+        "event": "players_update",
+        "data": {
+            "players": [
+                {
+                    "slot_id": p.slot_id,
+                    "name": p.name,
+                    "role_title": p.role_title,
+                    "alive": p.alive,
+                    "color": None,
+                    "institution_label": p.institution_label,
+                    "public_tick": p.public_tick,
+                }
+                for p in state["players"]
+            ]
+        }
+    })
+
+    await asyncio.sleep(2)  # Karakter gösterimini okumak için bekle
 
     game_log = {
         "game_id": game_id,
@@ -525,32 +606,43 @@ async def _game_loop_runner(game_id: str, state: Any):
                     else:
                         locations[player.name] = "campfire"
 
-                # Konum duzeltmeleri (prototype ile ayni logic)
+                # Konum duzeltmeleri — ziyaret edilen kisi evde olmali
                 for name, loc in list(locations.items()):
                     if loc.startswith("visiting:"):
                         target = loc.split(":")[1]
                         if locations.get(target) != "home":
+                            # Hedef evde degil — campfire'a yonlendir
                             locations[name] = "campfire"
-                        else:
-                            other_visitors = [n for n, l in locations.items()
-                                              if l == f"visiting:{target}" and n != name]
-                            if other_visitors:
-                                locations[name] = "campfire"
+                # NOT: Ayni eve birden fazla ziyaretci artik izinli (kaldirilan kisitlama)
 
-                # Minimum hareket: hic oda gorusmesi yoksa 1 cift zorla esle
+                # Minimum hareket: az visit varsa daha fazla zorla esle
                 actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
                                  if l.startswith("visiting:")]
-                if not actual_visits and len(alive_names) >= 4:
-                    campfire_pool = [n for n, l in locations.items() if l == "campfire"]
-                    home_pool = [n for n, l in locations.items() if l == "home"]
-                    if len(campfire_pool) >= 2 and not home_pool:
-                        pair = random_module.sample(campfire_pool, 2)
-                        locations[pair[0]] = "home"
-                        locations[pair[1]] = f"visiting:{pair[0]}"
-                    elif home_pool and campfire_pool:
+                campfire_pool = [n for n, l in locations.items() if l == "campfire"]
+                home_pool = [n for n, l in locations.items() if l == "home"]
+
+                # En az 2 visit olsun (6 kisiyle: 2 visit + 2 campfire ideal)
+                target_visit_count = max(2, len(alive_names) // 3)
+                while len(actual_visits) < target_visit_count and len(campfire_pool) >= 2:
+                    if home_pool:
+                        # Campfire'dan birini, evde olan birine gonder
                         target_home = random_module.choice(home_pool)
                         visitor = random_module.choice(campfire_pool)
                         locations[visitor] = f"visiting:{target_home}"
+                        campfire_pool.remove(visitor)
+                        actual_visits.append((visitor, target_home))
+                    else:
+                        # Kimse evde degil — campfire'dan 2 kisi sec, biri eve gitsin
+                        pair = random_module.sample(campfire_pool, 2)
+                        locations[pair[0]] = "home"
+                        locations[pair[1]] = f"visiting:{pair[0]}"
+                        campfire_pool.remove(pair[0])
+                        campfire_pool.remove(pair[1])
+                        home_pool.append(pair[0])
+                        actual_visits.append((pair[1], pair[0]))
+                    # Refresh
+                    actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
+                                     if l.startswith("visiting:")]
 
                 # Konum sonuclarini hesapla
                 campfire_people = [n for n, l in locations.items() if l == "campfire"]
@@ -588,23 +680,15 @@ async def _game_loop_runner(game_id: str, state: Any):
                     }
                 })
 
-                # Hareket duyurusu campfire_history'ye ekle
-                movement_parts = []
-                for n in home_people:
-                    movement_parts.append(f"{n} evine cekildi")
-                for visitor_name, host_name in visits:
-                    movement_parts.append(f"{visitor_name}, {host_name}'in evine gitti")
-                for p_name, loc_id in institution_visits:
-                    loc_info = next((l for l in INSTITUTION_LOCATIONS if l["id"] == loc_id), None)
-                    loc_label = loc_info["label"] if loc_info else loc_id
-                    movement_parts.append(f"{p_name}, {loc_label}'e gitti")
-
-                if movement_parts:
-                    movement_msg = "Serbest dolasim: " + ". ".join(movement_parts) + "."
+                # Hareket duyurusu — sadece "bazi oyuncular gitti" de, isim verme
+                # Boylece campfire'daki LLM gidenlere hitap edemez
+                gone_count = len(home_people) + len(visits) + len(institution_visits)
+                if gone_count > 0:
+                    movement_msg = f"Serbest dolasim: {gone_count} kisi ates basindan ayrildi. Geriye kalanlar burada konusmaya devam ediyor."
                     state["campfire_history"].append({
                         "type": "narrator",
                         "content": movement_msg,
-                        "present": alive_names,
+                        "present": campfire_people,  # sadece campfire'dakiler gorur
                     })
 
                 # Campfire tartismasi (sadece campfire'dakiler) + Oda gorusmeleri (paralel)
@@ -711,12 +795,24 @@ async def _game_loop_runner(game_id: str, state: Any):
                                     "role_title": p.role_title,
                                     "content": speech,
                                 })
+                                # Sync TTS for proposal speeches too
+                                p_audio_url, p_audio_dur = await _generate_audio_url(
+                                    speech, voice=getattr(p, 'voice_id', 'alloy'),
+                                    speed=getattr(p, 'voice_speed', 0.9),
+                                )
                                 await manager.broadcast(game_id, {
                                     "event": "campfire_speech",
-                                    "data": {"speaker": p.name, "content": speech},
+                                    "data": {
+                                        "speaker": p.name,
+                                        "content": speech,
+                                        "audio_url": p_audio_url,
+                                        "audio_duration": p_audio_dur,
+                                    },
                                 })
-                                await _generate_and_broadcast_audio(game_id, p.name, speech)
-                                await asyncio.sleep(0.5)
+                                if p_audio_dur > 0:
+                                    await asyncio.sleep(min(max(p_audio_dur * 0.7, 1.0), 8.0))
+                                else:
+                                    await asyncio.sleep(0.5)
 
                     # Insan onerge oyu bekle
                     human_proposal_tasks = []
@@ -900,6 +996,10 @@ async def _game_loop_runner(game_id: str, state: Any):
                 tied = [name for name, count in tally.items() if count == top_count]
                 if len(tied) == 1:
                     exiled_name = top_vote
+                elif len(tied) >= 2:
+                    # Beraberlikte rastgele birini sec (oyun ilerlemesi icin)
+                    exiled_name = random_module.choice(tied)
+                    logger.info(f"Vote tie between {tied} — randomly chose {exiled_name}")
 
             # ═══════════════════════════════════════
             # 5. SURGUN
@@ -918,6 +1018,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                 round_data["exiled"] = exiled_name
                 round_data["exiled_type"] = player.player_type.value if player else None
 
+                remaining = get_alive_names(state)
                 await manager.broadcast(game_id, {
                     "event": "exile",
                     "data": {
@@ -925,6 +1026,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                         "exiled_type": player.player_type.value if player else "unknown",
                         "exiled_role": player.role_title if player else "unknown",
                         "votes": vote_map,
+                        "active_players": remaining,
                         "message": f"{exiled_name} surgun edildi!",
                     }
                 })
@@ -1220,7 +1322,7 @@ async def _run_campfire_segment_ws(
             if not message:
                 message = f"[{first.name} sessiz kaldi]"
         else:
-            message = await generate_campfire_speech(state, first)
+            message = await generate_campfire_speech(state, first, participant_names=participant_names)
 
         # Moderator check
         mod_ok = True
@@ -1244,6 +1346,14 @@ async def _run_campfire_segment_ws(
             })
             first.add_message("assistant", message)
 
+            # TTS senkron — text + audio birlikte gonder
+            audio_url, audio_duration = None, 0.0
+            if not first.is_human:
+                audio_url, audio_duration = await _generate_audio_url(
+                    message, voice=getattr(first, 'voice_id', 'alloy'),
+                    speed=getattr(first, 'voice_speed', 0.9),
+                )
+
             await manager.broadcast(game_id, {
                 "event": "campfire_speech",
                 "data": {
@@ -1253,12 +1363,15 @@ async def _run_campfire_segment_ws(
                     "turn": 1,
                     "max_turns": max_turns,
                     "participants": participant_names,
+                    "audio_url": audio_url,
+                    "audio_duration": audio_duration,
                 }
             })
 
-            # TTS fire-and-forget (AI only)
-            if not first.is_human:
-                asyncio.create_task(_generate_and_broadcast_audio(game_id, first.name, message))
+            # Audio suresi kadar bekle (min 1s, max 8s)
+            if audio_duration > 0:
+                wait_time = min(max(audio_duration * 0.7, 1.0), 8.0)
+                await asyncio.sleep(wait_time)
 
             # Ocak Tepki kontrolu (Katman 1+2)
             if check_ocak_tepki:
@@ -1311,11 +1424,27 @@ async def _run_campfire_segment_ws(
                 reactions = []
 
             # Insan oyuncular icin otomatik "WANT" ekle (her zaman konusma hakki var)
+            human_participants = []
             for p in participants:
                 if p.is_human and p.name != last_speech["name"]:
-                    reactions.append({"name": p.name, "wants": True, "reason": "insan oyuncu"})
+                    reactions.append({"name": p.name, "wants": True, "reason": "insan oyuncu — oncelikli"})
+                    human_participants.append(p)
 
-            action, name = await orchestrator_pick(state, reactions)
+            # Check if human player hasn't spoken recently — force their turn every 3rd turn
+            force_human = False
+            if human_participants:
+                human_name = human_participants[0].name
+                recent_speakers = [m["name"] for m in state["campfire_history"][-3:]
+                                   if m.get("type") == "speech"]
+                if human_name not in recent_speakers and turns_done % 3 == 0:
+                    force_human = True
+                    logger.info(f"Forcing human turn for {human_name} (hasn't spoken in 3 turns)")
+
+            if force_human:
+                action, name = "NEXT", human_participants[0].name
+            else:
+                action, name = await orchestrator_pick(state, reactions)
+
             if action == "END":
                 break
 
@@ -1345,7 +1474,7 @@ async def _run_campfire_segment_ws(
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
         else:
-            message = await generate_campfire_speech(state, speaker)
+            message = await generate_campfire_speech(state, speaker, participant_names=participant_names)
 
         # Moderator check
         mod_ok = True
@@ -1370,7 +1499,15 @@ async def _run_campfire_segment_ws(
         })
         speaker.add_message("assistant", message)
 
-        # Broadcast
+        # TTS senkron — text + audio birlikte gonder
+        audio_url, audio_duration = None, 0.0
+        if not speaker.is_human:
+            audio_url, audio_duration = await _generate_audio_url(
+                message, voice=getattr(speaker, 'voice_id', 'alloy'),
+                speed=getattr(speaker, 'voice_speed', 0.9),
+            )
+
+        # Broadcast text + audio together
         await manager.broadcast(game_id, {
             "event": "campfire_speech",
             "data": {
@@ -1380,12 +1517,15 @@ async def _run_campfire_segment_ws(
                 "turn": turns_done,
                 "max_turns": max_turns,
                 "participants": participant_names,
+                "audio_url": audio_url,
+                "audio_duration": audio_duration,
             }
         })
 
-        # TTS fire-and-forget (AI only)
-        if not speaker.is_human:
-            asyncio.create_task(_generate_and_broadcast_audio(game_id, speaker.name, message))
+        # Audio suresi kadar bekle (min 1s, max 8s)
+        if audio_duration > 0:
+            wait_time = min(max(audio_duration * 0.7, 1.0), 8.0)
+            await asyncio.sleep(wait_time)
 
         # Ocak Tepki kontrolu (Katman 1+2)
         if check_ocak_tepki:
@@ -1491,7 +1631,17 @@ async def _run_room_conversation_ws(
         exchanges.append(exchange_entry)
         current.add_message("assistant", speech_content)
 
-        # Broadcast: herkes gorur (spectator dahil)
+        # TTS senkron — text + audio birlikte gonder
+        audio_url, audio_duration = None, 0.0
+        if not current.is_human:
+            audio_url, audio_duration = await _generate_audio_url(
+                speech_content, voice=getattr(current, 'voice_id', 'alloy'),
+                speed=getattr(current, 'voice_speed', 0.9),
+            )
+
+        visit_context = f"visit:{owner.name}:{visitor.name}"
+
+        # Broadcast: herkes gorur (spectator dahil), audio dahil
         await manager.broadcast(game_id, {
             "event": "house_visit_exchange",
             "data": {
@@ -1502,16 +1652,16 @@ async def _run_room_conversation_ws(
                 "max_exchanges": max_exchanges,
                 "visitor": visitor.name,
                 "host": owner.name,
+                "audio_url": audio_url,
+                "audio_duration": audio_duration,
+                "context": visit_context,
             }
         })
 
-        # TTS fire-and-forget (AI only, unicast to human player)
-        if not current.is_human:
-            human_p = visitor if visitor.is_human else (owner if owner.is_human else None)
-            if human_p:
-                asyncio.create_task(_generate_and_broadcast_audio(
-                    game_id, current.name, speech_content, target_player_id=human_p.slot_id
-                ))
+        # Audio suresi kadar bekle (1v1'de biraz daha uzun bekle)
+        if audio_duration > 0:
+            wait_time = min(max(audio_duration * 0.75, 1.0), 8.0)
+            await asyncio.sleep(wait_time)
 
     # Visit data kaydet
     visit_data = {
@@ -1582,10 +1732,10 @@ async def _run_institution_visit_ws(
             }
         })
 
-        # TTS fire-and-forget
+        # TTS fire-and-forget (institution visits are less critical for sync)
         if narrative:
             asyncio.create_task(_generate_and_broadcast_audio(
-                game_id, "Anlatici", narrative, target_player_id=player.slot_id
+                game_id, "Anlatici", narrative, context=f"institution:{location_id}"
             ))
 
         # Ozel mini event kontrolu

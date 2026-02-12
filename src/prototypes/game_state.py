@@ -59,6 +59,10 @@ class Player(BaseModel):
     alibi_anchor: str | None = None                     # test edilebilir günlük rutin iddiası (LLM üretir)
     speech_color: str | None = None                     # konuşma tonu/tarzı özeti (LLM üretir)
 
+    # TTS ses profili
+    voice_id: str = "alloy"                             # 'alloy' | 'zeynep' | 'ali'
+    voice_speed: float = 0.9                            # TTS hızı (0.7-1.1 arası)
+
     @property
     def is_echo_born(self) -> bool:
         return self.player_type == PlayerType.YANKI_DOGMUS

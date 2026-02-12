@@ -110,7 +110,7 @@ const initialState = {
   proposal: null,
   sozBorcu: null,
   baskiTarget: null,
-  canUseKalkan: true,
+  canUseKalkan: false,
   selectedRoom: 'campfire' as string | null,
   playerLocations: {} as Record<string, string>,
   inputRequired: null,
@@ -174,26 +174,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }
         const phase = (phaseMap[rawPhase] ?? rawPhase) as Phase
         const round = (data.round as number) ?? store.round
+
+        // Only reset on actual phase TRANSITIONS (not sub-phases within campfire)
+        const isSubPhase = rawPhase === 'campfire_close'
+        const isNewPhase = phase !== store.phase
+
         set({
           phase,
           round,
-          transitioning: true,
+          transitioning: isNewPhase, // Only show transition for real phase changes
           inputRequired: null,
         })
+
+        // Stop stale audio only on real phase transitions
+        if (isNewPhase) {
+          audioQueue.stop()
+        }
+
         // Clear phase-specific data on phase change
-        if (phase === 'morning') {
+        if (phase === 'morning' && isNewPhase) {
           set({ speeches: [], votes: {}, exileResult: null, houseVisits: [], spotlightCards: [], sinama: null })
         }
-        if (phase === 'campfire') {
+        if (phase === 'campfire' && !isSubPhase) {
+          // Only reset on campfire_open (first entry), NOT on campfire_close
           const allAtCampfire: Record<string, string> = {}
           for (const p of store.players) allAtCampfire[p.name] = 'campfire'
           set({ playerLocations: allAtCampfire, selectedRoom: 'campfire', houseVisits: [], showParchment: false })
+        }
+        if (phase === 'campfire' && isSubPhase) {
+          // campfire_close: everyone returns to campfire but KEEP houseVisits and speeches
+          const allAtCampfire: Record<string, string> = {}
+          for (const p of store.players) allAtCampfire[p.name] = 'campfire'
+          set({ playerLocations: allAtCampfire, selectedRoom: 'campfire' })
         }
         if (phase === 'vote') {
           set({ votes: {} })
         }
         // Auto clear transition after delay
-        setTimeout(() => set({ transitioning: false }), 2000)
+        if (isNewPhase) {
+          setTimeout(() => set({ transitioning: false }), 2000)
+        }
         break
       }
 
@@ -213,6 +233,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'free_roam_start':
         // Free roam is part of campfire flow — keep phase, show notification
+        // Add a separator in the campfire chat to mark the segment
+        store.addSpeech({
+          speaker: '---',
+          content: `--- Serbest Dolasim ${data.roam_round ?? ''}/${data.total_roam_rounds ?? ''} ---`,
+        })
         set({
           notification: {
             message: `Serbest Dolaşım ${data.roam_round ?? ''}/${data.total_roam_rounds ?? ''}`,
@@ -226,10 +251,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const decisions = (data.decisions as LocationDecision[]) ?? []
         const locs: Record<string, string> = {}
         for (const d of decisions) {
-          if (d.choice === 'CAMPFIRE') locs[d.player_id] = 'campfire'
-          else if (d.choice === 'HOME') locs[d.player_id] = 'home'
-          else if (d.choice.startsWith('VISIT|')) locs[d.player_id] = `visiting:${d.choice.split('|')[1]}`
-          else locs[d.player_id] = 'campfire'
+          if (d.choice === 'CAMPFIRE') locs[d.player] = 'campfire'
+          else if (d.choice === 'HOME') locs[d.player] = 'home'
+          else if (d.choice.startsWith('VISIT|')) locs[d.player] = `visiting:${d.choice.split('|')[1]}`
+          else locs[d.player] = 'campfire'
         }
         set({ playerLocations: locs, locationDecisions: decisions })
         break
@@ -287,22 +312,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Player stayed home alone — just a notification
         break
 
-      case 'campfire_speech':
+      case 'campfire_speech': {
+        const cfAudioUrl = data.audio_url as string | undefined
         store.addSpeech({
           speaker: data.speaker as string,
           content: data.content as string,
-          audio_url: data.audio_url as string | undefined,
+          audio_url: cfAudioUrl,
         })
+        // Audio senkron: text + audio birlikte geldi, hemen cal
+        if (cfAudioUrl) {
+          const currentRoom = store.selectedRoom ?? 'campfire'
+          if (currentRoom === 'campfire') {
+            audioQueue.enqueue(cfAudioUrl)
+          }
+        }
         break
+      }
 
-      case 'your_turn':
+      case 'your_turn': {
+        const { action_required, timeout_seconds, ...rest } = data
         set({
           inputRequired: {
-            type: data.action_required as InputAction['type'],
-            timeout_seconds: data.timeout_seconds as number | undefined,
+            type: action_required as InputAction['type'],
+            timeout_seconds: timeout_seconds as number | undefined,
+            data: rest,
           },
         })
         break
+      }
 
       case 'vote_confirmed':
         store.addVote(data.voter as string, data.target as string)
@@ -331,17 +368,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'speech_audio': {
         const audioUrl = data.audio_url as string
+        const audioContext = (data.context as string) ?? 'campfire'
+
         // Update the matching speech with audio_url
-        set((s) => ({
-          speeches: s.speeches.map((sp) =>
-            sp.speaker === data.speaker
-              ? { ...sp, audio_url: audioUrl }
-              : sp
-          ),
-        }))
-        // Enqueue for playback
+        if (audioContext === 'campfire') {
+          set((s) => ({
+            speeches: s.speeches.map((sp) =>
+              sp.speaker === data.speaker
+                ? { ...sp, audio_url: audioUrl }
+                : sp
+            ),
+          }))
+        }
+
+        // Only play audio if it matches the currently selected room
         if (audioUrl) {
-          audioQueue.enqueue(audioUrl)
+          const currentRoom = store.selectedRoom ?? 'campfire'
+          let shouldPlay = false
+
+          if (audioContext === 'campfire' && currentRoom === 'campfire') {
+            shouldPlay = true
+          } else if (audioContext.startsWith('visit:') && currentRoom !== 'campfire') {
+            // audioContext = "visit:host:visitor", check if host matches selectedRoom
+            const parts = audioContext.split(':')
+            const host = parts[1]
+            const visitor = parts[2]
+            if (currentRoom === host || currentRoom === visitor) {
+              shouldPlay = true
+            }
+          }
+
+          if (shouldPlay) {
+            audioQueue.enqueue(audioUrl)
+          }
         }
         break
       }
@@ -375,6 +434,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       case 'house_visit_exchange': {
         const exHost = data.host as string
         const exVisitor = data.visitor as string
+        const visitAudioUrl = data.audio_url as string | undefined
         set((s) => ({
           houseVisits: s.houseVisits.map((hv) =>
             hv.host === exHost && hv.visitor === exVisitor
@@ -385,7 +445,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
                     {
                       speaker: data.speaker as string,
                       content: data.content as string,
-                      audio_url: data.audio_url as string | undefined,
+                      audio_url: visitAudioUrl,
                     },
                   ],
                   turn: (data.turn as number) ?? hv.turn,
@@ -393,20 +453,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
               : hv
           ),
         }))
+        // Audio senkron: text + audio birlikte geldi
+        if (visitAudioUrl) {
+          const currentRoom = store.selectedRoom ?? 'campfire'
+          if (currentRoom === exHost || currentRoom === exVisitor) {
+            audioQueue.enqueue(visitAudioUrl)
+          }
+        }
         break
       }
 
       case 'house_visit_end': {
         const endHost = data.host as string
         const endVisitor = data.visitor as string
-        // Remove this visit after a brief delay
+        // Keep the visit data longer so user can read the conversation
         setTimeout(() => {
           set((s) => ({
             houseVisits: s.houseVisits.filter(
               (hv) => !(hv.host === endHost && hv.visitor === endVisitor)
             ),
           }))
-        }, 3000)
+        }, 15000) // 15 seconds to read
         break
       }
 
@@ -430,6 +497,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
           },
         })
         setTimeout(() => set({ notification: null }), 4000)
+        break
+
+      case 'character_reveal':
+        // İnsan oyuncuya karakter bilgisi göster + myName güncelle
+        set({
+          myName: data.name as string,
+          notification: {
+            message: `Sen "${data.name}" rolundesin — ${data.role_title}. Tarafin: ${data.player_type === 'et_can' ? 'Et u Can (Köylü)' : 'Yanki Dogmus (Sahtekar)'}`,
+            type: 'info',
+          },
+        })
+        // Karakter bildirimini uzun tut
+        setTimeout(() => set({ notification: null }), 12000)
         break
 
       case 'players_update':

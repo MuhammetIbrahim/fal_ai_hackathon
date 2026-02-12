@@ -282,7 +282,7 @@ export class VillageMapScene implements Scene {
     }
 
     // ── Characters ──
-    const players = useGameStore.getState().players
+    const { players, myName } = useGameStore.getState()
     const alivePlayers = players.filter(p => p.alive)
     for (let i = 0; i < alivePlayers.length; i++) {
       const player = alivePlayers[i]
@@ -310,6 +310,23 @@ export class VillageMapScene implements Scene {
           : (cy > 0 ? 'down' : 'up')
       }
 
+      // Highlight human player with a gold glow
+      const isMe = player.name === myName
+      if (isMe) {
+        ctx.save()
+        ctx.shadowColor = COLORS.TEXT_GOLD
+        ctx.shadowBlur = 12
+        ctx.strokeStyle = COLORS.TEXT_GOLD
+        ctx.lineWidth = 2
+        ctx.strokeRect(
+          anim.currentX - charSize / 2 - 2,
+          anim.currentY - charSize / 2 - 2,
+          charSize + 4,
+          charSize + 4,
+        )
+        ctx.restore()
+      }
+
       SpriteSheet.drawPlaceholderCharacter(
         ctx,
         anim.currentX - charSize / 2,
@@ -320,11 +337,15 @@ export class VillageMapScene implements Scene {
       )
 
       // Name tag
-      ctx.fillStyle = COLORS.TEXT_LIGHT
-      ctx.font = 'bold 11px monospace'
+      ctx.fillStyle = isMe ? COLORS.TEXT_GOLD : COLORS.TEXT_LIGHT
+      ctx.font = isMe ? 'bold 12px monospace' : 'bold 11px monospace'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'top'
-      ctx.fillText(player.name, anim.currentX, anim.currentY + charSize / 2 + 4)
+      ctx.fillText(
+        isMe ? `${player.name} (SEN)` : player.name,
+        anim.currentX,
+        anim.currentY + charSize / 2 + 4,
+      )
     }
 
     // ── Room activity indicators (speech bubble icon) ──

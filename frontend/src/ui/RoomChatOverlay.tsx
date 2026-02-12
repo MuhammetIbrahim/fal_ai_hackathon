@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useGameStore } from '../state/GameStore'
 import type { Speech } from '../state/types'
 
@@ -23,7 +23,11 @@ function usePlayerColor() {
 }
 
 // ── Chat message list for a single room ──
-const ChatMessages: React.FC<{ speeches: Speech[] }> = ({ speeches }) => {
+const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: boolean }> = ({
+  speeches,
+  emptyText,
+  large,
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const getColor = usePlayerColor()
 
@@ -33,32 +37,60 @@ const ChatMessages: React.FC<{ speeches: Speech[] }> = ({ speeches }) => {
     }
   }, [speeches])
 
+  const textSize = large ? 'text-[11px]' : 'text-[8px]'
+  const nameSize = large ? 'text-[12px]' : 'text-[8px]'
+  const sepSize = large ? 'text-[9px]' : 'text-[7px]'
+
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-2 py-1.5 space-y-1.5 scrollbar-thin min-h-0"
+      className="flex-1 overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin min-h-0"
     >
       {speeches.length === 0 && (
-        <p className="text-stone text-[7px] text-center mt-2 opacity-50 font-pixel">
-          Bekleniyor...
+        <p className={`text-stone ${sepSize} text-center mt-4 opacity-50 font-pixel`}>
+          {emptyText ?? 'Bekleniyor...'}
         </p>
       )}
 
-      {speeches.map((speech, idx) => (
-        <div key={idx} className="flex flex-col gap-0.5">
-          <span
-            className="text-[8px] font-pixel font-bold"
-            style={{ color: getColor(speech.speaker) }}
-          >
-            {speech.speaker}
-          </span>
-          <p className="text-text-light text-[8px] font-pixel leading-relaxed pl-1.5 border-l-2 border-wood/30">
-            {speech.content}
-          </p>
-        </div>
-      ))}
+      {speeches.map((speech, idx) => {
+        // Separator message
+        if (speech.speaker === '---') {
+          return (
+            <div key={idx} className="flex items-center gap-2 my-1">
+              <div className="flex-1 h-px bg-wood/30" />
+              <span className={`text-stone ${sepSize} font-pixel whitespace-nowrap`}>
+                {speech.content.replace(/---/g, '').trim()}
+              </span>
+              <div className="flex-1 h-px bg-wood/30" />
+            </div>
+          )
+        }
+
+        return (
+          <div key={idx} className="flex flex-col gap-0.5">
+            <span
+              className={`${nameSize} font-pixel font-bold`}
+              style={{ color: getColor(speech.speaker) }}
+            >
+              {speech.speaker}
+            </span>
+            <p className={`text-text-light ${textSize} font-pixel leading-relaxed pl-2 border-l-2 border-wood/30`}>
+              {speech.content}
+            </p>
+          </div>
+        )
+      })}
     </div>
   )
+}
+
+interface TabInfo {
+  id: string
+  label: string
+  icon: string
+  speeches: Speech[]
+  emptyText?: string
+  isMine?: boolean
 }
 
 // ── Main RoomChatOverlay ──
@@ -67,30 +99,102 @@ export const RoomChatOverlay: React.FC = () => {
   const houseVisits = useGameStore((s) => s.houseVisits)
   const selectedRoom = useGameStore((s) => s.selectedRoom)
   const setSelectedRoom = useGameStore((s) => s.setSelectedRoom)
+  const playerLocations = useGameStore((s) => s.playerLocations)
+  const myName = useGameStore((s) => s.myName)
+  const prevVisitCountRef = useRef(0)
+  const lastManualSwitchRef = useRef(0)  // timestamp of last manual tab click
 
-  // Build tab list: campfire is always first, then house visits
-  const tabs: { id: string; label: string; icon: string; speeches: Speech[] }[] = [
-    { id: 'campfire', label: 'Ocak', icon: '🔥', speeches },
-  ]
+  // Detect if human is in a house visit
+  const myLocation = myName ? playerLocations[myName] : undefined
+  const isInVisit = myLocation?.startsWith('visiting:')
+  const myVisitHost = isInVisit ? myLocation!.split(':')[1] : null
 
-  for (const visit of houseVisits) {
-    tabs.push({
-      id: `visit:${visit.host}:${visit.visitor}`,
-      label: `${visit.visitor} → ${visit.host}`,
-      icon: '🏠',
-      speeches: visit.speeches,
+  // Build tab list: campfire always first, then each active house visit
+  const tabs: TabInfo[] = useMemo(() => {
+    const result: TabInfo[] = [
+      { id: 'campfire', label: 'Ocak', icon: '🔥', speeches },
+    ]
+
+    for (const visit of houseVisits) {
+      const isMyVisit =
+        myName !== null && (visit.host === myName || visit.visitor === myName)
+      result.push({
+        id: `visit:${visit.host}:${visit.visitor}`,
+        label: `${visit.visitor} → ${visit.host}`,
+        icon: isMyVisit ? '🏠' : '🏠',
+        speeches: visit.speeches,
+        emptyText: `${visit.visitor} ile ${visit.host} konusuyor...`,
+        isMine: isMyVisit,
+      })
+    }
+
+    return result
+  }, [speeches, houseVisits, myName])
+
+  // Auto-switch to human's own visit tab when it appears
+  // Don't auto-switch if user recently clicked a tab (within 5 seconds)
+  useEffect(() => {
+    const newCount = houseVisits.length
+    const oldCount = prevVisitCountRef.current
+    if (newCount > oldCount && newCount > 0) {
+      const newest = houseVisits[newCount - 1]
+      const recentManualSwitch = Date.now() - lastManualSwitchRef.current < 5000
+
+      // If the new visit involves me, always switch to it (my own visit is priority)
+      if (myName && (newest.host === myName || newest.visitor === myName)) {
+        setSelectedRoom(newest.host)
+      } else if (!recentManualSwitch) {
+        // Only auto-switch if user hasn't manually clicked a tab recently
+        const currentRoom = useGameStore.getState().selectedRoom
+        if (!currentRoom || currentRoom === 'campfire') {
+          setSelectedRoom(newest.host)
+        }
+      }
+    }
+    prevVisitCountRef.current = newCount
+  }, [houseVisits.length, houseVisits, setSelectedRoom, myName])
+
+  // Find active tab based on selectedRoom
+  const activeTab = useMemo(() => {
+    if (!selectedRoom || selectedRoom === 'campfire') {
+      return tabs[0]
+    }
+
+    // Try to find a visit tab where selectedRoom matches host OR visitor
+    const visitTab = tabs.find((t) => {
+      if (t.id === 'campfire') return false
+      const parts = t.id.split(':')
+      const host = parts[1]
+      const visitor = parts[2]
+      return host === selectedRoom || visitor === selectedRoom
     })
-  }
+    if (visitTab) return visitTab
 
-  // Find active tab
-  const activeTab = tabs.find((t) => {
-    if (selectedRoom === 'campfire' && t.id === 'campfire') return true
-    if (selectedRoom && t.id.includes(selectedRoom)) return true
-    return false
-  }) ?? tabs[0]
+    return tabs[0]
+  }, [selectedRoom, tabs])
+
+  // Immersive mode: when human is in a visit and viewing their visit tab
+  const isImmersiveVisit = isInVisit && activeTab.isMine
+
+  // Panel dimensions based on mode
+  const panelClass = isImmersiveVisit
+    ? 'fixed inset-x-0 top-12 bottom-16 z-30 flex flex-col mx-auto max-w-2xl border-2 border-text-gold/60 bg-bg-dark/98 shadow-2xl shadow-black/60'
+    : 'fixed right-0 top-12 bottom-16 w-[320px] z-30 flex flex-col border-2 border-wood/60 bg-bg-dark/95 shadow-lg shadow-black/40'
 
   return (
-    <div className="fixed right-0 top-12 bottom-16 w-[320px] z-30 flex flex-col border-2 border-wood/60 bg-bg-dark/95 shadow-lg shadow-black/40">
+    <div className={panelClass}>
+      {/* Immersive visit header */}
+      {isImmersiveVisit && (
+        <div className="flex-shrink-0 flex items-center justify-center gap-3 px-4 py-2 border-b-2 border-text-gold/30 bg-[#2a1f10]/80">
+          <span className="text-[10px] font-pixel text-text-gold">
+            🏠 Ev Ziyareti
+          </span>
+          <span className="text-[9px] font-pixel text-text-light">
+            {myVisitHost}'in Evi
+          </span>
+        </div>
+      )}
+
       {/* Tab bar */}
       <div className="flex-shrink-0 flex overflow-x-auto border-b-2 border-wood/30 scrollbar-thin">
         {tabs.map((tab) => {
@@ -99,23 +203,24 @@ export const RoomChatOverlay: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => {
-                // Map tab id back to selectedRoom
+                lastManualSwitchRef.current = Date.now()
                 if (tab.id === 'campfire') {
                   setSelectedRoom('campfire')
                 } else {
-                  // Extract host name from visit tab
                   const parts = tab.id.split(':')
-                  setSelectedRoom(parts[1]) // host name
+                  setSelectedRoom(parts[1])
                 }
               }}
               className={`flex-shrink-0 px-2 py-1.5 text-[8px] font-pixel whitespace-nowrap transition-colors ${
                 isActive
                   ? 'text-text-gold border-b-2 border-text-gold font-bold bg-wood/10'
-                  : 'text-stone hover:text-text-light hover:bg-wood/5'
+                  : tab.isMine
+                    ? 'text-fire-orange hover:text-text-gold hover:bg-wood/5 font-bold'
+                    : 'text-stone hover:text-text-light hover:bg-wood/5'
               }`}
             >
               <span className="mr-1">{tab.icon}</span>
-              {tab.label}
+              {tab.isMine ? `★ ${tab.label}` : tab.label}
               {/* New message indicator for non-active tabs */}
               {!isActive && tab.speeches.length > 0 && (
                 <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-fire-orange animate-pulse" />
@@ -126,7 +231,11 @@ export const RoomChatOverlay: React.FC = () => {
       </div>
 
       {/* Chat content */}
-      <ChatMessages speeches={activeTab.speeches} />
+      <ChatMessages
+        speeches={activeTab.speeches}
+        emptyText={activeTab.emptyText}
+        large={isImmersiveVisit}
+      />
     </div>
   )
 }

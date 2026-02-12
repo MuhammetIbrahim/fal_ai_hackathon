@@ -40,12 +40,16 @@ const LobbyUI: React.FC = () => {
     if (!name) return
     try {
       setLoading(true)
-      const result = await createLobby(name)
+      const result = await createLobby(name) as any
       setLobbyCode(result.lobby_code)
       setIsHost(true)
       setMyName(name)
       // Host is already P0 from create — no need to join again
       setConnection(result.lobby_code, 'P0')
+      // Set initial player list from lobby response so the Start button enables
+      if (result.players) {
+        useGameStore.getState().setPlayers(result.players)
+      }
     } catch (err) {
       setNotification({
         message: `Lobi olusturulamadi: ${(err as Error).message}`,
@@ -85,17 +89,23 @@ const LobbyUI: React.FC = () => {
 
     try {
       setLoading(true)
+      setNotification({ message: 'Lobi baslatiliyor...', type: 'info' })
       const result = await startLobby(lobbyCode, name)
       const gId = result.game_id
 
-      // Start the game
-      await startGame(gId)
-
-      // Connect WebSocket
+      // Connect WebSocket BEFORE starting game to avoid missing first events
       if (playerId) {
         wsManager.connect(gId, playerId)
         setConnection(gId, playerId)
       }
+
+      // Wait for WS connection to establish
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      // Start the game (LLM character generation — can take 30-60s)
+      setNotification({ message: 'Karakterler olusturuluyor... (30-60 sn)', type: 'info' })
+      await startGame(gId)
+      setNotification(null)
     } catch (err) {
       setNotification({
         message: `Oyun baslatilamadi: ${(err as Error).message}`,
@@ -429,17 +439,6 @@ export const UIRoot: React.FC = () => {
         <div className="pointer-events-auto">
           <ActionBar />
         </div>
-      )}
-
-      {phase === 'houses' && (
-        <>
-          <div className="pointer-events-auto">
-            <RoomChatOverlay />
-          </div>
-          <div className="pointer-events-auto">
-            <ActionBar />
-          </div>
-        </>
       )}
 
       {phase === 'vote' && (

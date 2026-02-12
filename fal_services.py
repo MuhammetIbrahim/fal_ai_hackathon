@@ -231,8 +231,11 @@ async def tts_generate(
     text: str,
     speed: float = 1.0,
     response_format: str = "wav",
+    voice: str = "alloy",
 ) -> TTSResult:
-    """Sesi uret, CDN URL dondur. Streaming gerekmiyorsa bunu kullan."""
+    """Sesi uret, CDN URL dondur. Streaming gerekmiyorsa bunu kullan.
+    voice: 'alloy' | 'zeynep' | 'ali'
+    """
     try:
         handler = await fal_client.submit_async(
             TTS_ENDPOINT,
@@ -240,6 +243,7 @@ async def tts_generate(
                 "input": text,
                 "response_format": response_format,
                 "speed": speed,
+                "voice": voice,
             },
             path="/generate",
         )
