@@ -243,71 +243,65 @@ class ImageJobResult(BaseModel):
 
 ## Dosya Detayları
 
-### 1. `api/main.py`
+### Root Dosyalar (`api/`)
+
+#### `api/main.py`
 - `create_app()` factory pattern (mevcut `src/main.py` ile aynı pattern)
 - CORS middleware, TimingMiddleware
 - Lifespan: FAL init + store init + job cleanup scheduler
-- Router'ları include et: characters, worlds, voice, images, jobs
+- Domain router'ları include: `characters.router`, `worlds.router`, `voice.router`, `images.router`, `jobs.jobs_router`
 - Global exception handler → ErrorResponse formatında döner
 
-### 2. `api/config.py`
+#### `api/config.py`
 - `APISettings(BaseSettings)`: FAL_KEY, API_KEYS (dict), HOST, PORT, DEBUG
 - Model config: GENERATION_MODEL, DIALOGUE_MODEL, VALIDATION_MODEL, temperatures
 - Job config: JOB_TTL_HOURS (default 24)
 - `get_api_settings()` singleton
 
-### 3. `api/deps.py`
+#### `api/deps.py`
 - `get_tenant(authorization: str = Header(...)) -> str` — Bearer token → tenant_id
 - Router'larda `dependencies=[Depends(get_tenant)]`
 - Tenant ID tüm service çağrılarına geçirilir
 
-### 4. `api/errors.py`
+#### `api/errors.py`
 - `APIError`, `NotFoundError`, `ValidationError`, `ServiceError` exception sınıfları
 - `register_error_handlers(app)` → global exception handler kaydı
 
-### 5. `api/jobs.py`
-- `JobManager` — submit, get, cleanup
-- `asyncio.create_task()` ile background execution
+#### `api/jobs.py`
+- `JobManager` class — submit, get, cleanup (`asyncio.create_task()` ile background execution)
+- `jobs_router = APIRouter()` — `GET /v1/jobs/{job_id}` (tek endpoint, ayrı dosya gereksiz)
 - Tenant-scoped job store
 - Auto-cleanup (lifespan'da schedule)
 
-### 6. `api/schemas/common.py`
+#### `api/store.py`
+Tenant-scoped in-memory store:
+- Her CRUD fonksiyonu `tenant_id` alır
+- `list_*` fonksiyonları `limit` + `offset` destekler (pagination)
+- TTL: `cleanup_expired(max_age_hours)` — lifespan'da periyodik çağrılır
+
+#### `api/shared/schemas.py`
 - `ErrorResponse` — standart error formatı
 - `PaginatedResponse` — `items`, `total`, `limit`, `offset`
 - `JobStatusResponse` — `job_id`, `status`, `result`, `error`, `created_at`
 
-### 7. `api/routers/characters.py`
-- `POST /v1/characters` → `character_service.create_character(tenant_id, ...)`
-- `POST /v1/characters/batch` → `character_service.create_batch(tenant_id, ...)`
+### Characters Domain (`api/characters/`)
+
+#### `api/characters/router.py`
+- `POST /v1/characters` → `service.create_character(tenant_id, ...)`
+- `GET /v1/characters` → `store.list_characters(tenant_id, limit, offset)`
+- `POST /v1/characters/batch` → `service.create_batch(tenant_id, ...)`
 - `GET /v1/characters/{id}` → `store.get_character(tenant_id, id)`
 - `PATCH /v1/characters/{id}` → `store.update_character(tenant_id, id, ...)`
-- `POST /v1/characters/{id}/speak` → `character_service.generate_speech(tenant_id, ...)`
-- `POST /v1/characters/{id}/react` → `character_service.generate_reaction(tenant_id, ...)`
+- `POST /v1/characters/{id}/speak` → `service.generate_speech(tenant_id, ...)`
+- `POST /v1/characters/{id}/react` → `service.generate_reaction(tenant_id, ...)`
 - `GET /v1/characters/{id}/memory` → `memory.get_memory(tenant_id, id)`
 - `DELETE /v1/characters/{id}` → `store.delete_character(tenant_id, id)`
 
-### 8. `api/routers/worlds.py`
-- `POST /v1/worlds` → `world_service.generate_world(tenant_id, ...)`
-- `GET /v1/worlds/{id}` → `store.get_world(tenant_id, id)`
+#### `api/characters/schema.py`
+- `CreateCharacterRequest`, `BatchCreateRequest`, `SpeakRequest`, `ReactRequest`
+- `CharacterResponse`, `SpeechResponse`, `ReactionResponse`, `MemoryResponse`
 
-### 9. `api/routers/voice.py`
-- `POST /v1/voice/tts` → **202** `job_manager.submit(tenant_id, "tts", voice_service.tts(...))`
-- `POST /v1/voice/stt` → **200** `voice_service.speech_to_text(...)` (sync, hızlı)
-- `GET /v1/voice/voices` → kullanılabilir ses listesi (statik)
-
-### 10. `api/routers/images.py`
-- `POST /v1/images/avatar` → **202** `job_manager.submit(tenant_id, "avatar", image_service.avatar(...))`
-- `POST /v1/images/background` → **202** `job_manager.submit(tenant_id, "background", image_service.bg(...))`
-
-### 11. `api/routers/jobs.py`
-- `GET /v1/jobs/{job_id}` → `job_manager.get(tenant_id, job_id)`
-
-### 12. `api/services/image_service.py`
-Reuse: `fal_services.py` → `generate_avatar()`, `generate_background()`
-- Genişletilmiş parametreler: width, height, seed, negative_prompt, guidance_scale, num_inference_steps
-- Style preset'leri → prompt prefix mapping
-
-### 13. `api/services/character_service.py`
+#### `api/characters/service.py`
 Reuse:
 - `src/prototypes/generate_characters.py` → character generation + validation
 - `src/prototypes/campfire.py` → dialogue + moderation
@@ -320,45 +314,74 @@ Fonksiyonlar:
 - `generate_reaction(tenant_id, character_id, last_message, context)` → ReactionResult
 - `moderate(text, taboo_words)` → ModerationResult
 
-### 14. `api/services/world_service.py`
-Reuse: `src/prototypes/world_gen.py` → `generate_world_seed()`, `render_world_brief()`, `render_scene_cards()`
-
-### 15. `api/services/voice_service.py`
-Reuse: `fal_services.py` → `tts_generate()`, `transcribe_audio()`
-
-### 16. `api/services/memory.py`
+#### `api/characters/memory.py`
 Reuse: `src/prototypes/campfire.py` → `summarize_campfire()` pattern
 - Tenant-scoped memory store
 
-### 17. `api/store.py`
-Tenant-scoped in-memory store:
-- Her CRUD fonksiyonu `tenant_id` alır
-- `list_*` fonksiyonları `limit` + `offset` destekler (pagination)
-- TTL: `cleanup_expired(max_age_hours)` — lifespan'da periyodik çağrılır
+### Worlds Domain (`api/worlds/`)
 
-### 18. `api/prompts/`
+#### `api/worlds/router.py`
+- `POST /v1/worlds` → `service.generate_world(tenant_id, ...)`
+- `GET /v1/worlds/{id}` → `store.get_world(tenant_id, id)`
+
+#### `api/worlds/schema.py`
+- `CreateWorldRequest`, `WorldResponse`
+
+#### `api/worlds/service.py`
+Reuse: `src/prototypes/world_gen.py` → `generate_world_seed()`, `render_world_brief()`, `render_scene_cards()`
+
+### Voice Domain (`api/voice/`)
+
+#### `api/voice/router.py`
+- `POST /v1/voice/tts` → **202** `job_manager.submit(tenant_id, "tts", service.tts(...))`
+- `POST /v1/voice/stt` → **200** `service.speech_to_text(...)` (sync, hızlı)
+- `GET /v1/voice/voices` → kullanılabilir ses listesi (statik)
+
+#### `api/voice/schema.py`
+- `TTSRequest`, `STTRequest`, `VoiceListResponse`
+
+#### `api/voice/service.py`
+Reuse: `fal_services.py` → `tts_generate()`, `transcribe_audio()`
+
+### Images Domain (`api/images/`)
+
+#### `api/images/router.py`
+- `POST /v1/images/avatar` → **202** `job_manager.submit(tenant_id, "avatar", service.avatar(...))`
+- `POST /v1/images/background` → **202** `job_manager.submit(tenant_id, "background", service.bg(...))`
+
+#### `api/images/schema.py`
+- `AvatarRequest`, `BackgroundRequest`, `ImageJobResult` (yukarıdaki P0 şemalarından)
+
+#### `api/images/service.py`
+Reuse: `fal_services.py` → `generate_avatar()`, `generate_background()`
+- Genişletilmiş parametreler: width, height, seed, negative_prompt, guidance_scale, num_inference_steps
+- Style preset'leri → prompt prefix mapping
+
+### Shared (`api/prompts/`, `api/data/`)
+
+#### `api/prompts/`
 - `character_gen.py`: ACTING_PROMPT_SYSTEM, VALIDATOR_SYSTEM
 - `dialogue.py`: CHARACTER_WRAPPER, REACTION_SYSTEM
 - `moderation.py`: MODERATOR_SYSTEM
 
-### 19. `api/data/defaults.json`
+#### `api/data/defaults.json`
 `src/prototypes/data.json`'dan kopyala: roles, archetypes, skill_tiers, names_pool
 
 ---
 
 ## Implementation Order
 
-1. **Temel iskelet**: `main.py`, `config.py`, `deps.py`, `errors.py`, `store.py` — app ayağa kalksın
-2. **Common schemas**: `schemas/common.py` — ErrorResponse, PaginatedResponse, JobStatusResponse
-3. **Job manager**: `jobs.py` + `routers/jobs.py` — async pattern altyapısı
-4. **World endpoint**: `worlds.py` router + schema + service — en basit, world_gen.py'yi wrap et
-5. **Character endpoint**: `characters.py` router + schema + service — create + get + PATCH
-6. **Speak endpoint**: `/characters/{id}/speak` — dialogue generation (mood parametresi ile)
-7. **React + Memory**: tepki + hafıza endpointleri
-8. **Voice endpoints**: TTS (async job) + STT (sync) + voices listesi
-9. **Image endpoints**: Avatar + Background (async job, genişletilmiş params)
-10. **Prompts extraction**: system prompt'ları ayrı dosyalara taşı
-11. **Batch endpoint**: toplu karakter üretimi
+1. **Temel iskelet**: `api/main.py`, `api/config.py`, `api/deps.py`, `api/errors.py`, `api/store.py` — app ayağa kalksın
+2. **Shared schemas**: `api/shared/schemas.py` — ErrorResponse, PaginatedResponse, JobStatusResponse
+3. **Job manager**: `api/jobs.py` — JobManager class + `GET /v1/jobs/{id}` router (aynı dosyada)
+4. **Worlds domain**: `api/worlds/router.py` + `schema.py` + `service.py` — en basit, world_gen.py'yi wrap et
+5. **Characters domain (CRUD)**: `api/characters/router.py` + `schema.py` + `service.py` — create + list + get + PATCH + delete
+6. **Characters speak**: `api/characters/router.py`'ye `/speak` endpoint — dialogue generation
+7. **Characters react + memory**: `api/characters/router.py`'ye `/react` + `/memory` + `api/characters/memory.py`
+8. **Voice domain**: `api/voice/router.py` + `schema.py` + `service.py` — TTS (async job) + STT (sync) + voices
+9. **Images domain**: `api/images/router.py` + `schema.py` + `service.py` — Avatar + Background (async job, genişletilmiş params)
+10. **Prompts extraction**: `api/prompts/` — system prompt'ları ayrı dosyalara taşı
+11. **Batch endpoint**: `api/characters/router.py`'ye `/batch` — toplu karakter üretimi
 
 ---
 
@@ -381,17 +404,17 @@ Tenant-scoped in-memory store:
 
 | Yeni Dosya | Kaynak | Ne alınıyor |
 |------------|--------|-------------|
-| `services/character_service.py` | `src/prototypes/generate_characters.py` | `create_character_slots()`, `generate_acting_prompt()`, validation |
-| `services/character_service.py` | `src/prototypes/campfire.py` | `character_speak()` prompt yapısı, `get_reaction()`, `moderator_check()` |
-| `services/world_service.py` | `src/prototypes/world_gen.py` | `generate_world_seed()`, `WorldSeed`, `render_world_brief()` |
-| `services/voice_service.py` | `fal_services.py` | `tts_generate()`, `transcribe_audio()` |
-| `services/image_service.py` | `fal_services.py` | `generate_avatar()`, `generate_background()` |
-| `services/memory.py` | `src/prototypes/campfire.py` | `summarize_campfire()` pattern |
-| `prompts/*` | `src/prototypes/campfire.py`, `generate_characters.py` | Tüm system prompt sabitleri |
-| `data/defaults.json` | `src/prototypes/data.json` | Roller, arketipler, isimler, tier'lar |
-| `store.py` | `src/core/database.py` | In-memory dict pattern (tenant-scoped) |
-| `main.py` | `src/main.py` | App factory, lifespan, middleware pattern |
-| `config.py` | `src/core/config.py` | Pydantic BaseSettings pattern |
+| `api/characters/service.py` | `src/prototypes/generate_characters.py` | `create_character_slots()`, `generate_acting_prompt()`, validation |
+| `api/characters/service.py` | `src/prototypes/campfire.py` | `character_speak()` prompt yapısı, `get_reaction()`, `moderator_check()` |
+| `api/characters/memory.py` | `src/prototypes/campfire.py` | `summarize_campfire()` pattern |
+| `api/worlds/service.py` | `src/prototypes/world_gen.py` | `generate_world_seed()`, `WorldSeed`, `render_world_brief()` |
+| `api/voice/service.py` | `fal_services.py` | `tts_generate()`, `transcribe_audio()` |
+| `api/images/service.py` | `fal_services.py` | `generate_avatar()`, `generate_background()` |
+| `api/prompts/*` | `src/prototypes/campfire.py`, `generate_characters.py` | Tüm system prompt sabitleri |
+| `api/data/defaults.json` | `src/prototypes/data.json` | Roller, arketipler, isimler, tier'lar |
+| `api/store.py` | `src/core/database.py` | In-memory dict pattern (tenant-scoped) |
+| `api/main.py` | `src/main.py` | App factory, lifespan, middleware pattern |
+| `api/config.py` | `src/core/config.py` | Pydantic BaseSettings pattern |
 
 ---
 
