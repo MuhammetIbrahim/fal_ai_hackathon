@@ -70,7 +70,7 @@ api/
 ### Worlds
 | Method | Path | Açıklama |
 |--------|------|----------|
-| `POST` | `/v1/worlds` | Dünya seed üret (deterministik) |
+| `POST` | `/v1/worlds` | Dünya oluştur (auto-generate VEYA custom JSON) |
 | `GET` | `/v1/worlds/{id}` | Dünya bilgisi getir |
 
 ### Voice
@@ -321,14 +321,32 @@ Reuse: `src/prototypes/campfire.py` → `summarize_campfire()` pattern
 ### Worlds Domain (`api/worlds/`)
 
 #### `api/worlds/router.py`
-- `POST /v1/worlds` → `service.generate_world(tenant_id, ...)`
+- `POST /v1/worlds` → `service.create_world(tenant_id, ...)` — iki mod destekler
 - `GET /v1/worlds/{id}` → `store.get_world(tenant_id, id)`
 
 #### `api/worlds/schema.py`
-- `CreateWorldRequest`, `WorldResponse`
+```python
+class CreateWorldRequest(BaseModel):
+    # Mode 1: Auto-generate (game_id verilirse bizim havuzdan deterministik üret)
+    game_id: str | None = None
+
+    # Mode 2: Custom world (consumer kendi evrenini JSON olarak supply eder)
+    name: str | None = None
+    description: str | None = None        # Evren özeti / lore
+    tone: str | None = None               # "dark fantasy", "sci-fi", "comedy"...
+    setting: dict | None = None           # Serbest — yerler, mevsim, atmosfer
+    rules: dict | None = None             # Konuşma kuralları, ritüeller
+    taboo_words: list[str] | None = None  # Karakterlerin kullanmaması gereken kelimeler
+    metadata: dict | None = None          # Serbest ek veri (stüdyo istediğini koyar)
+```
+- `game_id` verilirse → auto-generate (world_gen.py)
+- `game_id` yoksa → custom world (consumer JSON'ı doğrudan store'lanır)
+- İkisi birden → auto-generate + custom alanlar override eder
 
 #### `api/worlds/service.py`
 Reuse: `src/prototypes/world_gen.py` → `generate_world_seed()`, `render_world_brief()`, `render_scene_cards()`
+- Auto-generate mode: mevcut world_gen pipeline
+- Custom mode: consumer JSON'ını doğrudan kabul et, store'a yaz
 
 ### Voice Domain (`api/voice/`)
 
