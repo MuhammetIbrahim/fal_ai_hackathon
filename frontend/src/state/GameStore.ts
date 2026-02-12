@@ -161,9 +161,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const last = [...state.speeches].reverse().find(s => s.audio_url)
       if (last?.audio_url) audioQueue.enqueue(last.audio_url)
     } else {
-      const visit = state.houseVisits.find(
-        hv => hv.host === room || hv.visitor === room
-      )
+      // room is a visit_id
+      const visit = state.houseVisits.find(hv => hv.visit_id === room)
       if (visit) {
         const last = [...visit.speeches].reverse().find(s => s.audio_url)
         if (last?.audio_url) audioQueue.enqueue(last.audio_url)

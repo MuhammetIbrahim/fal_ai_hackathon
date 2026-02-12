@@ -172,12 +172,12 @@ export const RoomChatOverlay: React.FC = () => {
 
       // If the new visit involves me, always switch to it (my own visit is priority)
       if (myName && (newest.host === myName || newest.visitor === myName)) {
-        setSelectedRoom(newest.host)
+        setSelectedRoom(newest.visit_id)
       } else if (!recentManualSwitch) {
         // Only auto-switch if user hasn't manually clicked a tab recently
         const currentRoom = useGameStore.getState().selectedRoom
         if (!currentRoom || currentRoom === 'campfire') {
-          setSelectedRoom(newest.host)
+          setSelectedRoom(newest.visit_id)
         }
       }
     }
@@ -190,15 +190,13 @@ export const RoomChatOverlay: React.FC = () => {
       return tabs[0]
     }
 
-    // Try to find a visit tab where selectedRoom matches host OR visitor
+    // Try to find a visit tab where selectedRoom matches visit_id
     const visitTab = tabs.find((t) => {
       if (t.id === 'campfire') return false
       // Extract visit_id from tab id (format: 'visit:VISIT_ID')
       const visitId = t.id.replace('visit:', '')
-      // Find the corresponding visit in houseVisits
-      const visit = houseVisits.find((hv) => hv.visit_id === visitId)
-      if (!visit) return false
-      return visit.host === selectedRoom || visit.visitor === selectedRoom
+      // selectedRoom is now a visit_id, so directly compare
+      return visitId === selectedRoom
     })
     if (visitTab) return visitTab
 
