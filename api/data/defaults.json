@@ -1,0 +1,42 @@
+{
+  "archetypes": [
+    {"label": "Supheci Sessiz", "description": "Az konusur, gozlemler, guven vermez", "speech_style": "Kisa cumleler, belirsiz ifadeler"},
+    {"label": "Supheci Konuskan", "description": "Cok soru sorar, detay arar, herkesi sorguya ceker", "speech_style": "Soru agirlikli, arastirmaci"},
+    {"label": "Saldirgan", "description": "Sert, dogrudan, korkutmaya calisan", "speech_style": "Emredici, kisa, agresif ton"},
+    {"label": "Sakin Az Konusan", "description": "Duygusuz gorunur, sadece gerektiginde konusur", "speech_style": "Olculu, soguk, az kelime"},
+    {"label": "Cekici Manipulator", "description": "Iltifat eder, guven kazanir, arka planda oynar", "speech_style": "Sicak, ikna edici, yumusak"},
+    {"label": "Duru Idealist", "description": "Ilkelere bagli, adalet arar, fedakar gorunur", "speech_style": "Ilkeli, ciddi, motive edici"}
+  ],
+  "role_titles": [
+    {"title": "Kasap", "lore": "Koydeki hayvan kesimlerini yapar, guclu ve sessiz biridir"},
+    {"title": "Sifaci", "lore": "Bitki ve merhemlerle hastalari iyilestirmeye calisir"},
+    {"title": "Avci", "lore": "Ormanda iz surer, yaban hayati tanir, yalniz gezmeyi sever"},
+    {"title": "Tuccar", "lore": "Kervanlarla mal tasir, pazarlik ustasi, her yeri bilir"},
+    {"title": "Demirci", "lore": "Kor ateste metal dover, sabahtan aksama ocagin basinda"},
+    {"title": "Nobetci", "lore": "Surlarda gece nobet tutar, disaridan geleni ilk o gorur"},
+    {"title": "Simyaci", "lore": "Iksirler ve karisimlar hazirlar, gizemli deneyler yapar"},
+    {"title": "Ozan", "lore": "Sarkilar soyler, hikayeleri aktarir, herkesin sirrini bilir"},
+    {"title": "Ciftci", "lore": "Tarlada calisir, topragi tanir, sade ve durust biridir"},
+    {"title": "Haritaci", "lore": "Bolgenin haritalarini cizer, kayip yollari bilir"},
+    {"title": "Balikci", "lore": "Gol basinda yasayan, sabahci ve sabirli biri"},
+    {"title": "Marangoz", "lore": "Ahsap isler yapar, koydeki evlerin cogu onun eseri"},
+    {"title": "Kaptan", "lore": "Nehir gemilerini yonetir, deniz hikayeleri anlatir"},
+    {"title": "Kutuphaneci", "lore": "Eski yazmalari korur, tarihi bilir, iccedir"},
+    {"title": "Bahcivan", "lore": "Sifali otlar yetistirir, dogayla ic icedir"},
+    {"title": "Terzi", "lore": "Kumastan her sey diker, koyde herkesin olcusunu bilir"},
+    {"title": "Madenci", "lore": "Yeralti tunellerinde calisir, karanliga aliskin"},
+    {"title": "Muhendis", "lore": "Su degirmeni ve kopru tasarimcisi, mekanik zeka"},
+    {"title": "Surgun Rahip", "lore": "Eski tapinagin son rahibi, toplumdan dislanmis"},
+    {"title": "Ejderha Avcisi", "lore": "Efsanevi yaratiklari avladigini iddia eder"}
+  ],
+  "skill_tiers": [
+    {"tier": "caylak", "modifier": "Basit ve cekinik yanitlar ver, kisa cumle kur, belirsizlik goster"},
+    {"tier": "orta", "modifier": "Dogal ve olculu yanitla, orta detay seviyesi, tutarli kal"},
+    {"tier": "uzman", "modifier": "Otoriter konus, zengin kelime haznesi kullan, derinlikli yanitla"}
+  ],
+  "names_pool": [
+    "Kael", "Mirra", "Theron", "Lyra", "Dorian", "Selene", "Caspian",
+    "Freya", "Roland", "Iris", "Magnus", "Petra", "Aldric", "Yara",
+    "Lucan", "Ember", "Soren", "Dalia", "Orion", "Niara"
+  ]
+}
