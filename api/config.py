@@ -1,9 +1,10 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class APISettings(BaseSettings):
     # FAL AI
-    FAL_KEY: str = ""
+    FAL_KEY: str = Field("", alias="FAL_KEY")
 
     # Multi-tenancy: API key → tenant_id
     API_KEYS: dict[str, str] = {
@@ -37,6 +38,7 @@ class APISettings(BaseSettings):
         env_file = ".env"
         env_prefix = "API_"
         extra = "ignore"
+        populate_by_name = True
 
 
 _settings: APISettings | None = None

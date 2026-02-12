@@ -15,6 +15,14 @@ class AvatarRequest(BaseModel):
     model: str = Field("dev", description="dev | schnell | pro")
 
 
+class ImageJobResult(BaseModel):
+    image_url: str
+    seed_used: int
+    width: int
+    height: int
+    inference_time_ms: float | None = None
+
+
 class BackgroundRequest(BaseModel):
     prompt: str = Field(..., description="Sahne aciklamasi")
     style: str = Field("pixel_art", description="pixel_art | realistic | anime | painterly")
