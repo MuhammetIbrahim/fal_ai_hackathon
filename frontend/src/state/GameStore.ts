@@ -472,8 +472,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'house_visit':
       case 'house_visit_start': {
+        const visitId = data.visit_id as string | undefined
+        // visit_id zorunlu - yoksa event yoksay
+        if (!visitId) {
+          console.warn('[GameStore] house_visit_start: visit_id eksik, event yoksayıldı')
+          break
+        }
         const newVisit: HouseVisit = {
-          visit_id: (data.visit_id as string) || `${data.host}-${data.visitor}-${Date.now()}`,
+          visit_id: visitId,
           host: data.host as string,
           visitor: data.visitor as string,
           speeches: [],
@@ -491,13 +497,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const exHost = data.host as string
         const exVisitor = data.visitor as string
         const visitAudioUrl = data.audio_url as string | undefined
+        
+        // visit_id zorunlu - yoksa event yoksay
+        if (!exVisitId) {
+          console.warn('[GameStore] house_visit_exchange: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
         set((s) => ({
           houseVisits: s.houseVisits.map((hv) => {
-            // Prefer visit_id matching, fallback to host+visitor
-            const isMatch = exVisitId
-              ? hv.visit_id === exVisitId
-              : hv.host === exHost && hv.visitor === exVisitor
-            return isMatch
+            // Sadece visit_id ile eşleştir
+            return hv.visit_id === exVisitId
               ? {
                   ...hv,
                   speeches: [
@@ -525,18 +535,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'house_visit_end': {
         const endVisitId = data.visit_id as string | undefined
-        const endHost = data.host as string
-        const endVisitor = data.visitor as string
+        
+        // visit_id zorunlu - yoksa event yoksay
+        if (!endVisitId) {
+          console.warn('[GameStore] house_visit_end: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
         // Keep the visit data longer so user can read the conversation
         setTimeout(() => {
           set((s) => ({
-            houseVisits: s.houseVisits.filter((hv) => {
-              // Prefer visit_id matching, fallback to host+visitor
-              if (endVisitId) {
-                return hv.visit_id !== endVisitId
-              }
-              return !(hv.host === endHost && hv.visitor === endVisitor)
-            }),
+            houseVisits: s.houseVisits.filter((hv) => hv.visit_id !== endVisitId),
           }))
         }, 60000) // 60 seconds — closing campfire will clear anyway
         break
