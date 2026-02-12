@@ -493,9 +493,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'visit_speech':
       case 'house_visit_exchange': {
-        const exVisitId = data.visit_id as string | undefined
-        const exHost = data.host as string
-        const exVisitor = data.visitor as string
+        const exVisitId = data.visit_id as string
         const visitAudioUrl = data.audio_url as string | undefined
         
         // visit_id zorunlu - yoksa event yoksay
@@ -523,11 +521,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
               : hv
           }),
         }))
-        // Audio senkron: text + audio birlikte geldi
+        
+        // Audio senkron: visit_id'den visit bulup oda kontrolü yap
         if (visitAudioUrl) {
-          const currentRoom = store.selectedRoom ?? 'campfire'
-          if (currentRoom === exHost || currentRoom === exVisitor) {
-            audioQueue.enqueue(visitAudioUrl)
+          const visit = store.houseVisits.find((v) => v.visit_id === exVisitId)
+          if (visit) {
+            const currentRoom = store.selectedRoom ?? 'campfire'
+            if (currentRoom === visit.host || currentRoom === visit.visitor) {
+              audioQueue.enqueue(visitAudioUrl)
+            }
           }
         }
         break
