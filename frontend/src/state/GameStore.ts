@@ -142,7 +142,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setSinama: (sinama) => set({ sinama }),
   setOcakTepki: (tepki) => set({ ocakTepki: tepki }),
   setProposal: (proposal) => set({ proposal }),
-  setSelectedRoom: (room) => set({ selectedRoom: room }),
+  setSelectedRoom: (room) => {
+    const prev = get().selectedRoom
+    if (prev === room) return
+    // Stop old room's audio, switch, then play new room's latest audio
+    audioQueue.stop()
+    set({ selectedRoom: room })
+    // Find the last speech with audio_url in the new room and play it
+    const state = get()
+    if (!room || room === 'campfire') {
+      const last = [...state.speeches].reverse().find(s => s.audio_url)
+      if (last?.audio_url) audioQueue.enqueue(last.audio_url)
+    } else {
+      const visit = state.houseVisits.find(
+        hv => hv.host === room || hv.visitor === room
+      )
+      if (visit) {
+        const last = [...visit.speeches].reverse().find(s => s.audio_url)
+        if (last?.audio_url) audioQueue.enqueue(last.audio_url)
+      }
+    }
+  },
   setPlayerLocations: (locs) => set({ playerLocations: locs }),
   setInputRequired: (input) => set({ inputRequired: input }),
   setNotification: (notification) => set({ notification }),
@@ -254,6 +274,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           if (d.choice === 'CAMPFIRE') locs[d.player] = 'campfire'
           else if (d.choice === 'HOME') locs[d.player] = 'home'
           else if (d.choice.startsWith('VISIT|')) locs[d.player] = `visiting:${d.choice.split('|')[1]}`
+          else if (d.choice.startsWith('INSTITUTION|')) locs[d.player] = `institution:${d.choice.split('|')[1]}`
           else locs[d.player] = 'campfire'
         }
         set({ playerLocations: locs, locationDecisions: decisions })
@@ -389,13 +410,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
           if (audioContext === 'campfire' && currentRoom === 'campfire') {
             shouldPlay = true
           } else if (audioContext.startsWith('visit:') && currentRoom !== 'campfire') {
-            // audioContext = "visit:host:visitor", check if host matches selectedRoom
             const parts = audioContext.split(':')
             const host = parts[1]
             const visitor = parts[2]
             if (currentRoom === host || currentRoom === visitor) {
               shouldPlay = true
             }
+          } else if (audioContext.startsWith('institution:')) {
+            // Institution audio always plays (narration for the visiting player)
+            shouldPlay = true
           }
 
           if (shouldPlay) {
@@ -473,7 +496,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
               (hv) => !(hv.host === endHost && hv.visitor === endVisitor)
             ),
           }))
-        }, 15000) // 15 seconds to read
+        }, 60000) // 60 seconds — closing campfire will clear anyway
         break
       }
 

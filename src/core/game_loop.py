@@ -606,39 +606,52 @@ async def _game_loop_runner(game_id: str, state: Any):
                     else:
                         locations[player.name] = "campfire"
 
-                # Konum duzeltmeleri — ziyaret edilen kisi evde olmali
+                # Konum duzeltmeleri
+                # 1) Ziyaret edilen kisi evde olmali
                 for name, loc in list(locations.items()):
                     if loc.startswith("visiting:"):
                         target = loc.split(":")[1]
                         if locations.get(target) != "home":
-                            # Hedef evde degil — campfire'a yonlendir
                             locations[name] = "campfire"
-                # NOT: Ayni eve birden fazla ziyaretci artik izinli (kaldirilan kisitlama)
 
-                # Minimum hareket: az visit varsa daha fazla zorla esle
+                # 2) Her eve en fazla 1 ziyaretci — ikinci ziyaretci campfire'a
+                visited_homes: set[str] = set()
+                for name, loc in list(locations.items()):
+                    if loc.startswith("visiting:"):
+                        target = loc.split(":")[1]
+                        if target in visited_homes:
+                            locations[name] = "campfire"  # zaten biri var
+                        else:
+                            visited_homes.add(target)
+
+                # Minimum hareket: az visit varsa daha fazla FARKLI evlere zorla esle
                 actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
                                  if l.startswith("visiting:")]
                 campfire_pool = [n for n, l in locations.items() if l == "campfire"]
                 home_pool = [n for n, l in locations.items() if l == "home"]
+                # Zaten ziyaretci alan evleri cikar
+                available_homes = [h for h in home_pool if h not in visited_homes]
 
                 # En az 2 visit olsun (6 kisiyle: 2 visit + 2 campfire ideal)
                 target_visit_count = max(2, len(alive_names) // 3)
                 while len(actual_visits) < target_visit_count and len(campfire_pool) >= 2:
-                    if home_pool:
-                        # Campfire'dan birini, evde olan birine gonder
-                        target_home = random_module.choice(home_pool)
+                    if available_homes:
+                        # Campfire'dan birini, ziyaretcisi olmayan eve gonder
+                        target_home = random_module.choice(available_homes)
                         visitor = random_module.choice(campfire_pool)
                         locations[visitor] = f"visiting:{target_home}"
                         campfire_pool.remove(visitor)
+                        available_homes.remove(target_home)
+                        visited_homes.add(target_home)
                         actual_visits.append((visitor, target_home))
                     else:
-                        # Kimse evde degil — campfire'dan 2 kisi sec, biri eve gitsin
+                        # Bos ev yok — campfire'dan 2 kisi sec, biri eve gitsin
                         pair = random_module.sample(campfire_pool, 2)
                         locations[pair[0]] = "home"
                         locations[pair[1]] = f"visiting:{pair[0]}"
                         campfire_pool.remove(pair[0])
                         campfire_pool.remove(pair[1])
-                        home_pool.append(pair[0])
+                        visited_homes.add(pair[0])
                         actual_visits.append((pair[1], pair[0]))
                     # Refresh
                     actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
@@ -809,10 +822,8 @@ async def _game_loop_runner(game_id: str, state: Any):
                                         "audio_duration": p_audio_dur,
                                     },
                                 })
-                                if p_audio_dur > 0:
-                                    await asyncio.sleep(min(max(p_audio_dur * 0.7, 1.0), 8.0))
-                                else:
-                                    await asyncio.sleep(0.5)
+                                wait_time = min(max(p_audio_dur * 0.95, 2.0), 10.0) if p_audio_dur > 0 else 2.0
+                                await asyncio.sleep(wait_time)
 
                     # Insan onerge oyu bekle
                     human_proposal_tasks = []
@@ -1368,10 +1379,9 @@ async def _run_campfire_segment_ws(
                 }
             })
 
-            # Audio suresi kadar bekle (min 1s, max 8s)
-            if audio_duration > 0:
-                wait_time = min(max(audio_duration * 0.7, 1.0), 8.0)
-                await asyncio.sleep(wait_time)
+            # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+            wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+            await asyncio.sleep(wait_time)
 
             # Ocak Tepki kontrolu (Katman 1+2)
             if check_ocak_tepki:
@@ -1522,10 +1532,9 @@ async def _run_campfire_segment_ws(
             }
         })
 
-        # Audio suresi kadar bekle (min 1s, max 8s)
-        if audio_duration > 0:
-            wait_time = min(max(audio_duration * 0.7, 1.0), 8.0)
-            await asyncio.sleep(wait_time)
+        # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        await asyncio.sleep(wait_time)
 
         # Ocak Tepki kontrolu (Katman 1+2)
         if check_ocak_tepki:
@@ -1658,10 +1667,9 @@ async def _run_room_conversation_ws(
             }
         })
 
-        # Audio suresi kadar bekle (1v1'de biraz daha uzun bekle)
-        if audio_duration > 0:
-            wait_time = min(max(audio_duration * 0.75, 1.0), 8.0)
-            await asyncio.sleep(wait_time)
+        # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        await asyncio.sleep(wait_time)
 
     # Visit data kaydet
     visit_data = {

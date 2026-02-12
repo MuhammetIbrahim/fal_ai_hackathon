@@ -172,10 +172,17 @@ export class VillageMapScene implements Scene {
     const alivePlayers = players.filter(p => p.alive)
     const locations = store.playerLocations
 
+    // Count only campfire players for seat indexing
+    const campfirePlayers = alivePlayers.filter(p => (locations[p.name] || 'campfire') === 'campfire')
+
     for (let i = 0; i < alivePlayers.length; i++) {
       const player = alivePlayers[i]
       const loc = locations[player.name] || 'campfire'
-      const target = this.getCharacterTarget(player.name, loc, i, alivePlayers.length)
+      // Use campfire-only index for seating
+      const campfireIdx = campfirePlayers.indexOf(player)
+      const seatIdx = campfireIdx >= 0 ? campfireIdx : i
+      const seatTotal = campfireIdx >= 0 ? campfirePlayers.length : alivePlayers.length
+      const target = this.getCharacterTarget(player.name, loc, seatIdx, seatTotal)
 
       let anim = this.charAnims.get(player.name)
       if (!anim) {
@@ -556,10 +563,10 @@ export class VillageMapScene implements Scene {
     }
 
     if (location === 'home') {
-      // Stand at own house door
+      // Stand inside house (centered)
       const house = this.houses.find(h => h.owner === playerName)
       if (house) {
-        return { x: house.centerX, y: house.y + HOUSE_SIZE + 30 }
+        return { x: house.centerX, y: house.y + HOUSE_SIZE * 0.5 }
       }
     }
 
@@ -567,9 +574,14 @@ export class VillageMapScene implements Scene {
       const targetName = location.split(':')[1]
       const house = this.houses.find(h => h.owner === targetName)
       if (house) {
-        // Stand slightly offset from door
-        return { x: house.centerX + 25, y: house.y + HOUSE_SIZE + 30 }
+        // Stand at house door (clearly outside, offset to the right)
+        return { x: house.centerX + 50, y: house.y + HOUSE_SIZE + 20 }
       }
+    }
+
+    if (location.startsWith('institution:')) {
+      // Institution visitors go to top-right corner of the map
+      return { x: VILLAGE_CENTER.x + HOUSE_RADIUS + 100, y: VILLAGE_CENTER.y - HOUSE_RADIUS - 50 + playerIndex * 40 }
     }
 
     // Fallback: campfire
