@@ -258,6 +258,60 @@ async def handle_client_event(
 
         logger.info(f"📍 {player_id} chose location: {choice} in {game_id}")
 
+    # ═══ SPEAK AUDIO (Mikrofon — STT → queue) ═══
+    elif event_type == "speak_audio":
+        audio_b64 = event_data.get("audio", "")
+        speech_type = event_data.get("speech_type", "speak")  # "speak" or "visit_speak"
+
+        if not audio_b64:
+            await websocket.send_json({
+                "event": "error",
+                "data": {
+                    "code": "empty_audio",
+                    "message": "Audio data cannot be empty"
+                }
+            })
+            return
+
+        try:
+            import base64
+            audio_bytes = base64.b64decode(audio_b64)
+
+            from src.services.api_client import transcribe_audio
+            stt_result = await transcribe_audio(audio_bytes, language="tr")
+            content = stt_result.text.strip()
+
+            if not content:
+                await websocket.send_json({
+                    "event": "stt_result",
+                    "data": {"text": "", "status": "empty"}
+                })
+                return
+
+            # STT sonucunu client'a bildir
+            await websocket.send_json({
+                "event": "stt_result",
+                "data": {"text": content, "status": "ok"}
+            })
+
+            # Game loop queue'suna gonder
+            from src.core.game_loop import get_input_queue
+            queue = get_input_queue(game_id, player_id)
+            await queue.put({"event": speech_type, "content": content})
+
+            logger.info(f"🎤 {player_id} spoke via mic in {game_id}: {content[:50]}")
+
+        except Exception as e:
+            logger.error(f"STT failed for {player_id}: {e}")
+            await websocket.send_json({
+                "event": "error",
+                "data": {
+                    "code": "stt_error",
+                    "message": f"Speech-to-text failed: {str(e)[:100]}"
+                }
+            })
+            return
+
     # ═══ VISIT SPEAK (1v1 konusma) ═══
     elif event_type == "visit_speak":
         content = event_data.get("content", "")

@@ -35,13 +35,15 @@ const LobbyUI: React.FC = () => {
   const [playerName, setPlayerName] = useState('')
   const [loading, setLoading] = useState(false)
   const [isHost, setIsHost] = useState(false)
+  const [totalPlayers, setTotalPlayers] = useState(4)
+  const [aiCount, setAiCount] = useState(3)
 
   const handleCreateLobby = useCallback(async () => {
     const name = playerName.trim()
     if (!name) return
     try {
       setLoading(true)
-      const result = await createLobby(name) as any
+      const result = await createLobby(name, totalPlayers, aiCount) as any
       setLobbyCode(result.lobby_code)
       setIsHost(true)
       setMyName(name)
@@ -59,7 +61,7 @@ const LobbyUI: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [playerName, setLobbyCode, setConnection, setMyName, setNotification])
+  }, [playerName, totalPlayers, aiCount, setLobbyCode, setConnection, setMyName, setNotification])
 
   const handleJoinLobby = useCallback(async () => {
     const code = joinCode.trim().toUpperCase()
@@ -233,6 +235,45 @@ const LobbyUI: React.FC = () => {
                   />
                 </div>
 
+                {/* Player/AI count config */}
+                <div className="w-full max-w-[280px] flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
+                      Toplam Oyuncu
+                    </label>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => { const v = Math.max(3, totalPlayers - 1); setTotalPlayers(v); setAiCount(Math.min(aiCount, v - 1)) }}
+                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
+                      >-</button>
+                      <span className="text-text-gold text-[12px] font-pixel w-6 text-center">{totalPlayers}</span>
+                      <button
+                        onClick={() => setTotalPlayers(Math.min(10, totalPlayers + 1))}
+                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
+                      >+</button>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
+                      AI Sayisi
+                    </label>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setAiCount(Math.max(1, aiCount - 1))}
+                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
+                      >-</button>
+                      <span className="text-text-gold text-[12px] font-pixel w-6 text-center">{aiCount}</span>
+                      <button
+                        onClick={() => setAiCount(Math.min(totalPlayers - 1, aiCount + 1))}
+                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
+                      >+</button>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-stone/50 text-[7px] font-pixel">
+                  {totalPlayers - aiCount} insan + {aiCount} AI = {totalPlayers} oyuncu
+                </span>
+
                 {/* Action buttons */}
                 <div className="flex flex-col items-center gap-3 w-full max-w-[280px]">
                   <PixelButton
@@ -377,6 +418,91 @@ const LobbyUI: React.FC = () => {
           {/* Bottom decorative bar */}
           <div className="h-[3px] bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Character Reveal Modal ──
+const CharacterRevealModal: React.FC = () => {
+  const characterCard = useGameStore((s) => s.characterCard)
+  const setCharacterCard = useGameStore((s) => s.setCharacterCard)
+
+  if (!characterCard) return null
+
+  const sideLabel = characterCard.player_type === 'et_can' ? 'Et u Can (Koylu)' : 'Yanki Dogmus (Sahtekar)'
+  const sideColor = characterCard.player_type === 'et_can' ? 'text-green-400' : 'text-red-400'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/80" />
+      <div
+        className="relative max-w-sm w-full mx-4 border-2 border-text-gold/60"
+        style={{
+          background: 'linear-gradient(180deg, #1a1208 0%, #14100a 50%, #1a1208 100%)',
+          boxShadow: '0 0 60px rgba(218,165,32,0.15), 0 12px 40px rgba(0,0,0,0.7)',
+        }}
+      >
+        <div className="h-[3px] bg-gradient-to-r from-transparent via-text-gold/40 to-transparent" />
+        <div className="px-8 py-6 flex flex-col items-center gap-4">
+          {/* Avatar */}
+          {characterCard.avatar_url && (
+            <img
+              src={characterCard.avatar_url}
+              alt={characterCard.name}
+              className="w-24 h-24 border-2 border-wood/50"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          )}
+
+          {/* Name */}
+          <h2
+            className="text-text-gold text-[16px] font-pixel tracking-wider"
+            style={{ textShadow: '0 0 12px rgba(218,165,32,0.3)' }}
+          >
+            {characterCard.name}
+          </h2>
+
+          {/* Role */}
+          <span className="text-stone text-[10px] font-pixel">
+            {characterCard.role_title}
+          </span>
+
+          {/* Side */}
+          <span className={`text-[10px] font-pixel ${sideColor}`}>
+            {sideLabel}
+          </span>
+
+          {/* Archetype */}
+          {characterCard.archetype_label && (
+            <span className="text-wood text-[9px] font-pixel">
+              {characterCard.archetype_label}
+            </span>
+          )}
+
+          {/* Lore */}
+          {characterCard.lore && (
+            <p className="text-text-light/70 text-[9px] font-pixel text-center leading-relaxed max-h-[120px] overflow-y-auto">
+              {characterCard.lore}
+            </p>
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 w-full mt-2">
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/40" />
+            <div className="w-1.5 h-1.5 rotate-45 border border-text-gold/40" />
+            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/40" />
+          </div>
+
+          {/* Close button */}
+          <button
+            onClick={() => setCharacterCard(null)}
+            className="px-6 py-2 border-2 border-text-gold/50 text-text-gold text-[10px] font-pixel tracking-wider hover:bg-text-gold/10 transition-colors"
+          >
+            Anladim
+          </button>
+        </div>
+        <div className="h-[3px] bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
       </div>
     </div>
   )
@@ -563,6 +689,11 @@ export const UIRoot: React.FC = () => {
       {/* Player card overlay (character inspection on map click) */}
       <div className="pointer-events-auto">
         <PlayerCardOverlay />
+      </div>
+
+      {/* Character reveal modal (shown once at game start) */}
+      <div className="pointer-events-auto">
+        <CharacterRevealModal />
       </div>
     </div>
   )

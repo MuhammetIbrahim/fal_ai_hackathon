@@ -149,7 +149,7 @@ class ConnectionManager:
                 # Bağlantı kopmuş olabilir, temizle
                 self.disconnect(game_id, player_id)
         else:
-            logger.warning(f"⚠️  Player {player_id} not found in game {game_id}")
+            logger.debug(f"Player {player_id} not found in game {game_id} (expected for AI players)")
     
     async def broadcast(
         self,
@@ -184,8 +184,8 @@ class ConnectionManager:
         
         if game_id not in self.active_connections:
             all_games = list(self.active_connections.keys())
-            logger.warning(
-                f"⚠️  No active connections for game {game_id}. "
+            logger.debug(
+                f"No active connections for game {game_id}. "
                 f"Active games: {all_games}"
             )
             return

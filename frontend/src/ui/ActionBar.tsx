@@ -21,7 +21,10 @@ export const ActionBar: React.FC = () => {
   const [text, setText] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
   const [sentWaiting, setSentWaiting] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<Blob[]>([])
 
   // Focus input when it's the player's turn
   useEffect(() => {
@@ -38,6 +41,48 @@ export const ActionBar: React.FC = () => {
   useEffect(() => {
     setSelectedTarget(null)
   }, [inputRequired?.type])
+
+  // ── Microphone handlers ──
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      mediaRecorderRef.current = mediaRecorder
+      chunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+        stream.getTracks().forEach((t) => t.stop())
+
+        // Convert to base64 and send
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1]
+          const speechType = isInVisit ? 'visit_speak' : 'speak'
+          wsManager.send('speak_audio', { audio: base64, speech_type: speechType })
+        }
+        reader.readAsDataURL(blob)
+        setIsRecording(false)
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (err) {
+      console.error('Microphone access denied:', err)
+      setIsRecording(false)
+    }
+  }, [isInVisit])
+
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop()
+    }
+  }, [])
 
   // ── Send handlers ──
 
@@ -220,6 +265,21 @@ export const ActionBar: React.FC = () => {
               Gonderildi
             </span>
           )}
+          <button
+            onMouseDown={startRecording}
+            onMouseUp={stopRecording}
+            onMouseLeave={stopRecording}
+            onTouchStart={startRecording}
+            onTouchEnd={stopRecording}
+            className={`px-3 py-2 border-2 font-pixel text-[10px] transition-all ${
+              isRecording
+                ? 'bg-red-900 border-red-500 text-red-300 animate-pulse'
+                : 'bg-[#2a1f10] border-wood text-stone hover:border-text-gold hover:text-text-light'
+            }`}
+            title="Basilı tut ve konus"
+          >
+            {isRecording ? '...' : '🎤'}
+          </button>
           <input
             ref={inputRef}
             type="text"

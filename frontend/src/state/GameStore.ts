@@ -54,6 +54,14 @@ export interface GameStore {
   notification: { message: string; type: 'info' | 'warning' | 'error' } | null
   transitioning: boolean
   showParchment: boolean
+  characterCard: {
+    name: string
+    role_title: string
+    lore: string
+    archetype_label: string
+    player_type: string
+    avatar_url?: string
+  } | null
 
   // Actions
   setConnection: (gameId: string, playerId: string) => void
@@ -84,6 +92,7 @@ export interface GameStore {
   setTransitioning: (transitioning: boolean) => void
   setShowParchment: (show: boolean) => void
   setRound: (round: number) => void
+  setCharacterCard: (card: GameStore['characterCard']) => void
 
   handleEvent: (event: string, data: Record<string, unknown>) => void
   reset: () => void
@@ -124,6 +133,7 @@ const initialState = {
   notification: null,
   transitioning: false,
   showParchment: false,
+  characterCard: null,
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -176,6 +186,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTransitioning: (transitioning) => set({ transitioning }),
   setShowParchment: (show) => set({ showParchment: show }),
   setRound: (round) => set({ round }),
+  setCharacterCard: (card) => set({ characterCard: card }),
 
   handleEvent: (event: string, data: Record<string, unknown>) => {
     const store = get()
@@ -598,13 +609,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // İnsan oyuncuya karakter bilgisi göster + myName güncelle
         set({
           myName: data.name as string,
-          notification: {
-            message: `Sen "${data.name}" rolundesin — ${data.role_title}. Tarafin: ${data.player_type === 'et_can' ? 'Et u Can (Köylü)' : 'Yanki Dogmus (Sahtekar)'}`,
-            type: 'info',
+          characterCard: {
+            name: data.name as string,
+            role_title: data.role_title as string,
+            lore: (data.lore as string) ?? '',
+            archetype_label: (data.archetype_label as string) ?? '',
+            player_type: (data.player_type as string) ?? '',
+            avatar_url: data.avatar_url as string | undefined,
           },
         })
-        // Karakter bildirimini uzun tut
-        setTimeout(() => set({ notification: null }), 12000)
         break
 
       case 'players_update': {
@@ -658,6 +671,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
         })
         setTimeout(() => set({ notification: null }), 5000)
         break
+
+      case 'stt_result': {
+        const sttText = data.text as string
+        if (sttText) {
+          set({
+            notification: {
+              message: `Algilanan: "${sttText}"`,
+              type: 'info',
+            },
+          })
+          setTimeout(() => set({ notification: null }), 3000)
+        }
+        break
+      }
 
       default:
         console.log('[GameStore] Unhandled event:', event, data)

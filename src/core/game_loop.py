@@ -83,6 +83,38 @@ async def _generate_audio_url(
         return None, 0.0
 
 
+async def _rewrite_human_speech(text: str, character, state: dict) -> str:
+    """Insan metnini karakter tarzinda yeniden yaz — AI ile ayni pipeline."""
+    try:
+        global _tts_path_added
+        if not _tts_path_added:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+            _tts_path_added = True
+        from src.services.api_client import llm_generate
+
+        personality = getattr(character, 'personality', '')
+        char_name = getattr(character, 'name', 'Karakter')
+        role_title = getattr(character, 'role_title', '')
+
+        prompt = (
+            f"Rewrite the following message in the character's speaking style.\n"
+            f"Character: {char_name} ({role_title}) — {personality}\n"
+            f"Original message: {text}\n"
+            f"Rules:\n"
+            f"- Keep the original meaning and intent\n"
+            f"- Match the character's personality and speaking style\n"
+            f"- Use the same language as the original message\n"
+            f"- Keep it concise (max 2-3 sentences)\n"
+            f"- Return ONLY the rewritten text, nothing else"
+        )
+        result = await llm_generate(prompt=prompt, system_prompt="", temperature=0.8)
+        rewritten = result.output.strip()
+        return rewritten if rewritten else text
+    except Exception as e:
+        logger.warning(f"Human speech rewrite failed: {e}")
+        return text
+
+
 async def _generate_and_broadcast_audio(
     game_id: str,
     speaker: str,
@@ -269,6 +301,9 @@ async def _game_loop_runner(game_id: str, state: Any):
         return
 
     day_limit = state.get("day_limit", 5)
+
+    # ═══ WS Bağlantı Bekleme — client'ların bağlanması için kısa süre ═══
+    await asyncio.sleep(2.0)
 
     # ═══ Character Reveal — İnsan oyunculara karakterlerini göster ═══
     for p in state["players"]:
@@ -1126,6 +1161,8 @@ async def _run_campfire_segment_ws(
             )
             if not message:
                 message = f"[{first.name} sessiz kaldi]"
+            else:
+                message = await _rewrite_human_speech(message, first, state)
         else:
             message = await generate_campfire_speech(state, first, participant_names=participant_names)
 
@@ -1151,13 +1188,11 @@ async def _run_campfire_segment_ws(
             })
             first.add_message("assistant", message)
 
-            # TTS senkron — text + audio birlikte gonder
-            audio_url, audio_duration = None, 0.0
-            if not first.is_human:
-                audio_url, audio_duration = await _generate_audio_url(
-                    message, voice=getattr(first, 'voice_id', 'alloy'),
-                    speed=getattr(first, 'voice_speed', 1.0),
-                )
+            # TTS senkron — text + audio birlikte gonder (herkes icin)
+            audio_url, audio_duration = await _generate_audio_url(
+                message, voice=getattr(first, 'voice_id', 'alloy'),
+                speed=getattr(first, 'voice_speed', 1.0),
+            )
 
             await manager.broadcast(game_id, {
                 "event": "campfire_speech",
@@ -1277,6 +1312,8 @@ async def _run_campfire_segment_ws(
             )
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
+            else:
+                message = await _rewrite_human_speech(message, speaker, state)
         else:
             message = await generate_campfire_speech(state, speaker, participant_names=participant_names)
 
@@ -1303,13 +1340,11 @@ async def _run_campfire_segment_ws(
         })
         speaker.add_message("assistant", message)
 
-        # TTS senkron — text + audio birlikte gonder
-        audio_url, audio_duration = None, 0.0
-        if not speaker.is_human:
-            audio_url, audio_duration = await _generate_audio_url(
-                message, voice=getattr(speaker, 'voice_id', 'alloy'),
-                speed=getattr(speaker, 'voice_speed', 1.0),
-            )
+        # TTS senkron — text + audio birlikte gonder (herkes icin)
+        audio_url, audio_duration = await _generate_audio_url(
+            message, voice=getattr(speaker, 'voice_id', 'alloy'),
+            speed=getattr(speaker, 'voice_speed', 1.0),
+        )
 
         # Broadcast text + audio together
         await manager.broadcast(game_id, {
@@ -1425,6 +1460,8 @@ async def _run_room_conversation_ws(
             )
             if not speech_content:
                 speech_content = f"[{current.name} sessiz kaldi]"
+            else:
+                speech_content = await _rewrite_human_speech(speech_content, current, state)
         else:
             speech_content = await generate_1v1_speech(
                 state, current, opponent, exchanges, campfire_summary
@@ -1438,13 +1475,11 @@ async def _run_room_conversation_ws(
         exchanges.append(exchange_entry)
         current.add_message("assistant", speech_content)
 
-        # TTS senkron — text + audio birlikte gonder
-        audio_url, audio_duration = None, 0.0
-        if not current.is_human:
-            audio_url, audio_duration = await _generate_audio_url(
-                speech_content, voice=getattr(current, 'voice_id', 'alloy'),
-                speed=getattr(current, 'voice_speed', 1.0),
-            )
+        # TTS senkron — text + audio birlikte gonder (herkes icin)
+        audio_url, audio_duration = await _generate_audio_url(
+            speech_content, voice=getattr(current, 'voice_id', 'alloy'),
+            speed=getattr(current, 'voice_speed', 1.0),
+        )
 
         visit_context = f"visit:{owner.name}:{visitor.name}"
 
@@ -1804,6 +1839,8 @@ async def _run_persistent_campfire_ws(
             )
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
+            else:
+                message = await _rewrite_human_speech(message, speaker, state)
         else:
             message = await generate_campfire_speech(
                 state, speaker, participant_names=participant_names,
@@ -1834,14 +1871,12 @@ async def _run_persistent_campfire_ws(
             })
         speaker.add_message("assistant", message)
 
-        # TTS senkron
-        audio_url, audio_duration = None, 0.0
-        if not speaker.is_human:
-            audio_url, audio_duration = await _generate_audio_url(
-                message,
-                voice=getattr(speaker, "voice_id", "alloy"),
-                speed=getattr(speaker, "voice_speed", 1.0),
-            )
+        # TTS senkron (herkes icin)
+        audio_url, audio_duration = await _generate_audio_url(
+            message,
+            voice=getattr(speaker, "voice_id", "alloy"),
+            speed=getattr(speaker, "voice_speed", 1.0),
+        )
 
         await manager.broadcast(game_id, {
             "event": "campfire_speech",

@@ -155,8 +155,10 @@ async def llm_generate(
         client = _get_gemini_client()
         config_kwargs: dict = {
             "temperature": temperature,
-            "thinking_config": types.ThinkingConfig(thinking_budget=0),
+            "thinking_config": types.ThinkingConfig(thinking_budget=1024),
         }
+        if reasoning:
+            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=8192)
         if system_prompt:
             config_kwargs["system_instruction"] = system_prompt
         config = types.GenerateContentConfig(**config_kwargs)
@@ -183,7 +185,7 @@ async def llm_stream(
         client = _get_gemini_client()
         config_kwargs: dict = {
             "temperature": temperature,
-            "thinking_config": types.ThinkingConfig(thinking_budget=0),
+            "thinking_config": types.ThinkingConfig(thinking_budget=1024),
         }
         if system_prompt:
             config_kwargs["system_instruction"] = system_prompt
