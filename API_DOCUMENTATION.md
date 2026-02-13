@@ -56,6 +56,9 @@ Tum hatalar ayni yapida doner:
 | 404 | `CHAR_NOT_FOUND` | Karakter bulunamadi |
 | 404 | `WORLD_NOT_FOUND` | Dunya bulunamadi |
 | 404 | `JOB_NOT_FOUND` | Job bulunamadi |
+| 404 | `CONV_NOT_FOUND` | Konusma bulunamadi |
+| 422 | `CONV_ENDED` | Konusma sona ermis |
+| 422 | `MAX_TURNS` | Maksimum tur sayisina ulasildi |
 | 422 | `VALIDATION_ERROR` | Gecersiz input |
 | 502 | `SERVICE_ERROR` | fal.ai servisi hatasi |
 | 500 | `INTERNAL_ERROR` | Beklenmeyen sunucu hatasi |
@@ -625,6 +628,219 @@ Sahne arka plan gorseli uret.
 
 ---
 
+## Konusmalar (Conversations)
+
+Birden fazla AI karakter arasinda cok turlu, orkestre edilmis konusma yonetimi. Orkestrator (meta-LLM) her turda hangi karakterin konusacagini otomatik secer.
+
+### `POST /v1/conversations`
+
+Yeni konusma olustur. En az 2 karakter ID'si gereklidir.
+
+**Request Body:**
+```json
+{
+  "character_ids": ["chr_a1b2c3d4", "chr_e5f6g7h8", "chr_i9j0k1l2"],
+  "world_id": "a1b2c3d4e5f67890",
+  "topic": "Gecen gece ormandan gelen sesler hakkinda tartisma",
+  "max_turns": 20
+}
+```
+
+| Alan | Tip | Zorunlu | Varsayilan | Aciklama |
+|------|-----|---------|------------|----------|
+| `character_ids` | list[str] | Evet | — | Katilimci karakter ID'leri (min 2) |
+| `world_id` | string | Hayir | — | Onceden olusturulan dunya ID'si |
+| `topic` | string | Hayir | — | Konusma konusu / baslangic tetikleyicisi |
+| `max_turns` | int | Hayir | `20` | Maksimum tur sayisi (2-100) |
+
+**Response `201`:**
+```json
+{
+  "id": "conv_a1b2c3d4e5f6",
+  "character_ids": ["chr_a1b2c3d4", "chr_e5f6g7h8", "chr_i9j0k1l2"],
+  "status": "active",
+  "created_at": "2026-02-12T19:00:00+00:00"
+}
+```
+
+### `GET /v1/conversations`
+
+Konusma listesi (paginated).
+
+**Query Params:**
+| Param | Tip | Varsayilan | Aciklama |
+|-------|-----|------------|----------|
+| `limit` | int | 50 | Sayfa basina kayit (1-100) |
+| `offset` | int | 0 | Atlanacak kayit sayisi |
+
+**Response `200`:**
+```json
+{
+  "items": [
+    {"id": "conv_a1b2c3d4e5f6", "character_ids": [...], "status": "active", ...},
+    {"id": "conv_x7y8z9w0a1b2", "character_ids": [...], "status": "ended", ...}
+  ],
+  "total": 2,
+  "limit": 50,
+  "offset": 0
+}
+```
+
+### `GET /v1/conversations/{conv_id}`
+
+Konusma detayi getir — tum turlar dahil.
+
+**Response `200`:**
+```json
+{
+  "id": "conv_a1b2c3d4e5f6",
+  "character_ids": ["chr_a1b2c3d4", "chr_e5f6g7h8"],
+  "topic": "Gecen gece ormandan gelen sesler",
+  "status": "active",
+  "turns": [
+    {"role": "kullanici", "content": "Gecen gece neler oldu?"},
+    {"role": "karakter", "character_id": "chr_a1b2c3d4", "character_name": "Theron", "content": "Duydum. Ama orman her gece ses cikarir."},
+    {"role": "karakter", "character_id": "chr_e5f6g7h8", "character_name": "Mirra", "content": "Bu seferki farkli, Theron. Bunu sen de biliyorsun."}
+  ],
+  "created_at": "2026-02-12T19:00:00+00:00",
+  "updated_at": "2026-02-12T19:05:30+00:00"
+}
+```
+
+**Response `404`:**
+```json
+{
+  "error": {
+    "code": "CONV_NOT_FOUND",
+    "message": "Konusma 'conv_xyz' bulunamadi"
+  }
+}
+```
+
+### `POST /v1/conversations/{conv_id}/turn`
+
+Konusmada bir tur ilerlet. Sistem su adimlari otomatik yapar:
+
+1. Tum karakterlerden **tepki** toplar (paralel)
+2. **Orkestrator** (meta-LLM) tepkilere bakarak siradaki konusmaciyi secer
+3. Secilen karakter **konusturulur** (speak)
+4. Tur store'a kaydedilir
+
+**Request Body:**
+```json
+{
+  "user_message": "Peki bu seslerin kaynagi ne olabilir?",
+  "voice": "alloy",
+  "speed": 1.0
+}
+```
+
+| Alan | Tip | Zorunlu | Varsayilan | Aciklama |
+|------|-----|---------|------------|----------|
+| `user_message` | string | Hayir | — | Opsiyonel kullanici mesaji (tetikleyici) |
+| `voice` | string | Hayir | `alloy` | TTS ses ID (stream icin): `alloy`, `zeynep`, `ali` |
+| `speed` | float | Hayir | `1.0` | TTS konusma hizi (0.5 — 2.0) |
+
+**Response `200`:**
+```json
+{
+  "conversation_id": "conv_a1b2c3d4e5f6",
+  "turn_number": 3,
+  "speaker": {
+    "role": "karakter",
+    "character_id": "chr_a1b2c3d4",
+    "character_name": "Theron",
+    "content": "Kaynak mi? Orman kendi dilinde konusuyor. Onu dinlemesini bilenler anlar."
+  },
+  "reactions": [
+    {
+      "character_id": "chr_e5f6g7h8",
+      "character_name": "Mirra",
+      "reaction": "Theron yine gizliyor. Ormani bu kadar iyi tanimasi tesaduf olamaz.",
+      "wants_to_speak": true
+    },
+    {
+      "character_id": "chr_i9j0k1l2",
+      "character_name": "Dorian",
+      "reaction": "Ikisi de bir seyler biliyor ama paylasmiyor.",
+      "wants_to_speak": false
+    }
+  ],
+  "orchestrator_reason": "Theron konuya en yakin karakter ve tepkisi en guclu"
+}
+```
+
+| Alan | Tip | Aciklama |
+|------|-----|----------|
+| `speaker` | object | Konusan karakterin mesaji |
+| `reactions` | list | Diger karakterlerin ic tepkileri |
+| `reactions[].wants_to_speak` | bool | `true` = sonraki turda konusmak istiyor |
+| `orchestrator_reason` | string | Orkestrator'un secim gerekceleri |
+
+### `POST /v1/conversations/{conv_id}/turn/stream`
+
+Konusma turu + ses, SSE ile gercek zamanli streaming. `/turn` endpoint'inin streaming versiyonu.
+
+**Request Body:** `/turn` ile ayni.
+
+**Response:** `text/event-stream` (SSE)
+
+**SSE Event'leri (sirasiyla):**
+
+| Event | Data | Aciklama |
+|-------|------|----------|
+| `reactions` | `{"reactions": [{...}, ...]}` | Tum karakterlerin tepkileri |
+| `speaker` | `{"character_id": "...", "character_name": "...", "reason": "..."}` | Orkestrator'un sectigi konusmaci |
+| `text_token` | `{"token": "Ben"}` | LLM'den gelen her token |
+| `sentence_ready` | `{"sentence": "Ben Theron.", "index": 0}` | Tamamlanan cumle |
+| `audio_chunk` | `{"chunk_index": 0, "audio_base64": "...", "format": "pcm16", "sample_rate": 16000, "channels": 1, "sentence_index": 0}` | Cumlenin ses chunk'i |
+| `done` | `{"conversation_id": "...", "turn_number": 3, "speaker": {...}, "reactions": [...], "orchestrator_reason": "...", "total_audio_chunks": 8, "total_sentences": 3}` | Stream tamamlandi |
+| `error` | `{"code": "TURN_STREAM_ERROR", "message": "..."}` | Hata olustu |
+
+**curl Ornegi:**
+```bash
+curl -N -X POST http://localhost:9000/v1/conversations/<conv_id>/turn/stream \
+  -H "Authorization: Bearer demo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{"user_message": "Devam edin", "voice": "alloy"}'
+```
+
+> **Not:** Oncelikle `reactions` ve `speaker` event'leri gelir (orkestrasyon asamasi), sonra `text_token` → `sentence_ready` → `audio_chunk` akisi baslar. Client tarafinda text, audio ve orkestrasyon bilgileri ayri ayri handle edilmeli.
+
+### `POST /v1/conversations/{conv_id}/inject`
+
+Konusmaya dis mesaj enjekte et (anlatici/sistem mesaji). Karakterler bu mesaji baglam olarak gorur ama yanit uretmez.
+
+**Request Body:**
+```json
+{
+  "message": "Uzaktan bir canavar kuksemesi duyuldu. Herkes sessizlesti.",
+  "sender_name": "Anlatici"
+}
+```
+
+| Alan | Tip | Zorunlu | Varsayilan | Aciklama |
+|------|-----|---------|------------|----------|
+| `message` | string | Evet | — | Enjekte edilecek mesaj |
+| `sender_name` | string | Hayir | `Anlatici` | Gonderen adi |
+
+**Response `200`:**
+```json
+{
+  "role": "anlatici",
+  "character_name": "Anlatici",
+  "content": "Uzaktan bir canavar kuksemesi duyuldu. Herkes sessizlesti."
+}
+```
+
+### `DELETE /v1/conversations/{conv_id}`
+
+Konusmayi sonlandir. Status `ended` olur.
+
+**Response `204`:** Icerik yok.
+
+---
+
 ## Asenkron Isler (Jobs)
 
 TTS ve gorsel uretimi asenkron calisir. Sonuclari job polling ile alin.
@@ -767,6 +983,38 @@ curl http://localhost:9000/v1/jobs/<job_id> \
   -H "Authorization: Bearer demo-key-123"
 ```
 
+### 6. Konusma olustur (cok karakterli)
+```bash
+# Konusma olustur
+curl -X POST http://localhost:9000/v1/conversations \
+  -H "Authorization: Bearer demo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "character_ids": ["<char_id_1>", "<char_id_2>"],
+    "topic": "Gecen gece ormandan gelen garip sesler"
+  }'
+```
+
+### 7. Konusma turu ilerlet
+```bash
+# Orkestrator otomatik konusmaci secer
+curl -X POST http://localhost:9000/v1/conversations/<conv_id>/turn \
+  -H "Authorization: Bearer demo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+### 8. Konusmaya anlatici mesaji enjekte et
+```bash
+curl -X POST http://localhost:9000/v1/conversations/<conv_id>/inject \
+  -H "Authorization: Bearer demo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Uzaktan bir canavar kuksemesi duyuldu.",
+    "sender_name": "Anlatici"
+  }'
+```
+
 ---
 
 ## Calistirma
@@ -805,6 +1053,13 @@ open http://localhost:9000/docs
 | `POST` | `/v1/characters/{id}/speak/stream` | Karakter konustur + ses (SSE) | **Stream** |
 | `POST` | `/v1/characters/{id}/react` | Karakter tepkisi | Hayir |
 | `GET` | `/v1/characters/{id}/memory` | Hafiza getir | Hayir |
+| `POST` | `/v1/conversations` | Konusma olustur | Hayir |
+| `GET` | `/v1/conversations` | Konusma listesi | Hayir |
+| `GET` | `/v1/conversations/{id}` | Konusma detayi | Hayir |
+| `POST` | `/v1/conversations/{id}/turn` | Konusma turu ilerlet | Hayir |
+| `POST` | `/v1/conversations/{id}/turn/stream` | Konusma turu + ses (SSE) | **Stream** |
+| `POST` | `/v1/conversations/{id}/inject` | Mesaj enjekte et | Hayir |
+| `DELETE` | `/v1/conversations/{id}` | Konusma sonlandir | Hayir |
 | `POST` | `/v1/voice/tts` | Metin → Ses | **Evet (202)** |
 | `POST` | `/v1/voice/tts/stream` | Metin → Ses (SSE) | **Stream** |
 | `POST` | `/v1/voice/stt` | Ses → Metin | Hayir |
