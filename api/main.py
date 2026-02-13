@@ -99,12 +99,14 @@ def create_app() -> FastAPI:
     from api.voice.router import router as voice_router
     from api.images.router import router as images_router
     from api.conversations.router import router as conversations_router
+    from api.llm.router import router as llm_router
 
     app.include_router(worlds_router)
     app.include_router(characters_router)
     app.include_router(voice_router)
     app.include_router(images_router)
     app.include_router(conversations_router)
+    app.include_router(llm_router)
     app.include_router(jobs_router)
 
     return app

@@ -628,6 +628,68 @@ Sahne arka plan gorseli uret.
 
 ---
 
+## LLM (Dil Modeli)
+
+Ham LLM erisimi. Herhangi bir prompt/system_prompt kombinasyonu ile metin uretimi.
+
+### `POST /v1/llm/generate`
+
+Tam LLM yaniti (senkron).
+
+**Request Body:**
+```json
+{
+  "prompt": "Sence bu koyde neler oluyor?",
+  "system_prompt": "Sen Theron adinda bir demircisin...",
+  "model": "gemini-2.5-flash",
+  "temperature": 0.8,
+  "max_tokens": null,
+  "reasoning": null
+}
+```
+
+| Alan | Tip | Zorunlu | Varsayilan | Aciklama |
+|------|-----|---------|------------|----------|
+| `prompt` | string | Evet | — | Ana prompt / kullanici mesaji |
+| `system_prompt` | string | Hayir | `""` | System instruction |
+| `model` | string | Hayir | `gemini-2.5-flash` | Model adi (`google/` prefix'i otomatik strip edilir) |
+| `temperature` | float | Hayir | `0.8` | Yaraticilik (0.0 — 2.0) |
+| `max_tokens` | int | Hayir | null | Maksimum output token |
+| `reasoning` | bool | Hayir | null | Extended thinking aktif mi |
+
+**Response `200`:**
+```json
+{
+  "output": "Bu koyde bir seyler donuyor ama kimse konusmuyor..."
+}
+```
+
+### `POST /v1/llm/stream`
+
+Token token streaming (SSE).
+
+**Request Body:** `/v1/llm/generate` ile ayni (`reasoning` haric).
+
+**Response:** `text/event-stream` (SSE)
+
+**SSE Event'leri:**
+
+| Event | Data | Aciklama |
+|-------|------|----------|
+| `text_token` | `{"token": "Bu"}` | LLM'den gelen her token |
+| `done` | `{"output": "tam metin"}` | Stream tamamlandi |
+| `error` | `{"code": "LLM_ERROR", "message": "..."}` | Hata olustu |
+
+**curl Ornegi:**
+```bash
+curl -N -X POST http://localhost:9000/v1/llm/generate \
+  -H "Authorization: Bearer demo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Merhaba de", "system_prompt": "Kisa yanit ver", "temperature": 0.5}'
+```
+
+---
+
 ## Konusmalar (Conversations)
 
 Birden fazla AI karakter arasinda cok turlu, orkestre edilmis konusma yonetimi. Orkestrator (meta-LLM) her turda hangi karakterin konusacagini otomatik secer.
@@ -1053,6 +1115,8 @@ open http://localhost:9000/docs
 | `POST` | `/v1/characters/{id}/speak/stream` | Karakter konustur + ses (SSE) | **Stream** |
 | `POST` | `/v1/characters/{id}/react` | Karakter tepkisi | Hayir |
 | `GET` | `/v1/characters/{id}/memory` | Hafiza getir | Hayir |
+| `POST` | `/v1/llm/generate` | Ham LLM yaniti | Hayir |
+| `POST` | `/v1/llm/stream` | Ham LLM streaming (SSE) | **Stream** |
 | `POST` | `/v1/conversations` | Konusma olustur | Hayir |
 | `GET` | `/v1/conversations` | Konusma listesi | Hayir |
 | `GET` | `/v1/conversations/{id}` | Konusma detayi | Hayir |

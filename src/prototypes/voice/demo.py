@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from dotenv import load_dotenv
 load_dotenv()
 
-from fal_services import configure
+from src.services.api_client import configure
 from player import speak, speak_streaming
 
 

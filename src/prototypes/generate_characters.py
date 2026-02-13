@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from fal_services import llm_generate, configure
+from src.services.api_client import llm_generate, configure
 
 # ── Data ──────────────────────────────────────────────────
 DATA_PATH = Path(__file__).parent / "data.json"

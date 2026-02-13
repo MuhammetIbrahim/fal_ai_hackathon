@@ -91,7 +91,7 @@ from game import (
 # DATABASE IMPORTS
 # ═══════════════════════════════════════════════════
 from src.core.database import db, GAMES
-from fal_services import generate_background
+from src.services.api_client import generate_background
 
 
 # ═══════════════════════════════════════════════════

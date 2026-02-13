@@ -6,6 +6,12 @@ class Settings(BaseSettings):
     # FAL AI Configuration
     # ═══════════════════════════════════════════════════
     FAL_KEY: str = ""
+
+    # ═══════════════════════════════════════════════════
+    # Character AI API (B2B API — port 9000)
+    # ═══════════════════════════════════════════════════
+    CHARACTER_API_URL: str = "http://localhost:9000"
+    CHARACTER_API_KEY: str = "demo-key-123"
     
     # ═══════════════════════════════════════════════════
     # Database Configuration

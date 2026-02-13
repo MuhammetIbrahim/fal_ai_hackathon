@@ -18,7 +18,7 @@ import sounddevice as sd
 
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-from fal_services import tts_stream
+from src.services.api_client import tts_stream
 
 
 async def speak(text: str, speed: float = 1.0) -> None:

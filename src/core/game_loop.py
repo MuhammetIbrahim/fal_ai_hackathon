@@ -70,7 +70,7 @@ async def _generate_audio_url(
         if not _tts_path_added:
             sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
             _tts_path_added = True
-        from fal_services import tts_generate
+        from src.services.api_client import tts_generate
 
         clean_content = _clean_text_for_tts(content)
         if not clean_content or len(clean_content) < 3:
