@@ -50,16 +50,21 @@ Neden WebSocket? HTTP request/response modeli gercek zamanli ses streaming icin 
 
 ### 1.4 Backend — FastAPI (Game Engine)
 
-Bizim yazdigimiz ana kod burasi. 4 temel dosyadan olusur:
+Bizim yazdigimiz ana kod burasi. B2B API olarak modular monolith mimarisinde:
 
-| Dosya | Sorumluluk |
-|-------|-----------|
-| `game_manager.py` | Tur yonetimi, faz gecisleri (gunduz/gece/oylama), olum/kazanan kontrolu |
-| `ws_handler.py` | WebSocket baglanti yonetimi, ses verisi yonlendirme |
-| `freya_service.py` | Freya abstraction layer — agent olusturma, yonetme, prompt gonderme |
-| `fal_service.py` | fal.ai API cagrilari — avatar uretme, muzik/SFX uretme |
+| Modul | Dosyalar | Sorumluluk |
+|-------|----------|-----------|
+| `api/characters/` | router, schema, service, memory | Karakter CRUD, kisilik uretimi, diyalog, sesli konusma |
+| `api/conversations/` | router, schema, service | Coklu karakter konusma orkestratoru (meta-LLM ile sira secimi) |
+| `api/worlds/` | router, schema, service | Dunya/senaryo olusturma ve yonetimi |
+| `api/voice/` | router, schema, service | TTS/STT endpoint'leri (streaming + generate) |
+| `api/images/` | router, schema, service | FLUX ile avatar/arka plan uretimi |
+| `fal_services.py` | tek dosya | Freya TTS/STT + Gemini LLM + FLUX — tum dis servis cagrilari |
+| `api/main.py` | tek dosya | FastAPI app factory, CORS, lifespan, router kayit |
+| `api/config.py` | tek dosya | Pydantic Settings — tum API key ve model config |
+| `api/store.py` | tek dosya | In-memory veri deposu (characters, worlds, conversations) |
 
-Teknoloji: **FastAPI + Python (async)**
+Teknoloji: **FastAPI + Python (async) + Pydantic v2**
 
 ### 1.5 Freya.ai Katmani
 
@@ -81,10 +86,13 @@ Her AI karakter icin ayri bir Freya agent instance'i calisir:
 | Zeynep | Supheci | Dedektif | Freya LLM dusunur + TTS ile streaming konusur |
 | ... | ... | ... | 4-8 karakter arasi |
 
-**Kritik karar:** LLM icin Google Gemini Flash API'yi dogrudan kullaniyoruz (OpenRouter middleman yok). TTS/STT icin fal.ai Freya. Bu sayede:
-- LLM latency minimumda (middleman yok, ~0.45s first token)
-- TTS streaming ile ilk ses ~1.30s
-- Gemini thinking OFF — dusunme suresi sifir, aninda token uretimi
+**Kritik karar:** LLM icin Google Gemini Flash API'yi dogrudan kullaniyoruz (fal.ai OpenRouter middleman kaldirildi). TTS/STT icin fal.ai Freya. Bu sayede:
+- LLM ilk token **~612ms** (middleman yok, Gemini direkt API)
+- Pipeline ilk ses (LLM+TTS) **~1.95s** — 2 saniyenin altinda!
+- Gemini `thinking_budget=0` — dusunme suresi sifir, aninda token uretimi
+- Clause bazli bolme (`,;:.!?`) + 40 char limit ile TTS'e daha kisa parcalar gidiyor
+- asyncio.Queue ile LLM ve TTS paralel calisiyor — text gelirken ses de uretiliyor
+- 3 paralel TTS streaming ortalama **~1.3s** TTFA
 
 ### 1.6 fal.ai Katmani
 
@@ -105,6 +113,7 @@ Tum fal.ai cagrilari **async** calisiyor (`fal_client.submit_async`). Oyun akmay
 | LangGraph + ayri LLM | Freya'nin kendi LLM'i yeterli, ayri pipeline gereksiz karmasiklik |
 | Aurora Lipsync | Ekstra gecikme yaratiyor (~1s), demo icin gorsel avatar yeterli |
 | MiniMax TTS | Freya'nin kendi TTS'i streaming destekliyor, ayri TTS gereksiz |
+| fal.ai OpenRouter LLM | Gemini direkt API'ye gecildi — middleman kaldirildi, %48 latency dususu |
 
 ---
 
@@ -160,18 +169,19 @@ Turkce konus. Kisa ve sert cumleler kur."
 
 Bu prompt **her tur guncellenir** — kim oldu, kim hayatta, gecen turda ne konusuldu gibi bilgiler eklenir.
 
-### 2.3 Zamanlama
+### 2.3 Zamanlama (Gercek Benchmark Sonuclari)
 
 | Adim | Sure |
 |------|------|
 | Oyuncu konusur | Degisken |
-| Freya STT + duygu | ~200ms |
+| Freya STT | ~300-500ms |
 | Game Engine islem | ~50ms |
-| Gemini Flash LLM ilk token | ~450ms |
-| Freya TTS ilk chunk | ~850ms |
-| **Toplam ilk ses yaniti** | **~1.30 saniye** |
+| Gemini Flash LLM ilk token | **~612ms** |
+| Freya TTS ilk chunk (pipeline) | **~1.95s** |
+| TTS-only ilk ses | **~1.1-1.7s** |
+| 3x Concurrent TTS TTFA | **~1.3s avg** |
 
-Streaming sayesinde oyuncu ~1.3 saniye icinde AI karakterin konusmaya basladigini duyar. LLM (Gemini direkt API) + TTS (fal.ai Freya) pipeline'i paralel calisir, tum cevap bitmeden ses gelmeye baslar.
+Streaming sayesinde oyuncu **2 saniyenin altinda** AI karakterin konusmaya basladigini duyar. LLM (Gemini direkt API, thinking OFF) + TTS (fal.ai Freya) pipeline'i asyncio.Queue ile paralel calisir, tum cevap bitmeden ses gelmeye baslar.
 
 ---
 
@@ -205,24 +215,26 @@ Her faz gecisinde **Beatoven** ile yeni ambiyans muzigi ve SFX uretilir.
 ## 4. Sorumluluk Dagitimi
 
 ### Biz Yaziyoruz (Bizim Kodumuz)
-- Game Engine (FastAPI + Python) — tur yonetimi, state, oylama
+- B2B Character AI API (FastAPI + Python) — modular monolith, domain-based
+- Conversation Orchestrator — meta-LLM ile coklu karakter konusma yonetimi
+- Gemini LLM entegrasyonu — google-genai ile direkt API, thinking OFF
+- Streaming pipeline — asyncio.Queue ile LLM→TTS paralel, clause-based split, 40 char limit
 - React UI (React + Tailwind) — tum oyun ekranlari
 - WebSocket handler — ses ve data yonlendirme
-- Freya abstraction layer — agent yonetimi
-- fal.ai service layer — avatar/muzik API cagrilari
+- fal_services.py — TTS/STT/LLM/FLUX tek modülde
 - **Prompt tasarimi** — her karakter icin kisilik + rol + kontekst prompt'lari
 
-### Freya Yapiyor (3rd Party — Hackathon Sponsoru)
-- LLM (dil modeli) — karakter icin dusunme/karar verme
-- TTS (metin → ses) — streaming ses uretimi
-- STT (ses → metin) — oyuncunun sesini anlama
-- Duygu analizi — ses tonundan duygu cikarma
-- Streaming — dusuk latency gercek zamanli ses
+### Google Gemini (Direkt API)
+- LLM (dil modeli) — karakter AI dusunmesi ve yanit uretimi
+- Gemini 2.5 Flash — thinking_budget=0 ile minimum latency (~0.45s first token)
+- Streaming — token token uretim, TTS ile paralel calisiyor
 
-### fal.ai Yapiyor (3rd Party — Hackathon Sponsoru)
-- FLUX — AI ile karakter avatar goruntusu uretimi
-- Beatoven Music — faz bazli ambiyans muzik uretimi
-- Beatoven SFX — olay bazli ses efektleri uretimi
+### Freya / fal.ai (3rd Party — Hackathon Sponsoru)
+- TTS (metin → ses) — streaming PCM16 ses uretimi (Freya)
+- STT (ses → metin) — oyuncunun sesini anlama (Freya)
+- FLUX — AI ile karakter avatar goruntusu uretimi (fal.ai)
+- Beatoven Music — faz bazli ambiyans muzik uretimi (fal.ai)
+- Beatoven SFX — olay bazli ses efektleri uretimi (fal.ai)
 
 ---
 
@@ -231,13 +243,14 @@ Her faz gecisinde **Beatoven** ile yeni ambiyans muzigi ve SFX uretilir.
 | Katman | Teknoloji |
 |--------|-----------|
 | Frontend | React + Tailwind CSS + Vite |
-| Backend | FastAPI + Python (async) |
-| Realtime | WebSocket (bidirectional) |
-| Voice AI | Freya.ai (agent-based) |
+| Backend | FastAPI + Python (async) + Pydantic v2 |
+| LLM | Google Gemini 2.5 Flash (direkt API, google-genai) |
+| TTS | Freya TTS (fal.ai, streaming PCM16) |
+| STT | Freya STT (fal.ai) |
 | Image Gen | fal.ai FLUX |
 | Music/SFX | fal.ai Beatoven |
-| Lipsync | YOK (kaldirildi) |
-| Ayri LLM | YOK (Freya icinde) |
+| Realtime | SSE (Server-Sent Events) + WebSocket |
+| Orchestration | Meta-LLM ile konusma sira yonetimi |
 
 ---
 
@@ -247,7 +260,17 @@ Her faz gecisinde **Beatoven** ile yeni ambiyans muzigi ve SFX uretilir.
 Freya'ya karakter bilgisini verip "sen dusun, sen konus" dememiz yeterli. Ayri LLM + ayri TTS pipeline'i kurmak yerine Freya'nin built-in ozelliklerini kullaniyoruz. Bu hackathon'da zamanimiz sinirli — 45 dakikalik demo icin bu cok kritik.
 
 ### Dusuk Latency
-Eski mimari (fal.ai → OpenRouter → Gemini → TTS) ile ~2.5 saniye bekleme vardi. Yeni mimaride Gemini direkt API + Freya TTS streaming ile ilk ses ~1.30 saniye (%48 dusus). Bu oyun deneyimi icin devasa bir fark.
+Eski mimari (fal.ai → OpenRouter → Gemini → TTS) ile ~5.6 saniye ilk ses bekleme vardi. 5 optimizasyon adimi ile **~1.95 saniyeye** dustu (**2.9x iyilesme**):
+
+| Optimizasyon | Etki |
+|-------------|------|
+| Streaming endpoint'leri (SSE) | Ilk chunk beklemeden gonderim |
+| Clause-based split (`,;:.!?`) | Daha erken TTS tetikleme |
+| asyncio.Queue (LLM∥TTS paralel) | LLM beklemeden TTS baslar |
+| 40 char limit split | Uzun cumlelerde erken ses |
+| OpenRouter → Gemini direkt + Thinking OFF | LLM ilk token 612ms |
+
+**Benchmark sonucu:** Pipeline TTFA = 1949ms, LLM TTFT = 612ms, TTS-only = 1.1-1.7s
 
 ### Platform Kullanimi
 - **Freya:** Projenin kalbinde. Her AI karakter = 1 Freya agent. Dinleme de Freya. Juri icin Freya kullanim skoru yuksek.

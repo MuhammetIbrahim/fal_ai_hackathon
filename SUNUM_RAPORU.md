@@ -1,4 +1,4 @@
-# AI vs İnsan: Ocak Yemini — B2B Odaklı Sunum Raporu
+# AI vs İnsan: Ocak Yemini — Sunum Raporu
 
 ---
 
@@ -11,42 +11,42 @@
 > *"Among Us ile Dungeon Master'ın sesli buluştuğu nokta"*
 
 **Alt Başlık:**
-> Voice-First Character AI Platform — Oyun Stüdyoları İçin Hazır API
+> Voice-First Character AI Platform — Sesli Karakter Deneyimi İçin Hazır API
 
 **Giriş Konuşması:**
-> "Biz ATTN ekibi, bugün size sadece bir oyun değil, **her oyun stüdyosunun kendi dünyasına entegre edebileceği bir Sesli Karakter Zekası platformu** sunmaya geldik. Gördüğünüz oyun, bu platformun ilk ve en agresif showcase'i."
+> "Biz ATTN ekibi. Bugün size sadece bir oyun değil, **sesli karakter deneyimi isteyen her ürüne entegre edilebilecek bir Voice AI platformu** sunmaya geldik. Ve bu platformun gücünü kanıtlamak için en agresif showcase'ini kendimiz yaptık: **Ocak Yemini.**"
 
 ---
 
-## SLAYT 2: Oyun Felsefesi / Platform Felsefesi (40 sn)
+## SLAYT 2: Felsefe ve Oyun (40 sn)
 
-**Görsel:** Minimalist bir sahne — bir tarafta "metin kutusu" (eski dünya), diğer tarafta "ses dalgası" (yeni dünya). Arada keskin bir çizgi.
+**Görsel:** Ocak Yemini oyunundan bir sahne — karakter konuşurken ses dalgası animasyonu, karanlık fantezi atmosferi.
 
 **Mesaj:**
-> "Neden bu platformu yapıyoruz?"
+> "Ses ile etkileşimin geleceğini inşa ediyoruz."
 
 **Anlatım:**
-> "Bizim felsefemiz: **Yapay zeka karakterleri artık metin kutularına hapsolmamalı.** Bugün oyun stüdyoları NPC diyalog sistemi için hâlâ statik script ağaçları kullanıyor. Biz bunu kökünden değiştiriyoruz."
+> "Felsefemiz basit: **Yapay zeka karakterleriyle etkileşim artık klavyeden değil, sesinizden geçmeli.** Bir karaktere soru sorduğunuzda, 1.3 saniye içinde size kendi sesiyle, kendi kişiliğiyle yanıt vermeli. Metin yok, bekleme yok — sadece doğal bir sesli diyalog."
 >
-> "Oyuncunun bir NPC ile **gerçek bir insanla konuşuyormuş gibi** etkileşime girmesini hedefliyoruz. Ama asıl müşterimiz oyuncu değil — **bu deneyimi kendi oyununa entegre etmek isteyen stüdyo.**"
+> "Bunu kanıtlamak için en zor showcase'i seçtik: **Ocak Yemini** — 1 gerçek oyuncunun 4-8 AI karakterle **tamamen sesli** oynayabileceği bir sosyal çıkarsama oyunu. Among Us'ın gerilimi, Dungeon Master'ın atmosferi, ama her şey **ses üzerinden.** Oyuncu mikrofona konuşuyor, AI karakterler kendi sesleriyle anında yanıt veriyor. Ve bu oyunun arkasındaki tüm altyapı, tek bir API çağrısıyla erişilebilir durumda."
 
-**B2B DNA'sı — 3 Temel Söz:**
+**3 Temel Söz:**
 
 | # | Söz | Açıklama |
 |---|-----|----------|
-| 1 | **Tutarlı Karakter Hafızası** | Karakterler önceki konuşmaları hatırlar, çelişkiye düşmez |
-| 2 | **Ses-Öncelikli Mimari** | TTS/STT entegrasyonu API seviyesinde, stüdyo sadece endpoint çağırır |
-| 3 | **Çok-Kiracılı (Multi-Tenant)** | Her stüdyo kendi dünyasını, kurallarını, karakterlerini tanımlar |
+| 1 | **Ses-Öncelikli Mimari** | TTS/STT pipeline API seviyesinde hazır, tek endpoint çağrısıyla sesli karakter konuşması |
+| 2 | **Tutarlı Karakter Hafızası** | Karakterler önceki konuşmaları hatırlar, çelişkiye düşmez |
+| 3 | **Stüdyoya Özel İzolasyon** | Her stüdyo kendi dünyasını, kurallarını, karakterlerini bağımsız olarak tanımlar |
 
 ---
 
-## SLAYT 3: Mekanik ve Core Loop / Platform Mimarisi (35 sn)
+## SLAYT 3: Mimari ve Teknik Derinlik (35 sn)
 
 **Görsel:** İki katmanlı mimari şeması:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  B2B API KATMANI (Stüdyoların Kullandığı)           │
+│  VOICE AI API (Stüdyoların Kullandığı)               │
 │                                                       │
 │  Worlds API ────→ Characters API ────→ Voice API      │
 │  (Dünya yarat)    (Karakter üret)      (Konuştur)     │
@@ -68,26 +68,34 @@
 │  Sabah ───→ Tartışma ───→ Serbest Dolaşım ───→ Oy    │
 │  (Kehanet)   (Ateş başı)   (1v1 sorgu)        (Sürgün)│
 │                                                       │
-│  Aksiyon: Sesle sorgula                               │
-│  Ödül: Bilgi topla                                    │
-│  Gelişim: AI'ı tespit et ve sürgün et                 │
+│  Sesle sorgula → Bilgi topla → AI'ı tespit et         │
 └─────────────────────────────────────────────────────┘
 ```
 
 **Mesaj:**
-> "Felsefemiz gereği her API çağrısında stüdyo şu döngüyü tetikler: **Dünya Kur → Karakter Üret → Konuştur → Hafızaya Yaz.** Stüdyonun yapması gereken sadece endpoint'leri çağırmak — prompt mühendisliği, ses sentezi, hafıza yönetimi tamamen bizde."
+> "API döngüsü: **Dünya Kur → Karakter Üret → Konuştur → Hafızaya Yaz.** Prompt mühendisliği, ses sentezi, hafıza yönetimi tamamen bizde — stüdyo sadece endpoint çağırır. 5 aşamalı optimizasyonla pipeline'ı **5.6 saniyeden 1.30 saniyeye** düşürdük."
 
-**Teknik Derinlik (Jüri İçin):**
+**Benchmark Sonuçları:**
 
 | Metrik | Sonuç | Detay |
 |--------|-------|-------|
-| Servis entegrasyonu | Gemini API + fal.ai (6+ servis) | Gemini Flash LLM (direkt), Freya TTS/STT, FLUX |
-| LLM yanıt süresi | ~0.67 saniye | Gemini Flash direkt API, thinking OFF |
-| İlk text token | ~0.45 saniye | OpenRouter middleman kaldırıldı |
-| İlk ses çıkışı | ~1.30 saniye | LLM+TTS pipeline, eskiye göre %48 düşüş |
-| Paralel TTS | 3.3x hızlanma | 3 eşzamanlı karakter konuşması |
+| Servis entegrasyonu | Gemini API + fal.ai (7+ servis) | Gemini Flash LLM (direkt), Freya TTS/STT, FLUX, Beatoven |
+| LLM ilk token (TTFT) | **~0.61 saniye** | Gemini Flash direkt API, thinking_budget=0 |
+| Pipeline ilk ses (TTFA) | **~1.95 saniye** | LLM streaming + TTS, asyncio.Queue ile paralel |
+| 3x Paralel TTS TTFA | **~1.30 saniye** | 3 eşzamanlı karakter konuşması — en hızlı pipeline |
+| Eski → Yeni pipeline | 5.6s → 1.30s | **4.3x hızlanma** (5 aşamalı optimizasyon) |
 | Moderasyon | Otomatik | Karakter kırılması, taboo kelime, sahne dışı konuşma algılama |
 | Dünya üretimi | Deterministik | Aynı seed = aynı oyun (test edilebilir, denetlenebilir) |
+
+**5 Optimizasyon Adımı:**
+
+| # | Optimizasyon | Etki |
+|---|-------------|------|
+| 1 | Streaming endpoint'leri (SSE) | İlk chunk beklemeden gönderim |
+| 2 | Clause-based split (`,;:.!?`) | Daha erken TTS tetikleme |
+| 3 | asyncio.Queue (LLM∥TTS paralel) | LLM beklemeden TTS başlar |
+| 4 | 40 char limit split | Uzun cümlelerde erken ses |
+| 5 | OpenRouter → Gemini direkt + Thinking OFF | LLM ilk token 612ms |
 
 ---
 
@@ -97,22 +105,22 @@
 
 ### Hedef Segmentler
 
-| Segment | Pazar | Acı Noktası |
-|---------|-------|-------------|
-| **Oyun Stüdyoları** (Indie & AA) | 50K+ aktif stüdyo | NPC diyalog sistemi geliştirmek 6+ ay sürüyor |
-| **Kurumsal Eğitim** | $380B global pazar | Senaryo bazlı eğitim simülasyonları statik ve sıkıcı |
-| **İnteraktif Hikaye Platformları** | Büyüyen segment | Ses entegrasyonu teknik olarak çok zor |
+| Segment | Neden Bize İhtiyacı Var |
+|---------|------------------------|
+| **Sesli NPC isteyen oyun stüdyoları** (RPG, sosyal, hikaye odaklı) | Kendi sesli AI karakter pipeline'larını kurmak aylar sürüyor — biz bunu tek API'de sunuyoruz |
+| **İnteraktif hikaye platformları** | Ses entegrasyonu teknik olarak çok zor, biz bunu çözdük |
+| **Senaryo bazlı eğitim/simülasyon** | Statik simülasyonlar yerine dinamik, sesli AI karakterlerle gerçekçi eğitim |
 
-### Rakiplerin Hata Yaptığı 3 Nokta
+### Rakip Karşılaştırma
 
-| Rakip | Hata | Bizim Avantajımız |
-|-------|------|-------------------|
-| **Inworld AI, Convai** | Yalnızca İngilizce odaklı | Türkçe ve çok dilli destek |
-| **ChatGPT wrapper'lar** | Karakter tutarlılığı yok, hafıza yok, ses yok | Uçtan uca entegre pipeline |
-| **Statik diyalog ağaçları** | Ölçeklenemez, her branch elle yazılıyor | Prosedürel ve dinamik karakter üretimi |
+| Rakip | Eksik | Bizim Farkımız |
+|-------|-------|----------------|
+| **Inworld AI, Convai** | Yalnızca İngilizce odaklı, yüksek latency | Türkçe dahil çok dilli, 1.30s TTFA |
+| **ChatGPT wrapper'lar** | Karakter tutarlılığı yok, hafıza yok, ses yok | Uçtan uca entegre pipeline: LLM + TTS + hafıza |
+| **Manuel diyalog sistemleri** | Ölçeklenemez, her branch elle yazılıyor | Prosedürel ve dinamik karakter üretimi |
 
 **Boşluk:**
-> "Kimse henüz **ses-öncelikli, çok kiracılı, hafıza destekli karakter AI API'si** sunmuyor. Biz bu boşluğu dolduruyoruz."
+> "Kimse henüz **ses-öncelikli, stüdyoya özel izole edilebilen, hafıza destekli bir karakter AI API'si** sunmuyor. Biz tam olarak bunu yapıyoruz."
 
 ---
 
@@ -123,14 +131,14 @@
 ### Yol Haritası
 
 ```
-2026 Q1 (Şimdi)          2026 Q2-Q3              2026 Q4              2027
-──────────────────────────────────────────────────────────────────────────────
-Hackathon MVP             Beta API                GA Launch            Ölçekleme
-├─ Ocak Yemini Demo       ├─ PostgreSQL           ├─ API dokümantasyon ├─ Özel ses eğitimi
-├─ 7+ fal.ai entegrasyon  ├─ Rate limiting        ├─ SLA & uptime      ├─ Fine-tuned modeller
-├─ Streaming TTS/STT      ├─ Usage tracking       ├─ Fiyatlandırma v1  ├─ Kurumsal paket
-├─ Multi-tenant API       ├─ 3 pilot stüdyo       ├─ Dashboard         ├─ 10+ stüdyo
-└─ Core loop tamamlandı   └─ WebSocket streaming  └─ Public beta       └─ Uluslararası açılım
+2026 Q1 (Şimdi)          2026 Q2                 2026 Q3-Q4
+──────────────────────────────────────────────────────────────────
+Hackathon MVP             Altyapı Sağlamlaştırma   Açık Beta
+├─ Ocak Yemini Demo       ├─ PostgreSQL geçişi     ├─ Public API dokümantasyon
+├─ 7+ fal.ai entegrasyon  ├─ Rate limiting         ├─ Dashboard & usage tracking
+├─ Streaming TTS/STT      ├─ WebSocket streaming   ├─ İlk pilot stüdyo entegrasyonu
+├─ Multi-tenant API       ├─ Monitoring & logging  ├─ Fiyatlandırma modeli
+└─ Core loop tamamlandı   └─ Test suite            └─ Çok dilli ses desteği
 ```
 
 ### İş Modeli
@@ -142,13 +150,13 @@ Hackathon MVP             Beta API                GA Launch            Ölçekle
 | **Enterprise** | Özel | Sınırsız, SLA, dedicated instance, white-label, özel ses eğitimi |
 
 **Entegrasyon Kolaylığı:**
-> SDK'ya gerek yok — standart HTTP ve SSE çağrıları. Unity, Unreal, Godot, web, mobil... Herhangi bir platformdan `POST /v1/characters/{id}/speak/stream` çağır, ses akışını al. **5 dakikada entegrasyon.**
+> SDK'ya gerek yok — standart HTTP ve SSE çağrıları. Unity, Unreal, Godot, web, mobil... `POST /v1/characters/{id}/speak/stream` çağır, ses akışını al. **5 dakikada entegrasyon.**
 
 ---
 
-## SLAYT 6: Ekip ve Demoya Davet (40 sn)
+## SLAYT 6: Ekip ve Demo (40 sn)
 
-**Görsel:** Ekip üyelerinin profesyonel fotoğrafları.
+**Görsel:** Ekip üyelerinin fotoğrafları + Ocak Yemini ekran görüntüsü.
 
 ### Ekip: ATTN
 
@@ -159,19 +167,19 @@ Hackathon MVP             Beta API                GA Launch            Ölçekle
 | ___________________ | ___________________ | ___________________ |
 | ___________________ | ___________________ | ___________________ |
 
-### Teknik Kanıtlar
+### Bu Hafta Ne Yaptık
 
 - **Backend:** Python + FastAPI + fal.ai (7+ servis entegrasyonu)
 - **Frontend:** React + TypeScript + Zustand (dark fantasy UI)
 - **AI:** Gemini 2.5 Pro/Flash, Freya TTS/STT, FLUX avatar üretimi
-- **Performans:** <2s uçtan uca ses yanıtı, paralel TTS ile 3.3x hızlanma
-- **Kod:** 2000+ satır oyun motoru, tam B2B API katmanı, WebSocket desteği
+- **Performans:** 5.6s → 1.30s ses yanıtı (4.3x hızlanma), 3x paralel TTS
+- **Oyun:** Tam çalışan Ocak Yemini demo — sesli AI karakterler, oylama, gece/gündüz döngüsü
 
 ### Kapanış
 
-> "Bu felsefeyi, bu platformu ve bu oyunu bu seviyeye getirdik. Doğru yatırım ve ekip genişlemesiyle, 2026 sonunda **endüstri standardı bir B2B Character AI API** olacağız."
+> "Bir haftalık hackathon'da sesli karakter AI platformunu sıfırdan inşa ettik, 5.6 saniyelik gecikmeyi 1.3 saniyeye düşürdük ve üzerine tam bir oyun koyduk. Teknoloji hazır, API çalışıyor, oyun oynayabiliyor — **gerisi sadece ölçekleme meselesi.**"
 
-> "Şimdi anlattıklarımızın havada kalmaması için, sizi **Ocak Yemini'nin dünyasına** davet ediyorum. Ateş yanıyor, karakterler konuşuyor — **hangisi insan, hangisi AI, sesinden anlayabilecek misiniz?**"
+> "Şimdi sizi **Ocak Yemini'nin dünyasına** davet ediyoruz. Ateş yanıyor, karakterler konuşuyor — **hangisi insan, hangisi AI, sesinden anlayabilecek misiniz?**"
 
 *(Demoyu başlat!)*
 
@@ -179,13 +187,11 @@ Hackathon MVP             Beta API                GA Launch            Ölçekle
 
 ## Sunum Stratejisi Özeti
 
-Her slayttaki B2B pivot vurgusu:
-
-| Slayt | Oyun Anlatısı | B2B Dönüşümü |
-|-------|---------------|---------------|
-| 1 - Kapak | "Bir oyun sunuyoruz" | "Bir **platform** sunuyoruz, oyun onun showcase'i" |
-| 2 - Felsefe | "Oyuncu şunu hissetsin" | "Stüdyo bunu **kendi oyununa** entegre etsin" |
-| 3 - Mekanik | "Oyun döngüsü böyle" | "API döngüsü böyle, **tek HTTP çağrısı** yeterli" |
-| 4 - Pazar | "Oyuncular bunu sever" | "50K+ stüdyo bu API'ye **ihtiyaç duyuyor**" |
-| 5 - Yol Haritası | "Oyunu çıkaracağız" | "Pilot stüdyolar, **enterprise tier**, SDK gereksiz" |
-| 6 - Demo | "Oyunu oynayın" | "API'nin ürettiği deneyimi **yaşayın**" |
+| Slayt | Oyun | Platform |
+|-------|------|----------|
+| 1 - Kapak | Ocak Yemini'yi göster | "En agresif showcase'imiz" |
+| 2 - Felsefe | "Sesle oynanan sosyal çıkarsama" | "Ses ile etkileşimin geleceği" |
+| 3 - Mimari | Oyun döngüsü: sorgula → oy ver | API döngüsü: tek HTTP çağrısı, 1.30s yanıt |
+| 4 - Pazar | "Bu oyun türü büyüyor" | "Sesli karakter isteyen stüdyolar için boşluk var" |
+| 5 - Yol Haritası | "Demo hazır" | "Q2 altyapı, Q3-Q4 açık beta" |
+| 6 - Demo | "Oynayın, deneyin" | "Bir haftada sıfırdan buraya geldik" |
