@@ -147,7 +147,7 @@ async def create_batch(tenant_id: str, req: BatchCreateRequest) -> list[dict]:
     return await asyncio.gather(*tasks)
 
 
-async def _prepare_speech_context(tenant_id: str, character_id: str, message: str,
+async def prepare_speech_context(tenant_id: str, character_id: str, message: str,
                                    context_messages=None, game_context=None,
                                    mood=None, system_prompt_override=None) -> tuple[dict, str]:
     """Karakter ve prompt hazirla. (char_dict, formatted_prompt) doner."""
@@ -195,7 +195,7 @@ async def _prepare_speech_context(tenant_id: str, character_id: str, message: st
 
 async def generate_speech(tenant_id: str, character_id: str, req: SpeakRequest) -> dict:
     settings = get_api_settings()
-    char, prompt = await _prepare_speech_context(
+    char, prompt = await prepare_speech_context(
         tenant_id, character_id, req.message,
         context_messages=req.context_messages,
         game_context=req.game_context,
@@ -301,7 +301,7 @@ async def generate_speech_stream(tenant_id: str, character_id: str, req):
     settings = get_api_settings()
 
     try:
-        char, prompt = await _prepare_speech_context(
+        char, prompt = await prepare_speech_context(
             tenant_id, character_id, req.message,
             context_messages=req.context_messages,
             game_context=req.game_context,

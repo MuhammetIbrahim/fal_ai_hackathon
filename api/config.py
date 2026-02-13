@@ -25,6 +25,10 @@ class APISettings(BaseSettings):
     DIALOGUE_MODEL: str = "google/gemini-2.5-flash"
     VALIDATION_MODEL: str = "google/gemini-2.5-flash"
 
+    # Orchestrator
+    ORCHESTRATOR_MODEL: str = "google/gemini-2.5-flash"
+    ORCHESTRATOR_TEMPERATURE: float = 0.3
+
     # Temperature config
     GENERATION_TEMPERATURE: float = 1.0
     DIALOGUE_TEMPERATURE: float = 0.9

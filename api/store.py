@@ -74,3 +74,46 @@ async def get_exchanges(tenant_id: str, char_id: str) -> list[dict]:
 async def clear_memory(tenant_id: str, char_id: str) -> None:
     if tenant_id in _memories and char_id in _memories[tenant_id]:
         _memories[tenant_id][char_id] = []
+
+
+# ── Conversations ─────────────────────────────────────
+
+_conversations: dict[str, dict[str, dict]] = {}
+
+
+async def save_conversation(tenant_id: str, conv_id: str, data: dict) -> dict:
+    _conversations.setdefault(tenant_id, {})[conv_id] = {**data, "id": conv_id, "created_at": _now()}
+    return _conversations[tenant_id][conv_id]
+
+
+async def get_conversation(tenant_id: str, conv_id: str) -> dict | None:
+    return _conversations.get(tenant_id, {}).get(conv_id)
+
+
+async def update_conversation(tenant_id: str, conv_id: str, updates: dict) -> dict | None:
+    conv = await get_conversation(tenant_id, conv_id)
+    if not conv:
+        return None
+    conv.update(updates)
+    conv["updated_at"] = _now()
+    return conv
+
+
+async def list_conversations(tenant_id: str, limit: int = 50, offset: int = 0) -> tuple[list[dict], int]:
+    bucket = _conversations.get(tenant_id, {})
+    all_convs = list(bucket.values())
+    return all_convs[offset : offset + limit], len(all_convs)
+
+
+async def delete_conversation(tenant_id: str, conv_id: str) -> bool:
+    bucket = _conversations.get(tenant_id, {})
+    if conv_id in bucket:
+        del bucket[conv_id]
+        return True
+    return False
+
+
+async def add_conversation_turn(tenant_id: str, conv_id: str, turn: dict) -> None:
+    conv = await get_conversation(tenant_id, conv_id)
+    if conv:
+        conv.setdefault("turns", []).append(turn)
