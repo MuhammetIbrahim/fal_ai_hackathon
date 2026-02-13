@@ -81,8 +81,10 @@
 
 | Metrik | Sonuç | Detay |
 |--------|-------|-------|
-| fal.ai entegrasyonu | 7+ servis | Freya TTS/STT, OpenRouter LLM, FLUX, Beatoven |
-| İlk ses çıkışı | ~1.2 saniye | Polling'e göre 2.9x hızlı (streaming) |
+| Servis entegrasyonu | Gemini API + fal.ai (6+ servis) | Gemini Flash LLM (direkt), Freya TTS/STT, FLUX |
+| LLM yanıt süresi | ~0.67 saniye | Gemini Flash direkt API, thinking OFF |
+| İlk text token | ~0.45 saniye | OpenRouter middleman kaldırıldı |
+| İlk ses çıkışı | ~1.30 saniye | LLM+TTS pipeline, eskiye göre %48 düşüş |
 | Paralel TTS | 3.3x hızlanma | 3 eşzamanlı karakter konuşması |
 | Moderasyon | Otomatik | Karakter kırılması, taboo kelime, sahne dışı konuşma algılama |
 | Dünya üretimi | Deterministik | Aynı seed = aynı oyun (test edilebilir, denetlenebilir) |

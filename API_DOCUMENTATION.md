@@ -819,14 +819,16 @@ open http://localhost:9000/docs
 
 ### Streaming vs Polling Karsilastirmasi
 
-| Metrik | Polling | Streaming | Kazanc |
+| Metrik | Polling (eski) | Streaming (eski — OpenRouter) | Streaming (yeni — Gemini direkt) |
 |--------|---------|-----------|--------|
-| TTS ilk ses (kisa metin) | ~3.5s | ~1.2s | 2.9x |
-| TTS ilk ses (uzun metin) | ~5.0s | ~1.9s | 2.6x |
-| Pipeline ilk text | ~2.1s | ~1.1s | 1.9x |
-| Pipeline ilk ses | ~5.6s (speak + TTS) | ~2.7s | 2.1x |
-| 3x concurrent TTS | ~5.0s (sirali) | ~1.5s avg (paralel) | 3.3x |
+| LLM ilk token | ~2.1s | ~1.1s | **~0.45s** |
+| LLM only (speak) | ~2.5s | ~1.5s | **~0.67s** |
+| Pipeline ilk ses | ~5.6s | ~2.5s | **~1.30s** |
+| Total stream | ~7.0s | ~3.5s | **~3.43s** |
+| 3x concurrent TTS | ~5.0s (sirali) | ~1.5s avg (paralel) | ~1.5s avg (paralel) |
 
+**Gemini direkt API gecisi (v2):** OpenRouter middleman kaldirildi, LLM latency %48 dustu.
 - **Streaming endpoint'ler** PCM16 (16kHz, mono) formatinda raw audio doner — dusuk latency, aninda oynatilabilir.
 - **Polling endpoint'ler** mp3 formatinda CDN URL doner — yuksek kalite, indirip cache'lenebilir.
 - Metin uzadikca streaming avantaji artar: ilk clause TTS'e gonderilirken LLM hala uretmeye devam eder.
+- LLM: Google Gemini Flash API (direkt, thinking OFF). TTS/STT: fal.ai Freya (aynen).

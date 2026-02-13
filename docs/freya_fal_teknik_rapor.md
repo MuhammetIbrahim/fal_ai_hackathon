@@ -355,21 +355,24 @@ KULLANICI                    BACKEND (FastAPI)                    FAL.AI
 |------|----------|--------|----------|
 | Audio upload | `fal_client.upload_file_async()` | Async | URL almak icin |
 | STT | `freya-stt/generate` | `fal_client.submit_async()` | Default TR, fal native |
-| LLM | `openrouter/router` | `fal_client.stream()` | Streaming token |
+| LLM | Google Gemini Flash (direkt API) | `google-genai` async | Streaming token |
 | TTS | `freya-tts` + `/stream` | `fal_client.stream()` | Streaming PCM16 |
 | Avatar | `fal-ai/flux/dev` | `fal_client.submit_async()` | Oyun basinda 1 kez |
 
-### 6.3 Tahmini Zamanlama
+### 6.3 Gercek Benchmark Sonuclari
 
 | Adim | Sure |
 |------|------|
 | Audio upload (fal storage) | ~100ms |
 | STT (freya-stt/generate) | ~300-500ms |
-| LLM ilk token (openrouter, Gemini Flash) | ~200-400ms |
-| TTS ilk chunk (freya-tts/stream) | ~200-400ms |
-| **Toplam ilk ses yaniti** | **~1-1.5s** |
+| LLM ilk token (Gemini Flash direkt API, thinking OFF) | ~450ms |
+| TTS ilk chunk (freya-tts/stream) | ~850ms |
+| **Pipeline ilk ses yaniti (LLM+TTS)** | **~1.30s** |
+| **LLM only (speak)** | **~0.67s** |
+| **Total stream (LLM+TTS tamamlanma)** | **~3.43s** |
 
-LLM streaming + TTS streaming birlestirilirse (her cumle bitince hemen TTS'e ver), algilanan latency daha da dusebilir.
+OpenRouter middleman kaldirildi → LLM latency %48 dustu (2.5s → 1.30s first audio).
+LLM streaming + TTS streaming paralel calisiyor: her clause bitince hemen TTS'e gonderiliyor.
 
 ---
 

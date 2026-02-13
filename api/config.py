@@ -24,7 +24,7 @@ class APISettings(BaseSettings):
     CORS_ORIGINS: list[str] = ["*"]
 
     # LLM Model config (Gemini API — google/ prefix yok)
-    GENERATION_MODEL: str = "gemini-2.5-pro"
+    GENERATION_MODEL: str = "gemini-2.5-flash"
     DIALOGUE_MODEL: str = "gemini-2.5-flash"
     VALIDATION_MODEL: str = "gemini-2.5-flash"
 

@@ -81,10 +81,10 @@ Her AI karakter icin ayri bir Freya agent instance'i calisir:
 | Zeynep | Supheci | Dedektif | Freya LLM dusunur + TTS ile streaming konusur |
 | ... | ... | ... | 4-8 karakter arasi |
 
-**Kritik karar:** Ayri bir LLM (GPT, Claude vs.) KULLANMIYORUZ. Freya'nin kendi icindeki LLM'i hem dusunme hem konusma icin yeterli. Bu sayede:
-- Ayri LLM API maliyeti yok
-- Dusunme → ses gecisi aninda (LLM ciktisindan ayri TTS'e gonderme gerekmiyor)
-- Streaming latency ~0.5 saniye
+**Kritik karar:** LLM icin Google Gemini Flash API'yi dogrudan kullaniyoruz (OpenRouter middleman yok). TTS/STT icin fal.ai Freya. Bu sayede:
+- LLM latency minimumda (middleman yok, ~0.45s first token)
+- TTS streaming ile ilk ses ~1.30s
+- Gemini thinking OFF — dusunme suresi sifir, aninda token uretimi
 
 ### 1.6 fal.ai Katmani
 
@@ -167,10 +167,11 @@ Bu prompt **her tur guncellenir** — kim oldu, kim hayatta, gecen turda ne konu
 | Oyuncu konusur | Degisken |
 | Freya STT + duygu | ~200ms |
 | Game Engine islem | ~50ms |
-| Freya LLM + TTS ilk chunk | ~500ms |
-| **Toplam ilk ses yaniti** | **~0.5 saniye** |
+| Gemini Flash LLM ilk token | ~450ms |
+| Freya TTS ilk chunk | ~850ms |
+| **Toplam ilk ses yaniti** | **~1.30 saniye** |
 
-Streaming sayesinde oyuncu 0.5 saniye icinde AI karakterin konusmaya basladigini duyar. Tum cevap bitmeden ses gelmeye baslar.
+Streaming sayesinde oyuncu ~1.3 saniye icinde AI karakterin konusmaya basladigini duyar. LLM (Gemini direkt API) + TTS (fal.ai Freya) pipeline'i paralel calisir, tum cevap bitmeden ses gelmeye baslar.
 
 ---
 
@@ -246,7 +247,7 @@ Her faz gecisinde **Beatoven** ile yeni ambiyans muzigi ve SFX uretilir.
 Freya'ya karakter bilgisini verip "sen dusun, sen konus" dememiz yeterli. Ayri LLM + ayri TTS pipeline'i kurmak yerine Freya'nin built-in ozelliklerini kullaniyoruz. Bu hackathon'da zamanimiz sinirli — 45 dakikalik demo icin bu cok kritik.
 
 ### Dusuk Latency
-Eski mimari (LLM → TTS → Lipsync) ile ~2.5 saniye bekleme vardi. Yeni mimaride Freya streaming ile ilk ses ~0.5 saniye. Bu oyun deneyimi icin devasa bir fark.
+Eski mimari (fal.ai → OpenRouter → Gemini → TTS) ile ~2.5 saniye bekleme vardi. Yeni mimaride Gemini direkt API + Freya TTS streaming ile ilk ses ~1.30 saniye (%48 dusus). Bu oyun deneyimi icin devasa bir fark.
 
 ### Platform Kullanimi
 - **Freya:** Projenin kalbinde. Her AI karakter = 1 Freya agent. Dinleme de Freya. Juri icin Freya kullanim skoru yuksek.

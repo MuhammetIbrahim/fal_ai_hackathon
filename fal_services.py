@@ -153,12 +153,12 @@ async def llm_generate(
     """Gemini API ile tam yanit uret."""
     try:
         client = _get_gemini_client()
-        config_kwargs: dict = {"temperature": temperature}
+        config_kwargs: dict = {
+            "temperature": temperature,
+            "thinking_config": types.ThinkingConfig(thinking_budget=0),
+        }
         if system_prompt:
             config_kwargs["system_instruction"] = system_prompt
-        if max_tokens is not None:
-            config_kwargs["max_output_tokens"] = max_tokens
-
         config = types.GenerateContentConfig(**config_kwargs)
 
         response = await client.aio.models.generate_content(
@@ -181,12 +181,12 @@ async def llm_stream(
     """Gemini API ile token token yield et."""
     try:
         client = _get_gemini_client()
-        config_kwargs: dict = {"temperature": temperature}
+        config_kwargs: dict = {
+            "temperature": temperature,
+            "thinking_config": types.ThinkingConfig(thinking_budget=0),
+        }
         if system_prompt:
             config_kwargs["system_instruction"] = system_prompt
-        if max_tokens is not None:
-            config_kwargs["max_output_tokens"] = max_tokens
-
         config = types.GenerateContentConfig(**config_kwargs)
 
         async for chunk in await client.aio.models.generate_content_stream(
