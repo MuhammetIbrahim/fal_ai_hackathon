@@ -297,84 +297,107 @@ def _split_sentences(text: str) -> list[str]:
 
 
 async def generate_speech_stream(tenant_id: str, character_id: str, req):
-    """SSE: LLM token stream → cumle split → TTS audio chunk pipeline."""
+    """SSE formatinda LLM→TTS pipeline. asyncio.Queue ile LLM ve TTS paralel calisir."""
     settings = get_api_settings()
-    char, prompt = await _prepare_speech_context(
-        tenant_id, character_id, req.message,
-        context_messages=req.context_messages,
-        game_context=req.game_context,
-        mood=req.mood,
-        system_prompt_override=req.system_prompt_override,
-    )
+
+    try:
+        char, prompt = await _prepare_speech_context(
+            tenant_id, character_id, req.message,
+            context_messages=req.context_messages,
+            game_context=req.game_context,
+            mood=req.mood,
+            system_prompt_override=req.system_prompt_override,
+        )
+    except NotFoundError:
+        yield f"event: error\ndata: {json.dumps({'code': 'CHAR_NOT_FOUND', 'message': 'Karakter bulunamadi'})}\n\n"
+        return
+
     system_prompt = req.system_prompt_override or char["acting_prompt"]
+
+    queue = asyncio.Queue()
+
+    async def llm_producer():
+        try:
+            async for token in llm_stream(
+                prompt=prompt, system_prompt=system_prompt,
+                model=settings.DIALOGUE_MODEL, temperature=settings.DIALOGUE_TEMPERATURE,
+            ):
+                await queue.put(("token", token))
+            await queue.put(("done", None))
+        except Exception as e:
+            await queue.put(("error", str(e)))
+
+    llm_task = asyncio.create_task(llm_producer())
 
     full_text = ""
     sentence_buffer = ""
-    sent_sentence_count = 0
     audio_chunk_index = 0
 
     try:
-        async for token in llm_stream(
-            prompt=prompt,
-            system_prompt=system_prompt,
-            model=settings.DIALOGUE_MODEL,
-            temperature=settings.DIALOGUE_TEMPERATURE,
-        ):
+        while True:
+            msg_type, data = await queue.get()
+
+            if msg_type == "error":
+                yield f"event: error\ndata: {json.dumps({'code': 'LLM_ERROR', 'message': data})}\n\n"
+                return
+
+            if msg_type == "done":
+                break
+
+            token = data
+            yield f"event: text_token\ndata: {json.dumps({'token': token})}\n\n"
             full_text += token
             sentence_buffer += token
 
-            payload = json.dumps({"token": token})
-            yield f"event: text_token\ndata: {payload}\n\n"
+            sentences = re.findall(r'[^.!?,;:]*[.!?,;:]+', sentence_buffer)
+            if sentences:
+                completed = "".join(sentences)
+                sentence_buffer = sentence_buffer[len(completed):]
 
-            sentences = _split_sentences(sentence_buffer)
-            if len(sentences) > 1:
-                ready = sentences[:-1]
-                sentence_buffer = sentences[-1]
-
-                for sent in ready:
-                    sent_sentence_count += 1
-                    async for pcm_chunk in tts_stream(
-                        text=sent, speed=req.speed, voice=req.voice,
-                    ):
-                        chunk_payload = json.dumps({
-                            "chunk_index": audio_chunk_index,
-                            "audio_base64": base64.b64encode(pcm_chunk).decode("ascii"),
-                            "format": "pcm16",
-                            "sample_rate": 16000,
-                            "channels": 1,
-                            "sentence_index": sent_sentence_count - 1,
-                        })
-                        yield f"event: audio_chunk\ndata: {chunk_payload}\n\n"
+                for sent in _split_sentences(completed):
+                    yield f"event: sentence_ready\ndata: {json.dumps({'sentence': sent})}\n\n"
+                    async for pcm_chunk in tts_stream(sent, speed=req.speed, voice=req.voice):
+                        yield f"event: audio_chunk\ndata: {json.dumps({'chunk_index': audio_chunk_index, 'audio_base64': base64.b64encode(pcm_chunk).decode('ascii'), 'format': 'pcm16', 'sample_rate': 16000, 'channels': 1})}\n\n"
                         audio_chunk_index += 1
 
-        if sentence_buffer.strip():
-            sent_sentence_count += 1
-            async for pcm_chunk in tts_stream(
-                text=sentence_buffer.strip(), speed=req.speed, voice=req.voice,
-            ):
-                chunk_payload = json.dumps({
-                    "chunk_index": audio_chunk_index,
-                    "audio_base64": base64.b64encode(pcm_chunk).decode("ascii"),
-                    "format": "pcm16",
-                    "sample_rate": 16000,
-                    "channels": 1,
-                    "sentence_index": sent_sentence_count - 1,
-                })
-                yield f"event: audio_chunk\ndata: {chunk_payload}\n\n"
+            elif len(sentence_buffer) > 40:
+                last_space = sentence_buffer.rfind(' ', 0, 40)
+                if last_space > 10:
+                    chunk_to_speak = sentence_buffer[:last_space].strip()
+                    sentence_buffer = sentence_buffer[last_space:].strip()
+
+                    yield f"event: sentence_ready\ndata: {json.dumps({'sentence': chunk_to_speak})}\n\n"
+                    async for pcm_chunk in tts_stream(chunk_to_speak, speed=req.speed, voice=req.voice):
+                        yield f"event: audio_chunk\ndata: {json.dumps({'chunk_index': audio_chunk_index, 'audio_base64': base64.b64encode(pcm_chunk).decode('ascii'), 'format': 'pcm16', 'sample_rate': 16000, 'channels': 1})}\n\n"
+                        audio_chunk_index += 1
+
+        remaining = sentence_buffer.strip()
+        if remaining:
+            yield f"event: sentence_ready\ndata: {json.dumps({'sentence': remaining})}\n\n"
+            async for pcm_chunk in tts_stream(remaining, speed=req.speed, voice=req.voice):
+                yield f"event: audio_chunk\ndata: {json.dumps({'chunk_index': audio_chunk_index, 'audio_base64': base64.b64encode(pcm_chunk).decode('ascii'), 'format': 'pcm16', 'sample_rate': 16000, 'channels': 1})}\n\n"
                 audio_chunk_index += 1
 
-        await store.add_exchange(tenant_id, character_id, {"role": "kullanici", "content": req.message})
-        await store.add_exchange(tenant_id, character_id, {"role": "karakter", "content": full_text.strip(), "name": char["name"]})
+        full_message = full_text.strip()
+        mod_result = None
+        if char.get("world_id"):
+            world = await store.get_world(tenant_id, char["world_id"])
+            if world:
+                taboo = world.get("taboo_words", [])
+                rules = world.get("rules")
+                if taboo or rules:
+                    mod_result = await moderate(full_message, taboo, rules)
 
-        done_payload = json.dumps({
-            "character_id": character_id,
-            "character_name": char["name"],
-            "full_text": full_text.strip(),
-            "total_audio_chunks": audio_chunk_index,
-            "total_sentences": sent_sentence_count,
-        })
-        yield f"event: done\ndata: {done_payload}\n\n"
+        if mod_result is not None:
+            yield f"event: moderation\ndata: {json.dumps(mod_result)}\n\n"
+
+        await store.add_exchange(tenant_id, character_id, {"role": "kullanici", "content": req.message})
+        await store.add_exchange(tenant_id, character_id, {"role": "karakter", "content": full_message, "name": char["name"]})
+
+        yield f"event: done\ndata: {json.dumps({'character_id': character_id, 'character_name': char['name'], 'message': full_message, 'mood': req.mood, 'moderation': mod_result, 'total_audio_chunks': audio_chunk_index})}\n\n"
 
     except Exception as e:
-        error_payload = json.dumps({"code": "SPEAK_STREAM_ERROR", "message": str(e)})
-        yield f"event: error\ndata: {error_payload}\n\n"
+        yield f"event: error\ndata: {json.dumps({'code': 'STREAM_ERROR', 'message': str(e)})}\n\n"
+    finally:
+        if not llm_task.done():
+            llm_task.cancel()
