@@ -440,7 +440,13 @@ export class VillageMapScene implements Scene {
         world.x >= house.x && world.x <= house.x + HOUSE_SIZE &&
         world.y >= house.y && world.y <= house.y + HOUSE_SIZE
       ) {
-        store.setSelectedRoom(house.owner)
+        // Find the visit involving this house owner
+        const visit = store.houseVisits.find(
+          (v) => v.host === house.owner || v.visitor === house.owner
+        )
+        if (visit) {
+          store.setSelectedRoom(visit.visit_id)
+        }
         return
       }
     }

@@ -21,6 +21,7 @@ Akis:
 import asyncio
 import logging
 import random as random_module
+import uuid as _uuid
 from typing import Dict, Optional, Any
 from collections import Counter
 import sys
@@ -534,264 +535,43 @@ async def _game_loop_runner(game_id: str, state: Any):
             except Exception as e:
                 logger.warning(f"Sinama echo failed: {e}")
 
-            # ── 2b. FREE ROAM ROUNDS ──
-            for roam_round in range(1, FREE_ROAM_ROUNDS + 1):
-                alive = get_alive_players(state)
-                alive_names = [p.name for p in alive]
+            # ── 2b. FLUID FREE PHASE ──
+            _fluid_state_lock = asyncio.Lock()
 
-                await manager.broadcast(game_id, {
-                    "event": "free_roam_start",
-                    "data": {
-                        "round": round_n,
-                        "roam_round": roam_round,
-                        "total_roam_rounds": FREE_ROAM_ROUNDS,
-                    }
-                })
+            await manager.broadcast(game_id, {
+                "event": "free_roam_start",
+                "data": {
+                    "round": round_n,
+                    "roam_round": 1,
+                    "total_roam_rounds": FREE_ROAM_ROUNDS,
+                    "mode": "fluid",
+                }
+            })
 
-                # Konum kararlari
-                locations: dict[str, str] = {n: "campfire" for n in alive_names}
+            await _run_fluid_free_phase(
+                game_id=game_id,
+                state=state,
+                state_lock=_fluid_state_lock,
+                generate_campfire_speech=generate_campfire_speech,
+                generate_location_decision=generate_location_decision,
+                generate_1v1_speech=generate_1v1_speech,
+                generate_institution_scene=generate_institution_scene,
+                generate_private_mini_event=generate_private_mini_event,
+                generate_house_entry_event=generate_house_entry_event,
+                get_alive_players=get_alive_players,
+                find_player=find_player,
+                maybe_update_campfire_summary=maybe_update_campfire_summary,
+                get_reaction=get_reaction,
+                orchestrator_pick=orchestrator_pick,
+                check_moderation=check_moderation,
+                check_ocak_tepki=check_ocak_tepki,
+                free_roam_rounds=FREE_ROAM_ROUNDS,
+                campfire_turns_per_round=CAMPFIRE_TURNS_PER_ROUND,
+                room_exchanges=ROOM_EXCHANGES,
+                institution_locations=INSTITUTION_LOCATIONS,
+            )
 
-                # AI oyuncular concurrent karar verir
-                ai_tasks = []
-                ai_players = []
-                for p in alive:
-                    if p.is_human:
-                        pass  # Insanlar WS'den beklenecek
-                    else:
-                        ai_tasks.append(generate_location_decision(p, state, locations))
-                        ai_players.append(p)
-
-                # Insan oyunculardan konum karari bekle (paralel)
-                human_tasks = []
-                human_players = []
-                for p in alive:
-                    if p.is_human:
-                        human_tasks.append(
-                            _wait_for_human_input(
-                                game_id=game_id,
-                                player_id=p.slot_id,
-                                event_type="location_choice",
-                                timeout=30.0,
-                                extra_data={"alive_players": alive_names},
-                            )
-                        )
-                        human_players.append(p)
-
-                # Hepsini paralel calistir
-                all_results = await asyncio.gather(
-                    asyncio.gather(*ai_tasks) if ai_tasks else asyncio.sleep(0),
-                    asyncio.gather(*human_tasks) if human_tasks else asyncio.sleep(0),
-                )
-
-                ai_decisions = list(all_results[0]) if ai_tasks else []
-                human_choices = list(all_results[1]) if human_tasks else []
-
-                # AI kararlarini uygula
-                for decision in ai_decisions:
-                    name = decision["name"]
-                    if decision["decision"] == "home":
-                        locations[name] = "home"
-                    elif decision["decision"] == "visit":
-                        locations[name] = f"visiting:{decision['target']}"
-                    elif decision["decision"] == "institution":
-                        locations[name] = f"institution:{decision['target']}"
-                    else:
-                        locations[name] = "campfire"
-
-                # Insan kararlarini uygula
-                for player, choice in zip(human_players, human_choices):
-                    if not choice:
-                        locations[player.name] = "campfire"
-                    elif choice.upper() == "HOME":
-                        locations[player.name] = "home"
-                    elif choice.upper().startswith("VISIT") and "|" in choice:
-                        target = choice.split("|", 1)[1].strip()
-                        if target in alive_names and target != player.name:
-                            locations[player.name] = f"visiting:{target}"
-                        else:
-                            locations[player.name] = "campfire"
-                    elif choice.upper().startswith("INSTITUTION") and "|" in choice:
-                        loc_id = choice.split("|", 1)[1].strip().lower()
-                        valid_ids = [l["id"] for l in INSTITUTION_LOCATIONS]
-                        if loc_id in valid_ids:
-                            locations[player.name] = f"institution:{loc_id}"
-                        else:
-                            locations[player.name] = "campfire"
-                    else:
-                        locations[player.name] = "campfire"
-
-                # Konum duzeltmeleri
-                # 1) Ziyaret edilen kisi evde olmali
-                for name, loc in list(locations.items()):
-                    if loc.startswith("visiting:"):
-                        target = loc.split(":")[1]
-                        if locations.get(target) != "home":
-                            locations[name] = "campfire"
-
-                # 2) Her eve en fazla 1 ziyaretci — ikinci ziyaretci campfire'a
-                visited_homes: set[str] = set()
-                for name, loc in list(locations.items()):
-                    if loc.startswith("visiting:"):
-                        target = loc.split(":")[1]
-                        if target in visited_homes:
-                            locations[name] = "campfire"  # zaten biri var
-                        else:
-                            visited_homes.add(target)
-
-                # Minimum hareket: az visit varsa daha fazla FARKLI evlere zorla esle
-                actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
-                                 if l.startswith("visiting:")]
-                campfire_pool = [n for n, l in locations.items() if l == "campfire"]
-                home_pool = [n for n, l in locations.items() if l == "home"]
-                # Zaten ziyaretci alan evleri cikar
-                available_homes = [h for h in home_pool if h not in visited_homes]
-
-                # En az 2 visit olsun (6 kisiyle: 2 visit + 2 campfire ideal)
-                target_visit_count = max(2, len(alive_names) // 3)
-                while len(actual_visits) < target_visit_count and len(campfire_pool) >= 2:
-                    if available_homes:
-                        # Campfire'dan birini, ziyaretcisi olmayan eve gonder
-                        target_home = random_module.choice(available_homes)
-                        visitor = random_module.choice(campfire_pool)
-                        locations[visitor] = f"visiting:{target_home}"
-                        campfire_pool.remove(visitor)
-                        available_homes.remove(target_home)
-                        visited_homes.add(target_home)
-                        actual_visits.append((visitor, target_home))
-                    else:
-                        # Bos ev yok — campfire'dan 2 kisi sec, biri eve gitsin
-                        pair = random_module.sample(campfire_pool, 2)
-                        locations[pair[0]] = "home"
-                        locations[pair[1]] = f"visiting:{pair[0]}"
-                        campfire_pool.remove(pair[0])
-                        campfire_pool.remove(pair[1])
-                        visited_homes.add(pair[0])
-                        actual_visits.append((pair[1], pair[0]))
-                    # Refresh
-                    actual_visits = [(n, l.split(":")[1]) for n, l in locations.items()
-                                     if l.startswith("visiting:")]
-
-                # Konum sonuclarini hesapla
-                campfire_people = [n for n, l in locations.items() if l == "campfire"]
-                home_people = [n for n, l in locations.items() if l == "home"]
-                visits = [(n, l.split(":")[1]) for n, l in locations.items()
-                          if l.startswith("visiting:")]
-                logger.info(f"Free roam {roam_round}: campfire={campfire_people}, home={home_people}, visits={visits}")
-                institution_visits = [(n, l.split(":")[1]) for n, l in locations.items()
-                                      if l.startswith("institution:")]
-
-                # Broadcast konum kararlari
-                decisions_data = []
-                for name in alive_names:
-                    loc = locations[name]
-                    if loc == "campfire":
-                        decisions_data.append({"player": name, "choice": "CAMPFIRE"})
-                    elif loc == "home":
-                        decisions_data.append({"player": name, "choice": "HOME"})
-                    elif loc.startswith("visiting:"):
-                        target = loc.split(":")[1]
-                        decisions_data.append({"player": name, "choice": f"VISIT|{target}"})
-                    elif loc.startswith("institution:"):
-                        loc_id = loc.split(":")[1]
-                        decisions_data.append({"player": name, "choice": f"INSTITUTION|{loc_id}"})
-
-                await manager.broadcast(game_id, {
-                    "event": "location_decisions",
-                    "data": {
-                        "roam_round": roam_round,
-                        "decisions": decisions_data,
-                        "campfire_people": campfire_people,
-                        "home_people": home_people,
-                        "visits": [{"visitor": v, "host": h} for v, h in visits],
-                        "institution_visits": [{"player": p, "location": l} for p, l in institution_visits],
-                    }
-                })
-
-                # Hareket duyurusu — sadece "bazi oyuncular gitti" de, isim verme
-                # Boylece campfire'daki LLM gidenlere hitap edemez
-                gone_count = len(home_people) + len(visits) + len(institution_visits)
-                if gone_count > 0:
-                    movement_msg = f"Serbest dolasim: {gone_count} kisi ates basindan ayrildi. Geriye kalanlar burada konusmaya devam ediyor."
-                    state["campfire_history"].append({
-                        "type": "narrator",
-                        "content": movement_msg,
-                        "present": campfire_people,  # sadece campfire'dakiler gorur
-                    })
-
-                # Campfire tartismasi (sadece campfire'dakiler) + Oda gorusmeleri (paralel)
-                campfire_task = None
-                if len(campfire_people) >= 2:
-                    campfire_task = _run_campfire_segment_ws(
-                        game_id=game_id,
-                        state=state,
-                        max_turns=CAMPFIRE_TURNS_PER_ROUND,
-                        participant_names=campfire_people,
-                        generate_campfire_speech=generate_campfire_speech,
-                        get_alive_players=get_alive_players,
-                        find_player=find_player,
-                        maybe_update_campfire_summary=maybe_update_campfire_summary,
-                        get_reaction=get_reaction,
-                        orchestrator_pick=orchestrator_pick,
-                        check_moderation=check_moderation,
-                        check_ocak_tepki=check_ocak_tepki,
-                    )
-
-                room_tasks = []
-                for visitor_name, host_name in visits:
-                    visitor_player = find_player(state, visitor_name)
-                    host_player = find_player(state, host_name)
-                    if visitor_player and host_player:
-                        room_tasks.append(
-                            _run_room_conversation_ws(
-                                game_id=game_id,
-                                state=state,
-                                owner=host_player,
-                                visitor=visitor_player,
-                                max_exchanges=ROOM_EXCHANGES,
-                                generate_1v1_speech=generate_1v1_speech,
-                                generate_house_entry_event=generate_house_entry_event,
-                            )
-                        )
-
-                # Institution visit tasks
-                institution_tasks = []
-                for p_name, loc_id in institution_visits:
-                    p_obj = find_player(state, p_name)
-                    if p_obj:
-                        institution_tasks.append(
-                            _run_institution_visit_ws(
-                                game_id=game_id,
-                                state=state,
-                                player=p_obj,
-                                location_id=loc_id,
-                                generate_institution_scene=generate_institution_scene,
-                                generate_private_mini_event=generate_private_mini_event,
-                            )
-                        )
-
-                # Campfire + Room + Institution tasks paralel calistir
-                all_tasks = []
-                if campfire_task:
-                    all_tasks.append(campfire_task)
-                all_tasks.extend(room_tasks)
-                all_tasks.extend(institution_tasks)
-                if all_tasks:
-                    await asyncio.gather(*all_tasks)
-
-                # Evinde yalniz bekleyenler
-                for n in home_people:
-                    has_visitor = any(vn == n for _, vn in visits)
-                    if not has_visitor:
-                        await manager.send_to(
-                            game_id,
-                            find_player(state, n).slot_id if find_player(state, n) else "",
-                            {
-                                "event": "home_alone",
-                                "data": {"message": f"{n} evinde yalniz bekledi — kimse gelmedi."},
-                            }
-                        )
-
-                logger.info(f"Free roam {roam_round}/{FREE_ROAM_ROUNDS} completed")
+            logger.info(f"Fluid free phase completed for round {round_n}")
 
             # ── 2b-post. POLITIK ONERGE (Katman 4) ──
             try:
@@ -1598,7 +1378,10 @@ async def _run_room_conversation_ws(
     """
     1v1 oda gorusmesi — her exchange ilgili 2 oyuncuya unicast edilir.
     """
+    import uuid
+    
     campfire_summary = state.get("campfire_rolling_summary", "") or "(Ozet yok)"
+    visit_id = uuid.uuid4().hex  # Benzersiz ziyaret ID'si
 
     exchanges = []
     speakers = [visitor, owner]  # Misafir once konusur
@@ -1608,6 +1391,7 @@ async def _run_room_conversation_ws(
     await manager.broadcast(game_id, {
         "event": "house_visit_start",
         "data": {
+            "visit_id": visit_id,
             "visitor": visitor.name,
             "host": owner.name,
             "max_exchanges": max_exchanges,
@@ -1668,6 +1452,7 @@ async def _run_room_conversation_ws(
         await manager.broadcast(game_id, {
             "event": "house_visit_exchange",
             "data": {
+                "visit_id": visit_id,
                 "speaker": current.name,
                 "role_title": current.role_title,
                 "content": speech_content,
@@ -1688,6 +1473,7 @@ async def _run_room_conversation_ws(
     # Visit data kaydet
     visit_data = {
         "type": "room_visit",
+        "visit_id": visit_id,
         "owner": owner.name,
         "visitor": visitor.name,
         "exchanges": exchanges,
@@ -1698,6 +1484,7 @@ async def _run_room_conversation_ws(
     await manager.broadcast(game_id, {
         "event": "house_visit_end",
         "data": {
+            "visit_id": visit_id,
             "visitor": visitor.name,
             "host": owner.name,
             "exchange_count": len(exchanges),
@@ -1784,3 +1571,743 @@ async def _run_institution_visit_ws(
     })
 
     logger.info(f"Institution visit done: {player.name} -> {location_id}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# FLUID FREE PHASE — Session Manager, Persistent Campfire & Loop
+# ═══════════════════════════════════════════════════════════════
+
+
+class _FluidSessionManager:
+    """Tracks player states during the Fluid Free Phase.
+
+    Player states
+    ─────────────
+      IDLE        – not in any session, eligible for a new location decision
+      CAMPFIRE    – participating in the persistent campfire
+      ROOM:<tag>  – in a 1-on-1 room conversation
+      INST:<loc>  – visiting an institution
+    """
+
+    def __init__(self, alive_names: list[str]):
+        self._lock = asyncio.Lock()
+        self._states: dict[str, str] = {n: "IDLE" for n in alive_names}
+        self._campfire_set: set[str] = set()
+        self._cf_turn_counts: dict[str, int] = {}
+        self._sessions_done: int = 0
+        # Events for cross-task signalling
+        self._idle_event = asyncio.Event()
+        self._idle_event.set()
+        self._cf_changed = asyncio.Event()
+
+    # ── state transitions ──
+
+    async def join_campfire(self, name: str) -> None:
+        async with self._lock:
+            self._states[name] = "CAMPFIRE"
+            self._campfire_set.add(name)
+            self._cf_turn_counts.setdefault(name, 0)
+            self._cf_changed.set()
+
+    async def leave_campfire(self, name: str) -> None:
+        async with self._lock:
+            self._campfire_set.discard(name)
+            if self._states.get(name) == "CAMPFIRE":
+                self._states[name] = "IDLE"
+            self._cf_changed.set()
+            self._idle_event.set()
+
+    async def enter_session(self, names: list[str], tag: str) -> None:
+        async with self._lock:
+            for n in names:
+                self._states[n] = tag
+                self._campfire_set.discard(n)
+            self._cf_changed.set()
+
+    async def finish_session(self, names: list[str]) -> None:
+        async with self._lock:
+            for n in names:
+                self._states[n] = "IDLE"
+                self._campfire_set.discard(n)
+            self._sessions_done += 1
+            self._idle_event.set()
+
+    async def record_campfire_turn(self, participants: list[str]) -> None:
+        async with self._lock:
+            for n in participants:
+                self._cf_turn_counts[n] = self._cf_turn_counts.get(n, 0) + 1
+
+    async def reset_campfire_turns(self, name: str) -> None:
+        async with self._lock:
+            self._cf_turn_counts[name] = 0
+
+    # ── queries ──
+
+    async def get_idle(self) -> list[str]:
+        async with self._lock:
+            return [n for n, s in self._states.items() if s == "IDLE"]
+
+    async def get_campfire_participants(self) -> list[str]:
+        async with self._lock:
+            return list(self._campfire_set)
+
+    async def get_campfire_veterans(self, threshold: int) -> list[str]:
+        async with self._lock:
+            return [
+                n for n in self._campfire_set
+                if self._cf_turn_counts.get(n, 0) >= threshold
+            ]
+
+    async def player_state(self, name: str) -> str:
+        async with self._lock:
+            return self._states.get(name, "IDLE")
+
+    @property
+    def sessions_done(self) -> int:
+        return self._sessions_done
+
+    # ── wait helpers ──
+
+    async def wait_for_idle(self, timeout: float = 2.0) -> None:
+        self._idle_event.clear()
+        try:
+            await asyncio.wait_for(self._idle_event.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            pass
+
+    async def wait_for_cf_change(self, timeout: float = 3.0) -> None:
+        self._cf_changed.clear()
+        try:
+            await asyncio.wait_for(self._cf_changed.wait(), timeout=timeout)
+        except asyncio.TimeoutError:
+            pass
+
+
+# ───────────────────────────────────────────────────
+# Persistent Campfire — runs continuously,
+# players join / leave dynamically between turns
+# ───────────────────────────────────────────────────
+
+async def _run_persistent_campfire_ws(
+    game_id: str,
+    state: Any,
+    sm: _FluidSessionManager,
+    phase_done: asyncio.Event,
+    state_lock: asyncio.Lock,
+    max_total_turns: int,
+    veteran_threshold: int,
+    # engine functions
+    generate_campfire_speech,
+    get_alive_players,
+    find_player,
+    maybe_update_campfire_summary=None,
+    get_reaction=None,
+    orchestrator_pick=None,
+    check_moderation=None,
+    check_ocak_tepki=None,
+) -> None:
+    """Persistent campfire that runs until *phase_done* is set or the turn budget
+    is exhausted.  Participants are re-evaluated each turn so players can join or
+    leave between turns."""
+
+    ws_dict = state.get("world_seed")
+    use_orchestrator = get_reaction is not None and orchestrator_pick is not None
+    total_turns = 0
+
+    while not phase_done.is_set() and total_turns < max_total_turns:
+        # ── refresh participant list every turn ──
+        participant_names = await sm.get_campfire_participants()
+
+        if len(participant_names) < 2:
+            # Wait for more people (or phase end)
+            await sm.wait_for_cf_change(timeout=3.0)
+            continue
+
+        participants = [find_player(state, n) for n in participant_names]
+        participants = [p for p in participants if p and p.alive]
+        participant_names = [p.name for p in participants]
+
+        if len(participants) < 2:
+            await asyncio.sleep(1)
+            continue
+
+        total_turns += 1
+
+        # ── pick speaker ──
+        speaker = None
+        recent_speeches = [
+            m for m in state["campfire_history"]
+            if m.get("type") == "speech" and m.get("name") in participant_names
+        ]
+
+        if use_orchestrator and recent_speeches:
+            last_speech = recent_speeches[-1]
+            others = [p for p in participants
+                      if p.name != last_speech["name"] and not p.is_human]
+
+            reactions = []
+            if others:
+                reaction_tasks = [get_reaction(p, last_speech, state) for p in others]
+                raw = await asyncio.gather(*reaction_tasks, return_exceptions=True)
+                reactions = [r for r in raw if isinstance(r, dict)]
+
+            # humans always eligible
+            for p in participants:
+                if p.is_human and p.name != last_speech["name"]:
+                    reactions.append({"name": p.name, "wants": True, "reason": "insan oyuncu"})
+
+            # force human every 3rd turn
+            human_parts = [p for p in participants
+                           if p.is_human and p.name != last_speech["name"]]
+            force_human = False
+            if human_parts:
+                h_name = human_parts[0].name
+                recent_speakers = [
+                    m["name"] for m in state["campfire_history"][-3:]
+                    if m.get("type") == "speech"
+                ]
+                if h_name not in recent_speakers and total_turns % 3 == 0:
+                    force_human = True
+
+            if force_human:
+                action, name = "NEXT", human_parts[0].name
+            else:
+                action, name = await orchestrator_pick(state, reactions)
+
+            if action == "END":
+                # orchestrator says stop — skip turn, don't break the loop
+                await asyncio.sleep(1)
+                continue
+
+            if name in participant_names:
+                speaker = find_player(state, name)
+            else:
+                wanters = [r for r in reactions
+                           if r.get("wants") and r["name"] in participant_names]
+                if wanters:
+                    speaker = find_player(state, wanters[0]["name"])
+
+        if not speaker:
+            ai_parts = [p for p in participants if not p.is_human]
+            speaker = random_module.choice(ai_parts) if ai_parts else participants[0]
+
+        if not speaker or not speaker.alive:
+            continue
+
+        # ── generate speech ──
+        if speaker.is_human:
+            message = await _wait_for_human_input(
+                game_id=game_id,
+                player_id=speaker.slot_id,
+                event_type="speak",
+                timeout=30.0,
+            )
+            if not message:
+                message = f"[{speaker.name} sessiz kaldi]"
+        else:
+            message = await generate_campfire_speech(
+                state, speaker, participant_names=participant_names,
+            )
+
+        # moderator
+        mod_ok = True
+        if check_moderation:
+            mod_ok, mod_reason = await check_moderation(speaker.name, message, ws_dict)
+            if not mod_ok:
+                async with state_lock:
+                    state["campfire_history"].append({
+                        "type": "moderator", "content": mod_reason,
+                        "present": list(participant_names),
+                    })
+                await manager.broadcast(game_id, {
+                    "event": "moderator_warning",
+                    "data": {"speaker": speaker.name, "reason": mod_reason},
+                })
+                continue
+
+        # record
+        async with state_lock:
+            state["campfire_history"].append({
+                "type": "speech", "name": speaker.name,
+                "role_title": speaker.role_title, "content": message,
+                "present": list(participant_names),
+            })
+        speaker.add_message("assistant", message)
+
+        # TTS senkron
+        audio_url, audio_duration = None, 0.0
+        if not speaker.is_human:
+            audio_url, audio_duration = await _generate_audio_url(
+                message,
+                voice=getattr(speaker, "voice_id", "alloy"),
+                speed=getattr(speaker, "voice_speed", 1.0),
+            )
+
+        await manager.broadcast(game_id, {
+            "event": "campfire_speech",
+            "data": {
+                "speaker": speaker.name,
+                "role_title": speaker.role_title,
+                "content": message,
+                "turn": total_turns,
+                "max_turns": max_total_turns,
+                "participants": participant_names,
+                "audio_url": audio_url,
+                "audio_duration": audio_duration,
+            },
+        })
+
+        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        await asyncio.sleep(wait_time)
+
+        # ocak tepki
+        if check_ocak_tepki:
+            try:
+                tepki = await check_ocak_tepki(speaker.name, message, state)
+                if tepki:
+                    async with state_lock:
+                        state["campfire_history"].append({
+                            "type": "narrator", "content": tepki["message"],
+                        })
+                    await manager.broadcast(game_id, {
+                        "event": "ocak_tepki", "data": tepki,
+                    })
+                    if tepki.get("type") == "kul_kaymasi":
+                        await manager.broadcast(game_id, {
+                            "event": "kul_kaymasi",
+                            "data": {
+                                "speaker": tepki["speaker"],
+                                "question": tepki.get("forced_question", ""),
+                            },
+                        })
+            except Exception as e:
+                logger.warning(f"Persistent campfire ocak tepki failed: {e}")
+
+        # rolling summary
+        if maybe_update_campfire_summary:
+            await maybe_update_campfire_summary(state)
+
+        # track turns per participant
+        await sm.record_campfire_turn(participant_names)
+
+        # eject veterans (exceeded turn threshold → IDLE → new decision)
+        veterans = await sm.get_campfire_veterans(veteran_threshold)
+        for vet in veterans:
+            await sm.leave_campfire(vet)
+            await sm.reset_campfire_turns(vet)
+            logger.info(f"Campfire veteran ejected: {vet} (after {veteran_threshold} turns)")
+
+    logger.info(f"Persistent campfire finished: {total_turns} total turns")
+
+
+# ───────────────────────────────────────────────────
+# Fluid Free Phase — orchestrates all sessions
+# ───────────────────────────────────────────────────
+
+async def _run_fluid_free_phase(
+    game_id: str,
+    state: Any,
+    state_lock: asyncio.Lock,
+    # engine functions
+    generate_campfire_speech,
+    generate_location_decision,
+    generate_1v1_speech,
+    generate_institution_scene,
+    generate_private_mini_event,
+    generate_house_entry_event,
+    get_alive_players,
+    find_player,
+    maybe_update_campfire_summary=None,
+    get_reaction=None,
+    orchestrator_pick=None,
+    check_moderation=None,
+    check_ocak_tepki=None,
+    # constants
+    free_roam_rounds: int = 3,
+    campfire_turns_per_round: int = 3,
+    room_exchanges: int = 4,
+    institution_locations: list | None = None,
+) -> None:
+    """Fluid Free Phase — parallel, reactive session management.
+
+    Instead of fixed sequential rounds, sessions run independently.
+    When a room conversation ends, those players immediately get a new
+    location decision without waiting for the campfire or other rooms.
+
+    Architecture
+    ────────────
+    ┌─ Persistent Campfire (background task) ──────────┐
+    │  Runs continuously. Players join when they choose │
+    │  CAMPFIRE, leave when ejected or phase ends.      │
+    └───────────────────────────────────────────────────┘
+    ┌─ Decision Loop (main coroutine) ─────────────────┐
+    │  Watches for IDLE players, collects decisions,    │
+    │  spawns room / institution tasks.  When a task    │
+    │  finishes → players → IDLE → next decision wave.  │
+    └───────────────────────────────────────────────────┘
+    """
+
+    alive = get_alive_players(state)
+    alive_names = [p.name for p in alive]
+
+    # ── Session manager ──
+    sm = _FluidSessionManager(alive_names)
+
+    # ── Quotas ──
+    max_campfire_turns = free_roam_rounds * campfire_turns_per_round
+    max_private_sessions = free_roam_rounds * max(2, len(alive_names) // 3)
+    veteran_threshold = campfire_turns_per_round  # eject after N consecutive turns
+
+    phase_done = asyncio.Event()
+    active_tasks: set[asyncio.Task] = set()
+    wave_counter = 0
+
+    valid_institution_ids = [loc["id"] for loc in (institution_locations or [])]
+
+    # ── task helper ──
+    def _spawn(coro) -> asyncio.Task:
+        task = asyncio.create_task(coro)
+        active_tasks.add(task)
+        task.add_done_callback(active_tasks.discard)
+        return task
+
+    # ── room session wrapper ──
+    async def _room_session(visitor_name: str, host_name: str) -> None:
+        visitor_p = find_player(state, visitor_name)
+        host_p = find_player(state, host_name)
+        if visitor_p and host_p:
+            try:
+                await _run_room_conversation_ws(
+                    game_id=game_id,
+                    state=state,
+                    owner=host_p,
+                    visitor=visitor_p,
+                    max_exchanges=room_exchanges,
+                    generate_1v1_speech=generate_1v1_speech,
+                    generate_house_entry_event=generate_house_entry_event,
+                )
+            except Exception as e:
+                logger.warning(f"Room session {visitor_name}→{host_name} failed: {e}")
+        await sm.finish_session([visitor_name, host_name])
+        logger.info(f"Room done → {visitor_name}, {host_name} now IDLE")
+
+    # ── institution session wrapper ──
+    async def _inst_session(player_name: str, loc_id: str) -> None:
+        p = find_player(state, player_name)
+        if p:
+            try:
+                await _run_institution_visit_ws(
+                    game_id=game_id,
+                    state=state,
+                    player=p,
+                    location_id=loc_id,
+                    generate_institution_scene=generate_institution_scene,
+                    generate_private_mini_event=generate_private_mini_event,
+                )
+            except Exception as e:
+                logger.warning(f"Institution visit {player_name}→{loc_id} failed: {e}")
+        await sm.finish_session([player_name])
+
+    # ─────────────────────────────────────────────
+    # Decision wave: collect decisions from IDLE
+    # players, correct locations, dispatch sessions
+    # ─────────────────────────────────────────────
+    async def _run_decision_wave(idle_names: list[str]) -> None:
+        nonlocal wave_counter
+        wave_counter += 1
+
+        alive_now = get_alive_players(state)
+        alive_names_now = [p.name for p in alive_now]
+        idle_names = [n for n in idle_names if n in alive_names_now]
+        if not idle_names:
+            return
+
+        # Build location context for the LLM prompt (who is where right now)
+        locations_ctx: dict[str, str] = {}
+        for n in alive_names_now:
+            s = await sm.player_state(n)
+            if s == "CAMPFIRE":
+                locations_ctx[n] = "campfire"
+            elif s.startswith("ROOM") or s.startswith("INST"):
+                locations_ctx[n] = "busy"
+            else:
+                locations_ctx[n] = "campfire"  # IDLE shown as campfire for context
+
+        # ── collect decisions (AI concurrent + human WS) ──
+        ai_tasks: list = []
+        ai_players: list = []
+        human_tasks: list = []
+        human_players: list = []
+
+        for n in idle_names:
+            p = find_player(state, n)
+            if not p or not p.alive:
+                continue
+            if p.is_human:
+                human_tasks.append(
+                    _wait_for_human_input(
+                        game_id=game_id,
+                        player_id=p.slot_id,
+                        event_type="location_choice",
+                        timeout=30.0,
+                        extra_data={"alive_players": alive_names_now},
+                    )
+                )
+                human_players.append(p)
+            else:
+                ai_tasks.append(generate_location_decision(p, state, locations_ctx))
+                ai_players.append(p)
+
+        all_results = await asyncio.gather(
+            asyncio.gather(*ai_tasks) if ai_tasks else asyncio.sleep(0),
+            asyncio.gather(*human_tasks) if human_tasks else asyncio.sleep(0),
+        )
+
+        ai_decisions = list(all_results[0]) if ai_tasks else []
+        human_choices = list(all_results[1]) if human_tasks else []
+
+        # ── apply decisions ──
+        wave_locs: dict[str, str] = {n: "campfire" for n in idle_names}
+
+        for decision in ai_decisions:
+            name = decision["name"]
+            if name not in wave_locs:
+                continue
+            if decision["decision"] == "home":
+                wave_locs[name] = "home"
+            elif decision["decision"] == "visit":
+                wave_locs[name] = f"visiting:{decision['target']}"
+            elif decision["decision"] == "institution":
+                wave_locs[name] = f"institution:{decision['target']}"
+            else:
+                wave_locs[name] = "campfire"
+
+        for player, choice in zip(human_players, human_choices):
+            if not choice:
+                wave_locs[player.name] = "campfire"
+            elif choice.upper() == "HOME":
+                wave_locs[player.name] = "home"
+            elif choice.upper().startswith("VISIT") and "|" in choice:
+                target = choice.split("|", 1)[1].strip()
+                if target in alive_names_now and target != player.name:
+                    wave_locs[player.name] = f"visiting:{target}"
+                else:
+                    wave_locs[player.name] = "campfire"
+            elif choice.upper().startswith("INSTITUTION") and "|" in choice:
+                loc_id = choice.split("|", 1)[1].strip().lower()
+                if loc_id in valid_institution_ids:
+                    wave_locs[player.name] = f"institution:{loc_id}"
+                else:
+                    wave_locs[player.name] = "campfire"
+            else:
+                wave_locs[player.name] = "campfire"
+
+        # ── location corrections ──
+        # 1) Visitor target must be "home" in THIS wave
+        for name, loc in list(wave_locs.items()):
+            if loc.startswith("visiting:"):
+                target = loc.split(":")[1]
+                if wave_locs.get(target) != "home":
+                    wave_locs[name] = "campfire"
+
+        # 2) Max 1 visitor per home
+        visited_homes: set[str] = set()
+        for name, loc in list(wave_locs.items()):
+            if loc.startswith("visiting:"):
+                target = loc.split(":")[1]
+                if target in visited_homes:
+                    wave_locs[name] = "campfire"
+                else:
+                    visited_homes.add(target)
+
+        # 3) Minimum visit enforcement (keep gameplay dynamic)
+        actual_visits = [
+            (n, l.split(":")[1]) for n, l in wave_locs.items()
+            if l.startswith("visiting:")
+        ]
+        campfire_pool = [n for n, l in wave_locs.items() if l == "campfire"]
+        home_pool = [n for n, l in wave_locs.items() if l == "home"]
+        available_homes = [h for h in home_pool if h not in visited_homes]
+
+        target_visit_count = max(1, len(idle_names) // 3)
+        while len(actual_visits) < target_visit_count and len(campfire_pool) >= 2:
+            if available_homes:
+                target_home = random_module.choice(available_homes)
+                vis = random_module.choice(campfire_pool)
+                wave_locs[vis] = f"visiting:{target_home}"
+                campfire_pool.remove(vis)
+                available_homes.remove(target_home)
+                visited_homes.add(target_home)
+                actual_visits.append((vis, target_home))
+            else:
+                pair = random_module.sample(campfire_pool, 2)
+                wave_locs[pair[0]] = "home"
+                wave_locs[pair[1]] = f"visiting:{pair[0]}"
+                campfire_pool.remove(pair[0])
+                campfire_pool.remove(pair[1])
+                visited_homes.add(pair[0])
+                actual_visits.append((pair[1], pair[0]))
+            actual_visits = [
+                (n, l.split(":")[1]) for n, l in wave_locs.items()
+                if l.startswith("visiting:")
+            ]
+
+        # ── compute final groups ──
+        campfire_people = [n for n, l in wave_locs.items() if l == "campfire"]
+        home_people = [n for n, l in wave_locs.items() if l == "home"]
+        visits = [
+            (n, l.split(":")[1]) for n, l in wave_locs.items()
+            if l.startswith("visiting:")
+        ]
+        institution_visits = [
+            (n, l.split(":")[1]) for n, l in wave_locs.items()
+            if l.startswith("institution:")
+        ]
+
+        logger.info(
+            f"Wave {wave_counter}: campfire={campfire_people}, "
+            f"home={home_people}, visits={visits}, inst={institution_visits}"
+        )
+
+        # ── broadcast decisions ──
+        decisions_data = []
+        for name in idle_names:
+            loc = wave_locs.get(name, "campfire")
+            if loc == "campfire":
+                decisions_data.append({"player": name, "choice": "CAMPFIRE"})
+            elif loc == "home":
+                decisions_data.append({"player": name, "choice": "HOME"})
+            elif loc.startswith("visiting:"):
+                target = loc.split(":")[1]
+                decisions_data.append({"player": name, "choice": f"VISIT|{target}"})
+            elif loc.startswith("institution:"):
+                lid = loc.split(":")[1]
+                decisions_data.append({"player": name, "choice": f"INSTITUTION|{lid}"})
+
+        # Merge with existing campfire for the broadcast
+        existing_cf = await sm.get_campfire_participants()
+        combined_campfire = list(set(existing_cf + campfire_people))
+
+        await manager.broadcast(game_id, {
+            "event": "location_decisions",
+            "data": {
+                "roam_round": wave_counter,
+                "decisions": decisions_data,
+                "campfire_people": combined_campfire,
+                "home_people": home_people,
+                "visits": [{"visitor": v, "host": h} for v, h in visits],
+                "institution_visits": [
+                    {"player": p, "location": l} for p, l in institution_visits
+                ],
+            },
+        })
+
+        # narrator movement
+        gone_count = len(home_people) + len(visits) + len(institution_visits)
+        if gone_count > 0:
+            movement_msg = (
+                f"Serbest dolasim: {gone_count} kisi ates basindan ayrildi. "
+                f"Geriye kalanlar burada konusmaya devam ediyor."
+            )
+            async with state_lock:
+                state["campfire_history"].append({
+                    "type": "narrator",
+                    "content": movement_msg,
+                    "present": combined_campfire,
+                })
+
+        # ── dispatch sessions ──
+        for n in campfire_people:
+            await sm.join_campfire(n)
+
+        for visitor_name, host_name in visits:
+            await sm.enter_session(
+                [visitor_name, host_name],
+                f"ROOM:{visitor_name}:{host_name}",
+            )
+            _spawn(_room_session(visitor_name, host_name))
+
+        for p_name, loc_id in institution_visits:
+            await sm.enter_session([p_name], f"INST:{loc_id}")
+            _spawn(_inst_session(p_name, loc_id))
+
+        # home people without a visitor → immediately IDLE again
+        for n in home_people:
+            has_visitor = any(hn == n for _, hn in visits)
+            if not has_visitor:
+                p = find_player(state, n)
+                if p:
+                    await manager.send_to(game_id, p.slot_id, {
+                        "event": "home_alone",
+                        "data": {
+                            "message": f"{n} evinde yalniz bekledi — kimse gelmedi.",
+                        },
+                    })
+                await sm.finish_session([n])
+
+    # ═════════════════════════════════════════════════
+    # Start the two concurrent engines
+    # ═════════════════════════════════════════════════
+
+    # 1) Persistent campfire (background)
+    campfire_task = _spawn(
+        _run_persistent_campfire_ws(
+            game_id=game_id,
+            state=state,
+            sm=sm,
+            phase_done=phase_done,
+            state_lock=state_lock,
+            max_total_turns=max_campfire_turns,
+            veteran_threshold=veteran_threshold,
+            generate_campfire_speech=generate_campfire_speech,
+            get_alive_players=get_alive_players,
+            find_player=find_player,
+            maybe_update_campfire_summary=maybe_update_campfire_summary,
+            get_reaction=get_reaction,
+            orchestrator_pick=orchestrator_pick,
+            check_moderation=check_moderation,
+            check_ocak_tepki=check_ocak_tepki,
+        )
+    )
+
+    # 2) Decision dispatch loop (main coroutine)
+    try:
+        # Wave 0: all players start IDLE — collect initial decisions
+        await _run_decision_wave(alive_names)
+
+        while not phase_done.is_set():
+            # Quota check
+            if sm.sessions_done >= max_private_sessions:
+                logger.info(
+                    f"Private session quota reached "
+                    f"({sm.sessions_done}/{max_private_sessions})"
+                )
+                phase_done.set()
+                break
+
+            # Wait for idle players (sessions finishing triggers this)
+            idle = await sm.get_idle()
+            if not idle:
+                await sm.wait_for_idle(timeout=3.0)
+                continue
+
+            # New decision wave for the freshly idle players
+            await _run_decision_wave(idle)
+
+    except Exception as e:
+        logger.error(f"Fluid free phase decision loop error: {e}")
+    finally:
+        phase_done.set()
+
+    # ── cleanup: drain active tasks ──
+    if active_tasks:
+        done, pending = await asyncio.wait(active_tasks, timeout=30.0)
+        for t in pending:
+            t.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+
+    logger.info(
+        f"Fluid free phase done: {wave_counter} waves, "
+        f"{sm.sessions_done} private sessions completed"
+    )

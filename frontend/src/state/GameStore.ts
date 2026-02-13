@@ -161,9 +161,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const last = [...state.speeches].reverse().find(s => s.audio_url)
       if (last?.audio_url) audioQueue.enqueue(last.audio_url)
     } else {
-      const visit = state.houseVisits.find(
-        hv => hv.host === room || hv.visitor === room
-      )
+      // room is a visit_id
+      const visit = state.houseVisits.find(hv => hv.visit_id === room)
       if (visit) {
         const last = [...visit.speeches].reverse().find(s => s.audio_url)
         if (last?.audio_url) audioQueue.enqueue(last.audio_url)
@@ -203,9 +202,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const phase = (phaseMap[rawPhase] ?? rawPhase) as Phase
         const round = (data.round as number) ?? store.round
 
+        // Update players if provided in phase_change payload
+        if (data.players) {
+          const incomingPlayers = data.players as Player[]
+          const existingPlayers = store.players
+          const mergedPlayers = incomingPlayers.map((incoming) => {
+            const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+            if (existing) {
+              return { ...existing, ...incoming, x: incoming.x ?? existing.x, y: incoming.y ?? existing.y, color: incoming.color ?? existing.color }
+            }
+            return incoming
+          })
+          set({ players: mergedPlayers })
+        }
+
         // Only reset on actual phase TRANSITIONS (not sub-phases within campfire)
         const isSubPhase = rawPhase === 'campfire_close'
         const isNewPhase = phase !== store.phase
+
+        // Notify Renderer to update background for the new phase
+        if (isNewPhase) {
+          window.dispatchEvent(
+            new CustomEvent('phase-background-change', {
+              detail: { phase, sceneBackgrounds: store.sceneBackgrounds },
+            }),
+          )
+        }
 
         set({
           phase,
@@ -449,7 +471,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'house_visit':
       case 'house_visit_start': {
+        const visitId = data.visit_id as string
+        
+        // visit_id zorunlu - yoksa event yoksay
+        if (!visitId) {
+          console.warn('[GameStore] house_visit_start: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
+        // Aynı visit_id zaten varsa duplicate, yoksay
+        const isDuplicate = store.houseVisits.some((v) => v.visit_id === visitId)
+        if (isDuplicate) {
+          console.warn(`[GameStore] house_visit_start: visit_id ${visitId} zaten var, duplicate event yoksayıldı`)
+          break
+        }
+        
         const newVisit: HouseVisit = {
+          visit_id: visitId,
           host: data.host as string,
           visitor: data.visitor as string,
           speeches: [],
@@ -463,12 +501,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'visit_speech':
       case 'house_visit_exchange': {
-        const exHost = data.host as string
-        const exVisitor = data.visitor as string
+        const exVisitId = data.visit_id as string
         const visitAudioUrl = data.audio_url as string | undefined
+        
+        // visit_id zorunlu - yoksa event yoksay
+        if (!exVisitId) {
+          console.warn('[GameStore] house_visit_exchange: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
+        // Store'da bu visit_id var mı kontrol et
+        const existingVisit = store.houseVisits.find((v) => v.visit_id === exVisitId)
+        if (!existingVisit) {
+          console.warn(`[GameStore] house_visit_exchange: visit_id ${exVisitId} store'da bulunamadı, event yoksayıldı`)
+          break
+        }
+        
         set((s) => ({
-          houseVisits: s.houseVisits.map((hv) =>
-            hv.host === exHost && hv.visitor === exVisitor
+          houseVisits: s.houseVisits.map((hv) => {
+            // Sadece visit_id ile eşleştir
+            return hv.visit_id === exVisitId
               ? {
                   ...hv,
                   speeches: [
@@ -482,12 +534,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   turn: (data.turn as number) ?? hv.turn,
                 }
               : hv
-          ),
+          }),
         }))
-        // Audio senkron: text + audio birlikte geldi
-        if (visitAudioUrl) {
+        
+        // Audio senkron: visit bulundu, oda kontrolü yap
+        if (visitAudioUrl && existingVisit) {
           const currentRoom = store.selectedRoom ?? 'campfire'
-          if (currentRoom === exHost || currentRoom === exVisitor) {
+          if (currentRoom === existingVisit.host || currentRoom === existingVisit.visitor) {
             audioQueue.enqueue(visitAudioUrl)
           }
         }
@@ -495,14 +548,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
 
       case 'house_visit_end': {
-        const endHost = data.host as string
-        const endVisitor = data.visitor as string
+        const endVisitId = data.visit_id as string | undefined
+        
+        // visit_id zorunlu - yoksa event yoksay
+        if (!endVisitId) {
+          console.warn('[GameStore] house_visit_end: visit_id eksik, event yoksayıldı')
+          break
+        }
+        
+        // Store'da bu visit_id var mı kontrol et
+        const existingVisit = store.houseVisits.find((v) => v.visit_id === endVisitId)
+        if (!existingVisit) {
+          console.warn(`[GameStore] house_visit_end: visit_id ${endVisitId} store'da bulunamadı, event yoksayıldı`)
+          break
+        }
+        
         // Keep the visit data longer so user can read the conversation
         setTimeout(() => {
           set((s) => ({
-            houseVisits: s.houseVisits.filter(
-              (hv) => !(hv.host === endHost && hv.visitor === endVisitor)
-            ),
+            houseVisits: s.houseVisits.filter((hv) => hv.visit_id !== endVisitId),
           }))
         }, 60000) // 60 seconds — closing campfire will clear anyway
         break
@@ -543,9 +607,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
         setTimeout(() => set({ notification: null }), 12000)
         break
 
-      case 'players_update':
-        set({ players: data.players as Player[] })
+      case 'players_update': {
+        const incomingPlayers = data.players as Player[]
+        const existingPlayers = store.players
+
+        // Merge incoming players with existing ones, preserving client-side fields (x, y, color)
+        // but updating server-side fields (avatar_url, alive, etc.)
+        const mergedPlayers = incomingPlayers.map((incoming) => {
+          const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+          if (existing) {
+            return {
+              ...existing,
+              ...incoming,
+              // Preserve client-side rendering fields if not provided by server
+              x: incoming.x ?? existing.x,
+              y: incoming.y ?? existing.y,
+              color: incoming.color ?? existing.color,
+            }
+          }
+          return incoming
+        })
+
+        // Detect avatar changes — notify Character system to invalidate cache
+        for (const incoming of incomingPlayers) {
+          const existing = existingPlayers.find((p) => p.slot_id === incoming.slot_id)
+          if (existing && existing.avatar_url !== incoming.avatar_url && incoming.avatar_url) {
+            // Dispatch a custom event so Character/SpriteSheet can clear cached sprites
+            window.dispatchEvent(
+              new CustomEvent('avatar-changed', {
+                detail: { slotId: incoming.slot_id, name: incoming.name, url: incoming.avatar_url },
+              }),
+            )
+          }
+        }
+
+        set({ players: mergedPlayers })
         break
+      }
 
       case 'scene_backgrounds':
         set({ sceneBackgrounds: data as Record<string, string> })
@@ -566,5 +664,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  reset: () => set(initialState),
+  reset: () => {
+    audioQueue.stop()
+    set(initialState)
+  },
 }))

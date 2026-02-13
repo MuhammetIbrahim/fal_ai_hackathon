@@ -17,6 +17,17 @@ export interface Scene {
   exit?(): void
 }
 
+/** Phase → background key mapping */
+const PHASE_BG_MAP: Record<string, string> = {
+  morning: 'morning',
+  campfire: 'campfire',
+  day: 'village',
+  houses: 'house_interior',
+  vote: 'campfire',
+  night: 'night',
+  exile: 'campfire',
+}
+
 export class Renderer {
   /** The canvas HTML element */
   canvas: HTMLCanvasElement
@@ -39,6 +50,18 @@ export class Renderer {
   /** Max delta time cap to prevent huge jumps (e.g. after tab switch) */
   private static readonly MAX_DT = 1 / 15 // ~66ms, about 15 FPS minimum
 
+  /** Current background image (loaded texture) */
+  private bgImage: HTMLImageElement | null = null
+
+  /** Currently loaded background URL (to avoid redundant loads) */
+  private bgUrl: string | null = null
+
+  /** Current phase for background tracking */
+  private currentPhase: string | null = null
+
+  /** Background image cache: url → HTMLImageElement */
+  private bgCache: Map<string, HTMLImageElement> = new Map()
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
 
@@ -50,6 +73,10 @@ export class Renderer {
 
     // Disable image smoothing for crisp pixel art
     this.ctx.imageSmoothingEnabled = false
+
+    // Listen for phase background changes from the store
+    this._onPhaseChange = this._onPhaseChange.bind(this)
+    window.addEventListener('phase-background-change', this._onPhaseChange as EventListener)
   }
 
   /**
@@ -70,6 +97,94 @@ export class Renderer {
     if (this.rafId) {
       cancelAnimationFrame(this.rafId)
       this.rafId = 0
+    }
+    window.removeEventListener('phase-background-change', this._onPhaseChange as EventListener)
+  }
+
+  /**
+   * Update the background texture for the current phase.
+   * Clears the old background and loads a new one from the provided URL.
+   * Uses an internal cache to avoid re-downloading the same image.
+   */
+  updateBackground(phase: string, sceneBackgrounds: Record<string, string>): void {
+    const bgKey = PHASE_BG_MAP[phase]
+    if (!bgKey) {
+      // No background mapping for this phase — clear background
+      this.bgImage = null
+      this.bgUrl = null
+      this.currentPhase = phase
+      return
+    }
+
+    const url = sceneBackgrounds[bgKey]
+    if (!url) {
+      // No URL provided for this background key — clear
+      this.bgImage = null
+      this.bgUrl = null
+      this.currentPhase = phase
+      return
+    }
+
+    // Skip if already loaded
+    if (url === this.bgUrl && this.bgImage) {
+      this.currentPhase = phase
+      return
+    }
+
+    // Clear old background immediately
+    this.bgImage = null
+    this.bgUrl = url
+    this.currentPhase = phase
+
+    // Check cache first
+    const cached = this.bgCache.get(url)
+    if (cached) {
+      this.bgImage = cached
+      return
+    }
+
+    // Load new background image
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      // Only apply if the URL is still current (user might have changed phase)
+      if (this.bgUrl === url) {
+        this.bgImage = img
+        this.bgCache.set(url, img)
+      }
+    }
+    img.onerror = () => {
+      console.warn(`[Renderer] Failed to load background: ${url}`)
+    }
+    img.src = url
+  }
+
+  /**
+   * Get the current background image (if loaded).
+   * Scenes can use this to draw the background.
+   */
+  getBackgroundImage(): HTMLImageElement | null {
+    return this.bgImage
+  }
+
+  /**
+   * Clear the background texture cache entirely.
+   * Useful when sceneBackgrounds URLs change (e.g., new game session).
+   */
+  clearBackgroundCache(): void {
+    this.bgCache.clear()
+    this.bgImage = null
+    this.bgUrl = null
+  }
+
+  /** Handle phase-background-change events from GameStore */
+  private _onPhaseChange(e: Event): void {
+    const detail = (e as CustomEvent).detail as {
+      phase: string
+      sceneBackgrounds: Record<string, string>
+    }
+    if (detail) {
+      this.updateBackground(detail.phase, detail.sceneBackgrounds)
     }
   }
 

@@ -17,6 +17,46 @@ import type { TileMap } from './TileMap'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 
+/** Global avatar image cache: url → HTMLImageElement */
+const avatarCache = new Map<string, HTMLImageElement>()
+
+/** Preload / fetch an avatar image with caching */
+function loadAvatar(url: string): HTMLImageElement | null {
+  if (avatarCache.has(url)) return avatarCache.get(url)!
+  // Start loading
+  const img = new Image()
+  img.crossOrigin = 'anonymous'
+  img.onload = () => {
+    avatarCache.set(url, img)
+  }
+  img.onerror = () => {
+    console.warn(`[Character] Failed to load avatar: ${url}`)
+  }
+  img.src = url
+  return null // not yet loaded
+}
+
+/** Remove a specific URL from the avatar cache */
+export function invalidateAvatar(url: string): void {
+  avatarCache.delete(url)
+}
+
+/** Clear the entire avatar cache */
+export function clearAvatarCache(): void {
+  avatarCache.clear()
+}
+
+// Listen for avatar-changed events dispatched by GameStore
+if (typeof window !== 'undefined') {
+  window.addEventListener('avatar-changed', ((e: CustomEvent) => {
+    const { url } = e.detail as { slotId: string; name: string; url: string }
+    // Invalidate old cached image so the new URL is loaded fresh
+    // We don't know the old URL here, but the Character.setAvatarUrl method handles that
+    // Pre-load the new URL
+    if (url) loadAvatar(url)
+  }) as EventListener)
+}
+
 export class Character {
   /** World pixel position (scaled) */
   x: number
@@ -56,6 +96,12 @@ export class Character {
   /** The scaled character draw size */
   private drawSize: number
 
+  /** Avatar image URL (from backend) */
+  private avatarUrl: string | null = null
+
+  /** Loaded avatar HTMLImageElement (cached) */
+  private avatarImage: HTMLImageElement | null = null
+
   constructor(
     name: string,
     slotId: string,
@@ -78,6 +124,44 @@ export class Character {
     this.slotId = slotId
     this.alive = true
     this.drawSize = CHAR_SIZE * CHAR_SCALE
+  }
+
+  /**
+   * Set / update the avatar URL.
+   * If the URL changes, clears the old cached sprite and starts loading the new one.
+   */
+  setAvatarUrl(url: string | null | undefined): void {
+    if (!url || url === this.avatarUrl) return
+
+    // Invalidate old avatar from global cache
+    if (this.avatarUrl) {
+      invalidateAvatar(this.avatarUrl)
+    }
+
+    this.avatarUrl = url
+    this.avatarImage = null
+
+    // Try to load from cache or start async load
+    const cached = loadAvatar(url)
+    if (cached) {
+      this.avatarImage = cached
+    }
+  }
+
+  /**
+   * Get the current avatar image (if loaded).
+   * Re-checks the cache each call so async loads are picked up.
+   */
+  getAvatarImage(): HTMLImageElement | null {
+    if (this.avatarImage) return this.avatarImage
+    if (this.avatarUrl) {
+      const cached = avatarCache.get(this.avatarUrl)
+      if (cached) {
+        this.avatarImage = cached
+        return cached
+      }
+    }
+    return null
   }
 
   /**
@@ -204,34 +288,49 @@ export class Character {
     const drawX = screen.x
     const drawY = screen.y
 
-    // Use placeholder sprite drawing
+    // Try to draw avatar image; fall back to placeholder sprite
+    const avatar = this.getAvatarImage()
+
     ctx.save()
-    // If camera has scale, we need to account for it in the placeholder drawing
-    if (camera.scale !== 1) {
-      ctx.translate(drawX, drawY)
-      ctx.scale(camera.scale, camera.scale)
-      SpriteSheet.drawPlaceholderCharacter(
-        ctx,
-        0,
-        0,
-        this.color,
-        this.direction,
-        this.animFrame,
-        this.alive,
-      )
-      ctx.restore()
+    if (avatar) {
+      // Draw the avatar image scaled to character size
+      const scaledSize = this.drawSize * camera.scale
+      ctx.drawImage(avatar, drawX, drawY, scaledSize, scaledSize)
+
+      // Draw death overlay if not alive
+      if (!this.alive) {
+        ctx.globalAlpha = 0.5
+        ctx.fillStyle = '#333333'
+        ctx.fillRect(drawX, drawY, scaledSize, scaledSize)
+        ctx.globalAlpha = 1
+      }
     } else {
-      ctx.restore()
-      SpriteSheet.drawPlaceholderCharacter(
-        ctx,
-        drawX,
-        drawY,
-        this.color,
-        this.direction,
-        this.animFrame,
-        this.alive,
-      )
+      // Use placeholder sprite drawing
+      if (camera.scale !== 1) {
+        ctx.translate(drawX, drawY)
+        ctx.scale(camera.scale, camera.scale)
+        SpriteSheet.drawPlaceholderCharacter(
+          ctx,
+          0,
+          0,
+          this.color,
+          this.direction,
+          this.animFrame,
+          this.alive,
+        )
+      } else {
+        SpriteSheet.drawPlaceholderCharacter(
+          ctx,
+          drawX,
+          drawY,
+          this.color,
+          this.direction,
+          this.animFrame,
+          this.alive,
+        )
+      }
     }
+    ctx.restore()
 
     // Draw name tag
     this.drawNameTag(ctx, camera)

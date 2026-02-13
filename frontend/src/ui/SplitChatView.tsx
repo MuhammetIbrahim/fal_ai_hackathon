@@ -115,7 +115,7 @@ export const SplitChatView: React.FC = () => {
       <div className="flex flex-col w-[280px] gap-1 min-h-0">
         {houseVisits.map((visit) => (
           <ChatPanel
-            key={`${visit.host}-${visit.visitor}`}
+            key={visit.visit_id}
             title={`${visit.visitor} → ${visit.host}`}
             titleColor="#C2B280"
             speeches={visit.speeches}
