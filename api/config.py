@@ -3,8 +3,11 @@ from pydantic_settings import BaseSettings
 
 
 class APISettings(BaseSettings):
-    # FAL AI
+    # FAL AI (TTS, STT, FLUX)
     FAL_KEY: str = Field("", alias="FAL_KEY")
+
+    # Gemini API (LLM)
+    GEMINI_API_KEY: str = Field("", alias="GEMINI_API_KEY")
 
     # Multi-tenancy: API key → tenant_id
     API_KEYS: dict[str, str] = {
@@ -20,13 +23,13 @@ class APISettings(BaseSettings):
     PORT: int = 9000
     CORS_ORIGINS: list[str] = ["*"]
 
-    # LLM Model config
-    GENERATION_MODEL: str = "google/gemini-2.5-pro"
-    DIALOGUE_MODEL: str = "google/gemini-2.5-flash"
-    VALIDATION_MODEL: str = "google/gemini-2.5-flash"
+    # LLM Model config (Gemini API — google/ prefix yok)
+    GENERATION_MODEL: str = "gemini-2.5-pro"
+    DIALOGUE_MODEL: str = "gemini-2.5-flash"
+    VALIDATION_MODEL: str = "gemini-2.5-flash"
 
     # Orchestrator
-    ORCHESTRATOR_MODEL: str = "google/gemini-2.5-flash"
+    ORCHESTRATOR_MODEL: str = "gemini-2.5-flash"
     ORCHESTRATOR_TEMPERATURE: float = 0.3
 
     # Temperature config

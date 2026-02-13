@@ -17,10 +17,15 @@ async def lifespan(app: FastAPI):
     settings = get_api_settings()
     print(f"Starting {settings.APP_NAME} v{settings.VERSION}")
 
+    import os
     if settings.FAL_KEY:
-        import fal_client, os
+        import fal_client
         os.environ["FAL_KEY"] = settings.FAL_KEY
         print("FAL_KEY configured")
+
+    if settings.GEMINI_API_KEY:
+        os.environ["GEMINI_API_KEY"] = settings.GEMINI_API_KEY
+        print("GEMINI_API_KEY configured")
 
     yield
 

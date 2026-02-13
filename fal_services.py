@@ -1,14 +1,15 @@
 """
-fal_services.py — fal.ai Hackathon Servis Modulu
-=================================================
-Freya TTS, Freya STT, OpenRouter LLM, FLUX Avatar
+fal_services.py — Hackathon Servis Modulu
+==========================================
+Freya TTS/STT (fal.ai), Gemini LLM (Google API), FLUX Avatar (fal.ai)
 Tum fonksiyonlar async. Herhangi bir projeye kopyala-yapistir.
 
 Kurulum:
-    pip install fal-client httpx python-dotenv
+    pip install fal-client httpx python-dotenv google-genai
 
 Env:
     export FAL_KEY="your-fal-api-key"
+    export GEMINI_API_KEY="your-gemini-api-key"
 
 Kullanim:
     from fal_services import tts_stream, llm_generate, transcribe_audio
@@ -23,11 +24,12 @@ from collections.abc import AsyncGenerator
 
 import httpx
 import fal_client
+from google import genai
+from google.genai import types
 
-# ── Endpoint'ler ──────────────────────────────────────────
+# ── Endpoint'ler (fal.ai — TTS, STT, FLUX) ───────────────
 TTS_ENDPOINT = "freya-mypsdi253hbk/freya-tts"
 STT_ENDPOINT = "freya-mypsdi253hbk/freya-stt"
-LLM_ENDPOINT = "openrouter/router"
 FLUX_ENDPOINT = "fal-ai/flux/dev"
 FAL_RUN_BASE = "https://fal.run"
 
@@ -124,35 +126,47 @@ async def transcribe_audio_url(audio_url: str, language: str = "tr") -> Transcri
 
 
 # ══════════════════════════════════════════════════════════
-#  2. LLM — OpenRouter uzerinden herhangi bir model
+#  2. LLM — Google Gemini API (dogrudan)
 # ══════════════════════════════════════════════════════════
+
+_gemini_client: genai.Client | None = None
+
+
+def _get_gemini_client() -> genai.Client:
+    global _gemini_client
+    if not _gemini_client:
+        api_key = os.environ.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise FalServiceError("gemini", "GEMINI_API_KEY tanimli degil")
+        _gemini_client = genai.Client(api_key=api_key)
+    return _gemini_client
+
 
 async def llm_generate(
     prompt: str,
     system_prompt: str = "",
-    model: str = "google/gemini-2.5-flash",
+    model: str = "gemini-2.5-flash",
     temperature: float = 0.8,
     max_tokens: int | None = None,
     reasoning: bool | None = None,
 ) -> LLMResult:
-    """Tam yanit bekle, dondur."""
+    """Gemini API ile tam yanit uret."""
     try:
-        args = {
-            "prompt": prompt,
-            "system_prompt": system_prompt,
-            "model": model,
-            "temperature": temperature,
-        }
+        client = _get_gemini_client()
+        config_kwargs: dict = {"temperature": temperature}
+        if system_prompt:
+            config_kwargs["system_instruction"] = system_prompt
         if max_tokens is not None:
-            args["max_tokens"] = max_tokens
-        if reasoning is not None:
-            args["reasoning"] = reasoning
-        handler = await fal_client.submit_async(
-            LLM_ENDPOINT,
-            arguments=args,
+            config_kwargs["max_output_tokens"] = max_tokens
+
+        config = types.GenerateContentConfig(**config_kwargs)
+
+        response = await client.aio.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=config,
         )
-        result = await handler.get()
-        return LLMResult(output=result.get("output", str(result)))
+        return LLMResult(output=response.text or "")
     except Exception as e:
         raise FalServiceError("llm", str(e)) from e
 
@@ -160,33 +174,28 @@ async def llm_generate(
 async def llm_stream(
     prompt: str,
     system_prompt: str = "",
-    model: str = "google/gemini-2.5-flash",
+    model: str = "gemini-2.5-flash",
     temperature: float = 0.8,
     max_tokens: int | None = None,
 ) -> AsyncGenerator[str, None]:
-    """Token token yield eder."""
+    """Gemini API ile token token yield et."""
     try:
-        args = {
-            "prompt": prompt,
-            "system_prompt": system_prompt,
-            "model": model,
-            "temperature": temperature,
-        }
+        client = _get_gemini_client()
+        config_kwargs: dict = {"temperature": temperature}
+        if system_prompt:
+            config_kwargs["system_instruction"] = system_prompt
         if max_tokens is not None:
-            args["max_tokens"] = max_tokens
-        stream = fal_client.stream_async(
-            LLM_ENDPOINT,
-            arguments=args,
-        )
-        prev_text = ""
-        async for event in stream:
-            if isinstance(event, dict) and "output" in event:
-                full_text = event["output"]
-                # API kumulatif donduruyor — sadece yeni kismi yield et
-                if len(full_text) > len(prev_text):
-                    delta = full_text[len(prev_text):]
-                    prev_text = full_text
-                    yield delta
+            config_kwargs["max_output_tokens"] = max_tokens
+
+        config = types.GenerateContentConfig(**config_kwargs)
+
+        async for chunk in await client.aio.models.generate_content_stream(
+            model=model,
+            contents=prompt,
+            config=config,
+        ):
+            if chunk.text:
+                yield chunk.text
     except Exception as e:
         raise FalServiceError("llm", str(e)) from e
 
@@ -315,7 +324,7 @@ async def generate_background(prompt: str) -> BackgroundResult:
 async def full_pipeline(
     audio_bytes: bytes,
     system_prompt: str,
-    model: str = "google/gemini-2.5-flash",
+    model: str = "gemini-2.5-flash",
     language: str = "tr",
     speed: float = 1.0,
 ) -> AsyncGenerator[bytes, None]:
