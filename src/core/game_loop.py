@@ -168,6 +168,37 @@ async def _interruptible_sleep(game_id: str, duration: float) -> bool:
         return False
 
 
+async def _race_ai_generation(game_id: str, coro) -> tuple:
+    """Race an AI generation coroutine against human interrupt event.
+    Returns (result, False) on normal completion, (None, True) if interrupted."""
+    event = get_interrupt_event(game_id)
+    event.clear()
+
+    gen_task = asyncio.create_task(coro)
+    interrupt_task = asyncio.create_task(event.wait())
+
+    done, pending = await asyncio.wait(
+        [gen_task, interrupt_task],
+        return_when=asyncio.FIRST_COMPLETED,
+    )
+
+    for t in pending:
+        t.cancel()
+
+    if interrupt_task in done:
+        try:
+            await gen_task
+        except (asyncio.CancelledError, Exception):
+            pass
+        return None, True
+
+    try:
+        await interrupt_task
+    except (asyncio.CancelledError, Exception):
+        pass
+    return gen_task.result(), False
+
+
 def get_input_queue(game_id: str, player_id: str) -> asyncio.Queue:
     """
     Oyuncu icin input queue getir/olustur.
@@ -1467,7 +1498,18 @@ async def _run_campfire_segment_ws(
             else:
                 logger.warning(f"[CAMPFIRE] Human: '{message[:80]}' → TTS direkt")
         else:
-            message = await generate_campfire_speech(state, speaker, participant_names=participant_names)
+            message, gen_cancelled = await _race_ai_generation(
+                game_id,
+                generate_campfire_speech(state, speaker, participant_names=participant_names),
+            )
+            if gen_cancelled:
+                logger.warning(f"[INTERRUPT] AI generation cancelled (campfire loop)")
+                human_p = next((p for p in participants if p.is_human), None)
+                if human_p:
+                    await _process_human_interjection(
+                        game_id, state, human_p, participant_names, turns_done, max_turns,
+                    )
+                continue
 
         # Moderator check
         mod_ok = True
@@ -1627,9 +1669,56 @@ async def _run_room_conversation_ws(
             else:
                 speech_content = await _rewrite_human_speech(speech_content, current, state)
         else:
-            speech_content = await generate_1v1_speech(
-                state, current, opponent, exchanges, campfire_summary
+            speech_content, gen_cancelled = await _race_ai_generation(
+                game_id,
+                generate_1v1_speech(state, current, opponent, exchanges, campfire_summary),
             )
+            if gen_cancelled:
+                logger.warning(f"[INTERRUPT] AI generation cancelled (room visit)")
+                # Human interrupted during AI generation — skip rest, interjection handled after sleep
+                human_in_visit = next((p for p in [visitor, owner] if p.is_human), None)
+                if human_in_visit:
+                    hq = get_input_queue(game_id, human_in_visit.slot_id)
+                    found_data = None
+                    stashed = []
+                    while True:
+                        try:
+                            item = hq.get_nowait()
+                        except asyncio.QueueEmpty:
+                            break
+                        if item.get("content") and item.get("event") in ("visit_speak", "speak"):
+                            found_data = item
+                            break
+                        else:
+                            stashed.append(item)
+                    for item in stashed:
+                        await hq.put(item)
+                    if found_data:
+                        h_content = found_data["content"]
+                        h_msg = await _rewrite_human_speech(h_content, human_in_visit, state)
+                        exchanges.append({"speaker": human_in_visit.name, "role_title": human_in_visit.role_title, "content": h_msg})
+                        human_in_visit.add_message("assistant", h_msg)
+                        h_audio_url, h_audio_dur = await _generate_audio_url(
+                            h_msg, voice=getattr(human_in_visit, 'voice_id', 'alloy'),
+                            speed=getattr(human_in_visit, 'voice_speed', 1.0),
+                        )
+                        await manager.broadcast(game_id, {
+                            "event": "house_visit_exchange",
+                            "data": {
+                                "visit_id": visit_id,
+                                "speaker": human_in_visit.name,
+                                "role_title": human_in_visit.role_title,
+                                "content": h_msg,
+                                "turn": turn + 1,
+                                "max_exchanges": max_exchanges,
+                                "visitor": visitor.name,
+                                "host": owner.name,
+                                "audio_url": h_audio_url,
+                                "audio_duration": h_audio_dur,
+                                "context": f"visit:{owner.name}:{visitor.name}",
+                            }
+                        })
+                continue
 
         exchange_entry = {
             "speaker": current.name,
@@ -2059,9 +2148,18 @@ async def _run_persistent_campfire_ws(
             else:
                 logger.warning(f"[PERSISTENT-CF] Human: '{message[:80]}' → TTS direkt")
         else:
-            message = await generate_campfire_speech(
-                state, speaker, participant_names=participant_names,
+            message, gen_cancelled = await _race_ai_generation(
+                game_id,
+                generate_campfire_speech(state, speaker, participant_names=participant_names),
             )
+            if gen_cancelled:
+                logger.warning(f"[INTERRUPT] AI generation cancelled (persistent campfire)")
+                human_p = next((p for p in participants if p.is_human), None)
+                if human_p:
+                    await _process_human_interjection(
+                        game_id, state, human_p, participant_names, total_turns, max_total_turns,
+                    )
+                continue
 
         # moderator
         mod_ok = True
