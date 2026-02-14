@@ -364,7 +364,7 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve ${userName
   }
 
   const allParticipants = [
-    ...SPEAKERS,
+    ...SPEAKERS.map(s => s.id === 'user' ? { ...s, name: userName } : s),
     { id: 'mod', name: ORCHESTRATOR.name, color: ORCHESTRATOR.color, emoji: ORCHESTRATOR.emoji },
   ]
 
