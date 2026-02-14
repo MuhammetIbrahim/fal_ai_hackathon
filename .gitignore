@@ -8,3 +8,6 @@ node_modules/
 dist/
 .vscode/
 *.egg-info/
+
+# Technical reports (for local use only)
+LIVING_EVENT_SYSTEM.md
