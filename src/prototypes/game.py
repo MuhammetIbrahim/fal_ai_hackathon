@@ -333,6 +333,7 @@ def create_character_slots(
     characters = []
 
     # Insan oyuncu
+    human_count = player_count - ai_count
     characters.append({
         "slot_id": "P0",
         "name": names[0],
@@ -340,6 +341,7 @@ def create_character_slots(
         "lore": roles[0]["lore"],
         "archetype": rng.choice(archetype_keys),
         "is_echo_born": False,
+        "is_human": True,
         "skill_tier": None,
         "institution": inst_pool[0]["id"],
         "institution_label": inst_pool[0]["label"],
@@ -356,6 +358,7 @@ def create_character_slots(
             "lore": roles[i]["lore"],
             "archetype": rng.choice(archetype_keys),
             "is_echo_born": is_ai,
+            "is_human": i < human_count,
             "skill_tier": rng.choice(tier_keys) if is_ai else None,
             "institution": inst_pool[i]["id"],
             "institution_label": inst_pool[i]["label"],
@@ -462,16 +465,11 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
         f"Konusma Tarzi: {arch['speech_style']}\n\n"
         f"KIMLIK:\n{identity}\n"
         f"{tier_block}\n\n"
-        f"Asagidaki 5 alani JSON olarak uret. Baska hicbir sey yazma, SADECE JSON:\n\n"
+        f"Asagidaki 3 alani JSON olarak uret. Baska hicbir sey yazma, SADECE JSON:\n\n"
         f'{{"acting_prompt": "2-3 paragraf acting talimati (yukaridaki kurallara uygun)",\n'
-        f' "public_tick": "Bu karakterin herkesin fark edecegi 1 konusma aliskanligi. '
-        f'Ornek: her cumleye bir soru ile baslar, surekli yani der, cumlelerini yarida keser. '
-        f'Kisa, somut, tek bir aliskanlık.",\n'
         f' "alibi_anchor": "Bu karakterin her gun yaptigi, baskalarinin dogrulayabilecegi 1 rutin. '
         f'Kurum ve unvanina uygun olsun. Ornek: her sabah kilere erzak sayar, aksam nobetini tutar. '
         f'Somut zaman + yer + eylem icersin.",\n'
-        f' "speech_color": "Bu karakterin konusma tonu 1-2 cumle. '
-        f'Ornek: kisa kesik cumleler kurar, gereksiz kelime kullanmaz. Veya: hikayeci tarzi, her seyi bir aniyla anlatir.",\n'
         f' "avatar_description": "Karakterin fiziksel gorunusu, 1-2 cumle INGILIZCE. '
         f'Yas, sac rengi, yuz yapisi, meslegine uygun kiyafet. '
         f'Ornek: 50 year old man with white beard, tired eyes, wearing blacksmith apron"}}'
@@ -611,6 +609,7 @@ async def generate_players(
             acting_prompt=card["acting_prompt"],
             skill_tier=slot.get("skill_tier"),
             skill_tier_label=SKILL_TIERS[slot["skill_tier"]]["label"] if slot.get("skill_tier") else None,
+            is_human=slot.get("is_human", False),
             institution=slot.get("institution"),
             institution_label=slot.get("institution_label"),
             public_tick=card.get("public_tick") or None,
@@ -773,13 +772,12 @@ FORMAT:
 - SADECE bu isimlere hitap et: {alive_names}
 
 DIL — COK ONEMLI:
-- Duz, sade, gunluk sokak Turkcesi. Edebiyat YASAK. Siir YASAK. Felsefe YASAK.
-- Kisa, kesik, bazen sinirli cumleler. Paragraf paragraf konusma YASAK.
-- Devrik cumleler, yarim dusunceler, cumleni bitirmeden baska seye atlama SERBEST.
-- "hani", "yani", "sey", "ya", "bak", "ne biliyim", "olm", "valla", "bi dk", "ulan" gibi dolgu kelimeler KULLAN.
-- Ornek tonlar: "Bilmiyorum abi ya", "Valla ben gormedim", "Ya bi git isine, ne anlatiyorsun?", "Hadi ordan be", "Ee napacaz simdi?", "Ulan sen de mi?"
-- Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "mal misin", "kafayi mi yedin", "yeter ulan"
-- Karakterine gore samimi hitap ZORUNLU: "usta", "hacim", "kanka", "evlat", "reis", "kardesim", "abi", "abla", "be adam", "hocam", "ulan" gibi. Resmi/kibar konusma YASAK.
+- Dogal, akici, gunluk Turkce. Edebiyat YASAK. Siir YASAK.
+- Kisa ve net cumleler. Paragraf paragraf konusma YASAK.
+- Konuya hakim biri gibi konus. Fikirlerini acik ve net ifade et.
+- Dolgu kelimeler ("ee", "sey", "hani", "yani", "valla", "olm") KULLANMA. Bunlar yapay duruyor.
+- Direkt konuya gir, gevezelik yapma. Argumanlarini net sun.
+- Samimi ama zeki konus. Karsi tarafin argumanini anla ve cevapla.
 
 ANALIZ YASAGI — KRITIK:
 - "Analizlerime gore", "Su noktada tutarsizlik var", "Mantiksal olarak", "Dusunuyorum da", "Simdiye kadarki veriler" gibi HERHANGI BIR dedektif/analitik dil TAMAMEN YASAK.
@@ -907,12 +905,8 @@ def _build_card_context(player: Player, state: GameState | None = None) -> str:
     parts = []
     if player.institution_label:
         parts.append(f"Kurumun: {player.institution_label}")
-    if player.public_tick:
-        parts.append(f"Konusma aliskanlığın: {player.public_tick}")
     if player.alibi_anchor:
         parts.append(f"Gunluk rutinin (alibi): {player.alibi_anchor}")
-    if player.speech_color:
-        parts.append(f"Konusma tarzin: {player.speech_color}")
     # Katman 2: Son kurum ziyareti alibi
     if state:
         visits = [v for v in state.get("_institution_visits", []) if v["player"] == player.name]
@@ -1178,13 +1172,12 @@ AI KOKUSUNU ENGELLE — KRITIK:
 - Campfire'da soylediklerini hatirla ve cakistirma yap
 
 DIL — COK ONEMLI:
-- Duz, sade, gunluk sokak Turkcesi. Edebi/felsefi/siirsel YASAK.
-- Kisa, kesik, bazen sinirli cumleler. Paragraf konusma YASAK.
-- Devrik cumleler, yarim dusunceler, cumleni bitirmeden atlama SERBEST.
-- "hani", "yani", "bak", "olm", "ne biliyim", "ya", "valla", "bi dk", "ulan" gibi dolgu kelimeler KULLAN.
-- Ornek tonlar: "Bilmiyorum abi ya", "Valla ben gormedim", "Ya bi git isine", "Hadi ordan be", "Ulan sen de mi?"
-- Sert olabilirsin: "ne sacmaliyorsun", "birak ya", "kafayi mi yedin", "yeter ulan"
-- Samimi hitap ZORUNLU: "usta", "hacim", "kanka", "evlat", "reis", "kardesim", "hocam", "ulan" gibi. Resmi konusma YASAK.
+- Dogal, akici, gunluk Turkce. Edebi/felsefi/siirsel YASAK.
+- Kisa ve net cumleler. Paragraf konusma YASAK.
+- Konuya hakim biri gibi konus. Fikirlerini acik ve net ifade et.
+- Dolgu kelimeler ("ee", "sey", "hani", "yani", "valla", "olm") KULLANMA. Bunlar yapay duruyor.
+- Direkt konuya gir, gevezelik yapma. Argumanlarini net sun.
+- Samimi ama zeki konus. Karsi tarafin argumanini anla ve cevapla.
 
 ANALIZ YASAGI:
 - "Analizlerime gore", "Mantiksal olarak", "Su noktada tutarsizlik var", "Dusunuyorum da" gibi HERHANGI BIR dedektif/analitik dil TAMAMEN YASAK.

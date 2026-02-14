@@ -49,6 +49,17 @@ export interface GameStore {
   // Character inspection
   inspectedPlayer: string | null  // player name when clicking a character on the map
 
+  // My character info (persistent — survives modal dismiss)
+  myCharacterInfo: {
+    name: string
+    role_title: string
+    lore: string
+    archetype_label: string
+    player_type: string
+    avatar_url?: string
+  } | null
+  showMyCharacter: boolean
+
   // UI control
   inputRequired: InputAction | null
   notification: { message: string; type: 'info' | 'warning' | 'error' } | null
@@ -73,6 +84,7 @@ export interface GameStore {
   setMorningText: (text: string) => void
   setOmens: (omens: Omen[]) => void
   addSpeech: (speech: Speech) => void
+  addVisitSpeech: (visitId: string, speech: Speech) => void
   clearSpeeches: () => void
   setHouseVisits: (visits: HouseVisit[]) => void
   addVote: (voter: string, target: string) => void
@@ -93,9 +105,16 @@ export interface GameStore {
   setShowParchment: (show: boolean) => void
   setRound: (round: number) => void
   setCharacterCard: (card: GameStore['characterCard']) => void
+  setShowMyCharacter: (show: boolean) => void
 
   handleEvent: (event: string, data: Record<string, unknown>) => void
   reset: () => void
+}
+
+let _notifTimer: ReturnType<typeof setTimeout> | null = null
+function setNotifTimeout(fn: () => void, ms: number) {
+  if (_notifTimer) clearTimeout(_notifTimer)
+  _notifTimer = setTimeout(() => { _notifTimer = null; fn() }, ms)
 }
 
 const initialState = {
@@ -134,6 +153,8 @@ const initialState = {
   transitioning: false,
   showParchment: false,
   characterCard: null,
+  myCharacterInfo: null,
+  showMyCharacter: false,
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -147,7 +168,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setMyName: (name) => set({ myName: name }),
   setMorningText: (text) => set({ morningText: text }),
   setOmens: (omens) => set({ omens }),
-  addSpeech: (speech) => set((s) => ({ speeches: [...s.speeches, speech] })),
+  addSpeech: (speech) =>
+    set((s) => {
+      // Server message → find and replace the oldest pending message from same speaker
+      if (!speech.pending) {
+        for (let i = 0; i < s.speeches.length; i++) {
+          if (s.speeches[i].pending && s.speeches[i].speaker === speech.speaker) {
+            const updated = [...s.speeches]
+            updated[i] = speech
+            return { speeches: updated }
+          }
+        }
+      }
+      // Pending messages auto-expire after 15s
+      if (speech.pending) {
+        setTimeout(() => {
+          set((s2) => ({
+            speeches: s2.speeches.map((sp) =>
+              sp === speech && sp.pending ? { ...sp, pending: false } : sp
+            ),
+          }))
+        }, 15000)
+      }
+      return { speeches: [...s.speeches, speech] }
+    }),
+  addVisitSpeech: (visitId, speech) =>
+    set((s) => {
+      const updated = s.houseVisits.map((hv) => {
+        if (hv.visit_id !== visitId) return hv
+        // If pending, add directly. If server message, try to replace pending first.
+        if (!speech.pending) {
+          for (let i = 0; i < hv.speeches.length; i++) {
+            if (hv.speeches[i].pending && hv.speeches[i].speaker === speech.speaker) {
+              const newSpeeches = [...hv.speeches]
+              newSpeeches[i] = speech
+              return { ...hv, speeches: newSpeeches }
+            }
+          }
+        }
+        return { ...hv, speeches: [...hv.speeches, speech] }
+      })
+      return { houseVisits: updated }
+    }),
   clearSpeeches: () => set({ speeches: [] }),
   setHouseVisits: (visits) => set({ houseVisits: visits }),
   addVote: (voter, target) => set((s) => ({ votes: { ...s.votes, [voter]: target } })),
@@ -169,13 +231,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get()
     if (!room || room === 'campfire') {
       const last = [...state.speeches].reverse().find(s => s.audio_url)
-      if (last?.audio_url) audioQueue.enqueue(last.audio_url)
+      if (last?.audio_url) audioQueue.playNow(last.audio_url)
     } else {
       // room is a visit_id
       const visit = state.houseVisits.find(hv => hv.visit_id === room)
       if (visit) {
         const last = [...visit.speeches].reverse().find(s => s.audio_url)
-        if (last?.audio_url) audioQueue.enqueue(last.audio_url)
+        if (last?.audio_url) audioQueue.playNow(last.audio_url)
       }
     }
   },
@@ -187,6 +249,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setShowParchment: (show) => set({ showParchment: show }),
   setRound: (round) => set({ round }),
   setCharacterCard: (card) => set({ characterCard: card }),
+  setShowMyCharacter: (show) => set({ showMyCharacter: show }),
 
   handleEvent: (event: string, data: Record<string, unknown>) => {
     const store = get()
@@ -305,7 +368,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: 'info',
           },
         })
-        setTimeout(() => set({ notification: null }), 3000)
+        setNotifTimeout(() => set({ notification: null }), 3000)
         break
 
       case 'location_decisions': {
@@ -329,7 +392,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: 'info',
           },
         })
-        setTimeout(() => set({ notification: null }), 5000)
+        setNotifTimeout(() => set({ notification: null }), 5000)
         break
 
       case 'morning_crisis':
@@ -339,7 +402,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: 'warning',
           },
         })
-        setTimeout(() => set({ notification: null }), 6000)
+        setNotifTimeout(() => set({ notification: null }), 6000)
         break
 
       case 'sinama_echo':
@@ -367,7 +430,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: 'warning',
           },
         })
-        setTimeout(() => set({ notification: null }), 5000)
+        setNotifTimeout(() => set({ notification: null }), 5000)
         break
 
       case 'home_alone':
@@ -381,11 +444,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           content: data.content as string,
           audio_url: cfAudioUrl,
         })
-        // Audio senkron: text + audio birlikte geldi, hemen cal
+        // Audio senkron: eski sesi kes, yenisini hemen cal (voice_chat mantigi)
         if (cfAudioUrl) {
           const currentRoom = store.selectedRoom ?? 'campfire'
           if (currentRoom === 'campfire') {
-            audioQueue.enqueue(cfAudioUrl)
+            audioQueue.playNow(cfAudioUrl)
           }
         }
         break
@@ -463,7 +526,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }
 
           if (shouldPlay) {
-            audioQueue.enqueue(audioUrl)
+            audioQueue.playNow(audioUrl)
           }
         }
         break
@@ -528,31 +591,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
           break
         }
         
+        // Use addVisitSpeech to handle pending replacement
+        store.addVisitSpeech(exVisitId, {
+          speaker: data.speaker as string,
+          content: data.content as string,
+          audio_url: visitAudioUrl,
+        })
+        // Update turn
         set((s) => ({
-          houseVisits: s.houseVisits.map((hv) => {
-            // Sadece visit_id ile eşleştir
-            return hv.visit_id === exVisitId
-              ? {
-                  ...hv,
-                  speeches: [
-                    ...hv.speeches,
-                    {
-                      speaker: data.speaker as string,
-                      content: data.content as string,
-                      audio_url: visitAudioUrl,
-                    },
-                  ],
-                  turn: (data.turn as number) ?? hv.turn,
-                }
+          houseVisits: s.houseVisits.map((hv) =>
+            hv.visit_id === exVisitId
+              ? { ...hv, turn: (data.turn as number) ?? hv.turn }
               : hv
-          }),
+          ),
         }))
         
         // Audio senkron: visit bulundu, oda kontrolü yap
         if (visitAudioUrl && existingVisit) {
           const currentRoom = store.selectedRoom ?? 'campfire'
           if (currentRoom === existingVisit.host || currentRoom === existingVisit.visitor) {
-            audioQueue.enqueue(visitAudioUrl)
+            audioQueue.playNow(visitAudioUrl)
           }
         }
         break
@@ -602,23 +660,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: (data.type as 'info' | 'warning' | 'error') ?? 'info',
           },
         })
-        setTimeout(() => set({ notification: null }), 4000)
+        setNotifTimeout(() => set({ notification: null }), 4000)
         break
 
-      case 'character_reveal':
-        // İnsan oyuncuya karakter bilgisi göster + myName güncelle
+      case 'character_reveal': {
+        // Broadcast ile gelir — target_player kontrolu yap (sadece bize ait olan)
+        const targetPlayer = data.target_player as string | undefined
+        const myPid = store.playerId
+        if (targetPlayer && myPid && targetPlayer !== myPid) {
+          break  // Bu reveal bize ait degil
+        }
+        const charInfo = {
+          name: data.name as string,
+          role_title: data.role_title as string,
+          lore: (data.lore as string) ?? '',
+          archetype_label: (data.archetype_label as string) ?? '',
+          player_type: (data.player_type as string) ?? '',
+          avatar_url: data.avatar_url as string | undefined,
+        }
         set({
           myName: data.name as string,
-          characterCard: {
-            name: data.name as string,
-            role_title: data.role_title as string,
-            lore: (data.lore as string) ?? '',
-            archetype_label: (data.archetype_label as string) ?? '',
-            player_type: (data.player_type as string) ?? '',
-            avatar_url: data.avatar_url as string | undefined,
-          },
+          characterCard: charInfo,
+          myCharacterInfo: charInfo,
         })
         break
+      }
 
       case 'players_update': {
         const incomingPlayers = data.players as Player[]
@@ -669,19 +735,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: 'error',
           },
         })
-        setTimeout(() => set({ notification: null }), 5000)
+        setNotifTimeout(() => set({ notification: null }), 5000)
         break
 
       case 'stt_result': {
         const sttText = data.text as string
         if (sttText) {
-          set({
-            notification: {
-              message: `Algilanan: "${sttText}"`,
-              type: 'info',
-            },
-          })
-          setTimeout(() => set({ notification: null }), 3000)
+          const sttMyName = get().myName
+          if (sttMyName) {
+            audioQueue.stop()  // Interrupt current audio — user is speaking
+
+            // Determine if user is in a visit or campfire
+            const sttLoc = store.playerLocations[sttMyName]
+            const sttInVisit = sttLoc?.startsWith('visiting:')
+            if (sttInVisit) {
+              const myVisit = store.houseVisits.find(
+                (v) => v.host === sttMyName || v.visitor === sttMyName
+              )
+              if (myVisit) {
+                store.addVisitSpeech(myVisit.visit_id, {
+                  speaker: sttMyName,
+                  content: sttText,
+                  pending: true,
+                })
+              }
+            } else {
+              store.addSpeech({
+                speaker: sttMyName,
+                content: sttText,
+                pending: true,
+              })
+            }
+          }
         }
         break
       }

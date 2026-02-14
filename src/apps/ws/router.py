@@ -205,8 +205,8 @@ async def handle_client_event(
         from src.core.game_loop import get_input_queue
         queue = get_input_queue(game_id, player_id)
         await queue.put({"event": "speak", "content": content})
-        
-        logger.info(f"🗣️  {player_id} spoke in {game_id}")
+
+        logger.warning(f"[QUEUE] speak text queued for {player_id}: '{content[:50]}' (qsize={queue.qsize()})")
     
     # ═══ VOTE (Oylama) ═══
     elif event_type == "vote":
@@ -275,11 +275,26 @@ async def handle_client_event(
 
         try:
             import base64
+            import asyncio as _aio
             audio_bytes = base64.b64decode(audio_b64)
 
             from src.services.api_client import transcribe_audio
-            stt_result = await transcribe_audio(audio_bytes, language="tr")
-            content = stt_result.text.strip()
+
+            # STT retry — fast backoff (0.5s, 1s, 1.5s, 2s, 2.5s, 3s)
+            content = ""
+            _retry_delays = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+            for attempt in range(len(_retry_delays) + 1):
+                try:
+                    stt_result = await transcribe_audio(audio_bytes, language="tr")
+                    content = stt_result.text.strip()
+                    break
+                except Exception as stt_e:
+                    if attempt < len(_retry_delays):
+                        delay = _retry_delays[attempt]
+                        logger.warning(f"STT attempt {attempt+1} failed: {stt_e}, retrying in {delay}s...")
+                        await _aio.sleep(delay)
+                    else:
+                        raise stt_e
 
             if not content:
                 await websocket.send_json({
@@ -299,15 +314,16 @@ async def handle_client_event(
             queue = get_input_queue(game_id, player_id)
             await queue.put({"event": speech_type, "content": content})
 
-            logger.info(f"🎤 {player_id} spoke via mic in {game_id}: {content[:50]}")
+            logger.warning(f"[QUEUE] speak_audio queued for {player_id}: event={speech_type} text='{content[:50]}' (qsize={queue.qsize()})")
 
         except Exception as e:
-            logger.error(f"STT failed for {player_id}: {e}")
+            logger.error(f"STT failed for {player_id} after retries: {e}")
+            # Soft notification — user can still type, don't show hard error
             await websocket.send_json({
-                "event": "error",
+                "event": "notification",
                 "data": {
-                    "code": "stt_error",
-                    "message": f"Speech-to-text failed: {str(e)[:100]}"
+                    "message": "Ses tanima basarisiz — yazarak devam edebilirsin",
+                    "type": "warning",
                 }
             })
             return

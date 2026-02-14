@@ -103,8 +103,8 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
               >
                 {speech.speaker}
               </span>
-              <p className={`text-text-light ${textSize} font-pixel leading-relaxed`}>
-                {speech.content}
+              <p className={`${speech.pending ? 'text-stone italic' : 'text-text-light'} ${textSize} font-pixel leading-relaxed`}>
+                {speech.content}{speech.pending ? ' ...' : ''}
               </p>
             </div>
           </div>

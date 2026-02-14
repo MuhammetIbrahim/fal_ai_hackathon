@@ -40,7 +40,11 @@ const LobbyUI: React.FC = () => {
 
   const handleCreateLobby = useCallback(async () => {
     const name = playerName.trim()
-    if (!name) return
+    if (!name) {
+      setNotification({ message: 'Isim gir!', type: 'error' })
+      setTimeout(() => setNotification(null), 2000)
+      return
+    }
     try {
       setLoading(true)
       const result = await createLobby(name, totalPlayers, aiCount) as any
@@ -166,31 +170,47 @@ const LobbyUI: React.FC = () => {
 
       {/* ── Main card ── */}
       <div className="relative w-[420px] max-w-[92vw]">
-        {/* Outer ornamental border */}
+        {/* Outermost glow ring */}
+        <div
+          className="absolute -inset-[12px] pointer-events-none rounded-sm"
+          style={{
+            border: '1px solid rgba(218,165,32,0.08)',
+            boxShadow: '0 0 80px rgba(255,140,0,0.06), 0 0 120px rgba(218,165,32,0.04)',
+          }}
+        />
+
+        {/* Outer ornamental border — double line effect */}
         <div
           className="absolute -inset-[6px] pointer-events-none"
           style={{
-            border: '3px solid #5C3A1E',
-            boxShadow: '0 0 0 1px #3a2210, 0 0 40px rgba(255,140,0,0.08)',
+            border: '2px solid #5C3A1E',
+            boxShadow: '0 0 0 1px #3a2210, inset 0 0 0 1px rgba(218,165,32,0.1), 0 0 50px rgba(255,140,0,0.1)',
           }}
         />
 
         {/* Inner card */}
         <div
-          className="relative border-2 border-wood/60"
+          className="relative border border-wood/60"
           style={{
-            background: 'linear-gradient(180deg, #1a1208 0%, #14100a 50%, #1a1208 100%)',
-            boxShadow: 'inset 0 1px 0 rgba(218,165,32,0.1), 0 12px 40px rgba(0,0,0,0.7)',
+            background: 'linear-gradient(180deg, #1c140a 0%, #14100a 40%, #0f0b06 70%, #1a1208 100%)',
+            boxShadow: 'inset 0 1px 0 rgba(218,165,32,0.15), inset 0 -1px 0 rgba(218,165,32,0.05), 0 16px 48px rgba(0,0,0,0.8)',
           }}
         >
-          {/* Top decorative bar */}
-          <div className="h-[3px] bg-gradient-to-r from-transparent via-text-gold/40 to-transparent" />
+          {/* Top decorative bar — gold accent */}
+          <div className="h-[2px] bg-gradient-to-r from-transparent via-text-gold/50 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
 
-          {/* Corner ornaments */}
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-text-gold/50" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-text-gold/50" />
-          <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-text-gold/50" />
-          <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-text-gold/50" />
+          {/* Corner ornaments — larger L-shaped */}
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-text-gold/40" />
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-text-gold/40" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-text-gold/40" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-text-gold/40" />
+
+          {/* Corner diamond accents */}
+          <div className="absolute top-2 left-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
+          <div className="absolute top-2 right-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
+          <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
+          <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
 
           {/* Content */}
           <div className="px-10 py-8 flex flex-col items-center">
@@ -416,10 +436,87 @@ const LobbyUI: React.FC = () => {
           </div>
 
           {/* Bottom decorative bar */}
-          <div className="h-[3px] bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
+          <div className="h-[2px] bg-gradient-to-r from-transparent via-text-gold/30 to-transparent" />
         </div>
       </div>
     </div>
+  )
+}
+
+// ── Character Info Button (floating, during gameplay) ──
+const CharacterInfoButton: React.FC = () => {
+  const myCharacterInfo = useGameStore((s) => s.myCharacterInfo)
+  const showMyCharacter = useGameStore((s) => s.showMyCharacter)
+  const setShowMyCharacter = useGameStore((s) => s.setShowMyCharacter)
+
+  if (!myCharacterInfo) return null
+
+  return (
+    <>
+      {/* Floating button — top-left */}
+      <button
+        onClick={() => setShowMyCharacter(!showMyCharacter)}
+        className="fixed top-3 left-3 z-40 flex items-center gap-2 px-3 py-2 border border-text-gold/40 hover:border-text-gold/70 transition-all"
+        style={{
+          background: 'linear-gradient(180deg, rgba(26,18,8,0.95) 0%, rgba(15,11,6,0.95) 100%)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+        }}
+      >
+        <span className="text-text-gold text-[10px] font-pixel">
+          {myCharacterInfo.name}
+        </span>
+        <span className="text-stone/50 text-[8px] font-pixel">
+          {showMyCharacter ? '▲' : '▼'}
+        </span>
+      </button>
+
+      {/* Dropdown panel */}
+      {showMyCharacter && (
+        <div
+          className="fixed top-12 left-3 z-40 w-[280px] border border-text-gold/40"
+          style={{
+            background: 'linear-gradient(180deg, rgba(26,18,8,0.98) 0%, rgba(15,11,6,0.98) 100%)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+          }}
+        >
+          <div className="h-px bg-gradient-to-r from-transparent via-text-gold/40 to-transparent" />
+          <div className="px-4 py-3 flex flex-col gap-2">
+            {myCharacterInfo.avatar_url && (
+              <img
+                src={myCharacterInfo.avatar_url}
+                alt={myCharacterInfo.name}
+                className="w-16 h-16 border border-wood/40 self-center"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            )}
+            <h3
+              className="text-text-gold text-[12px] font-pixel text-center"
+              style={{ textShadow: '0 0 8px rgba(218,165,32,0.3)' }}
+            >
+              {myCharacterInfo.name}
+            </h3>
+            <span className="text-stone text-[9px] font-pixel text-center">
+              {myCharacterInfo.role_title}
+            </span>
+            <span className={`text-[8px] font-pixel text-center ${myCharacterInfo.player_type === 'et_can' ? 'text-green-400' : 'text-red-400'}`}>
+              {myCharacterInfo.player_type === 'et_can' ? 'Et u Can (Koylu)' : 'Yanki Dogmus (Sahtekar)'}
+            </span>
+            {myCharacterInfo.archetype_label && (
+              <span className="text-wood text-[8px] font-pixel text-center">
+                {myCharacterInfo.archetype_label}
+              </span>
+            )}
+            {myCharacterInfo.lore && (
+              <p className="text-text-light/60 text-[8px] font-pixel text-center leading-relaxed mt-1">
+                {myCharacterInfo.lore}
+              </p>
+            )}
+          </div>
+          <div className="h-px bg-gradient-to-r from-transparent via-wood/20 to-transparent" />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -590,6 +687,13 @@ export const UIRoot: React.FC = () => {
       <div className="pointer-events-auto">
         <StatusHUD />
       </div>
+
+      {/* Character info button — visible during gameplay (not lobby) */}
+      {phase !== 'lobby' && (
+        <div className="pointer-events-auto">
+          <CharacterInfoButton />
+        </div>
+      )}
 
       <div className="pointer-events-auto">
         <TransitionOverlay />

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useGameStore } from '../state/GameStore'
 import { wsManager } from '../net/websocket'
+import { audioQueue } from '../audio/AudioQueue'
 import PixelButton from './PixelButton'
 
 export const ActionBar: React.FC = () => {
@@ -20,7 +21,7 @@ export const ActionBar: React.FC = () => {
 
   const [text, setText] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
-  const [sentWaiting, setSentWaiting] = useState(false)
+  const [sentWaiting] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
@@ -33,7 +34,6 @@ export const ActionBar: React.FC = () => {
       inputRequired?.type === 'visit_speak'
     ) {
       inputRef.current?.focus()
-      setSentWaiting(false)
     }
   }, [inputRequired])
 
@@ -46,6 +46,9 @@ export const ActionBar: React.FC = () => {
 
   const startRecording = useCallback(async () => {
     try {
+      // Stop current audio — user is interrupting to speak
+      audioQueue.stop()
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       mediaRecorderRef.current = mediaRecorder
@@ -89,23 +92,50 @@ export const ActionBar: React.FC = () => {
   const handleSendSpeech = useCallback(() => {
     const trimmed = text.trim()
     if (!trimmed) return
+
+    // 1. Stop current audio — user is interrupting
+    audioQueue.stop()
+
+    // 2. Show user's text immediately in chat
+    const currentName = useGameStore.getState().myName
+    if (currentName) {
+      useGameStore.getState().addSpeech({
+        speaker: currentName,
+        content: trimmed,
+        pending: true,
+      })
+    }
+
+    // 3. Send to server
     wsManager.send('speak', { content: trimmed })
     setText('')
-    // If we sent before our turn, show a "sent" indicator
-    if (!inputRequired || inputRequired.type !== 'speak') {
-      setSentWaiting(true)
-    }
-  }, [text, inputRequired])
+  }, [text])
 
   const handleSendVisitSpeech = useCallback(() => {
     const trimmed = text.trim()
     if (!trimmed) return
+
+    audioQueue.stop()
+
+    // Add pending message to the correct visit tab (not campfire)
+    const state = useGameStore.getState()
+    const currentName = state.myName
+    if (currentName) {
+      const myVisit = state.houseVisits.find(
+        (v) => v.host === currentName || v.visitor === currentName
+      )
+      if (myVisit) {
+        state.addVisitSpeech(myVisit.visit_id, {
+          speaker: currentName,
+          content: trimmed,
+          pending: true,
+        })
+      }
+    }
+
     wsManager.send('visit_speak', { content: trimmed })
     setText('')
-    if (!inputRequired || inputRequired.type !== 'visit_speak') {
-      setSentWaiting(true)
-    }
-  }, [text, inputRequired])
+  }, [text])
 
   const handleVote = useCallback(() => {
     if (!selectedTarget) return

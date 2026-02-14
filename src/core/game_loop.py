@@ -84,35 +84,28 @@ async def _generate_audio_url(
 
 
 async def _rewrite_human_speech(text: str, character, state: dict) -> str:
-    """Insan metnini karakter tarzinda yeniden yaz — AI ile ayni pipeline."""
-    try:
-        global _tts_path_added
-        if not _tts_path_added:
-            sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-            _tts_path_added = True
-        from src.services.api_client import llm_generate
+    """Insan metnini direkt dondur — rewrite yok, STT → TTS direkt."""
+    return text
 
-        personality = getattr(character, 'personality', '')
-        char_name = getattr(character, 'name', 'Karakter')
-        role_title = getattr(character, 'role_title', '')
 
-        prompt = (
-            f"Rewrite the following message in the character's speaking style.\n"
-            f"Character: {char_name} ({role_title}) — {personality}\n"
-            f"Original message: {text}\n"
-            f"Rules:\n"
-            f"- Keep the original meaning and intent\n"
-            f"- Match the character's personality and speaking style\n"
-            f"- Use the same language as the original message\n"
-            f"- Keep it concise (max 2-3 sentences)\n"
-            f"- Return ONLY the rewritten text, nothing else"
-        )
-        result = await llm_generate(prompt=prompt, system_prompt="", temperature=0.8)
-        rewritten = result.output.strip()
-        return rewritten if rewritten else text
-    except Exception as e:
-        logger.warning(f"Human speech rewrite failed: {e}")
-        return text
+async def _stt_keepalive(transcribe_fn, silent_wav: bytes, game_id: str):
+    """Background: fal.ai STT cold-start'i onlemek icin periyodik ping gonder.
+    Oyun bitene kadar her 12 saniyede bir sessiz WAV gonderir."""
+    while True:
+        try:
+            await transcribe_fn(silent_wav, language="tr")
+            logger.warning("[WARMUP] STT keepalive OK")
+        except Exception as e:
+            logger.warning(f"[WARMUP] STT keepalive failed: {e}")
+        await asyncio.sleep(12)
+        # Oyun bittiyse dur
+        try:
+            game = db[GAMES].find_one({"game_id": game_id})
+            if not game or game.get("status") == "finished":
+                logger.warning("[WARMUP] Game ended, stopping STT keepalive")
+                return
+        except Exception:
+            pass
 
 
 async def _generate_and_broadcast_audio(
@@ -209,6 +202,84 @@ def _save_log(game_id: str, log_data: dict):
 # HELPER: Wait for Human Input
 # ═══════════════════════════════════════════════════
 
+async def _process_human_interjection(
+    game_id: str,
+    state: Any,
+    human_player,
+    participant_names: list[str],
+    turns_done: int,
+    max_turns: int,
+    event_type: str = "speak",
+) -> bool:
+    """
+    Non-blocking: Human queue'da mesaj varsa hemen isle ve broadcast et.
+    True donerse human konustu, False donerse kuyrukta mesaj yoktu.
+    """
+    queue = get_input_queue(game_id, human_player.slot_id)
+
+    # Drain queue — skip non-matching events (put them back)
+    found_data = None
+    stashed = []
+    while True:
+        try:
+            input_data = queue.get_nowait()
+        except asyncio.QueueEmpty:
+            break
+        if input_data.get("event") == event_type and input_data.get("content"):
+            found_data = input_data
+            break
+        else:
+            stashed.append(input_data)
+
+    # Put back non-matching messages
+    for item in stashed:
+        await queue.put(item)
+
+    if not found_data:
+        return False
+
+    content = found_data.get("content", "")
+    logger.warning(f"[INTERJECT] Processing human interjection: '{content[:50]}'")
+
+    # Rewrite in character voice
+    message = await _rewrite_human_speech(content, human_player, state)
+
+    # Add to history
+    state["campfire_history"].append({
+        "type": "speech", "name": human_player.name,
+        "role_title": human_player.role_title, "content": message,
+        "present": list(participant_names),
+    })
+    human_player.add_message("assistant", message)
+
+    # TTS
+    audio_url, audio_duration = await _generate_audio_url(
+        message, voice=getattr(human_player, 'voice_id', 'alloy'),
+        speed=getattr(human_player, 'voice_speed', 1.0),
+    )
+
+    # Broadcast
+    await manager.broadcast(game_id, {
+        "event": "campfire_speech",
+        "data": {
+            "speaker": human_player.name,
+            "role_title": human_player.role_title,
+            "content": message,
+            "turn": turns_done,
+            "max_turns": max_turns,
+            "participants": participant_names,
+            "audio_url": audio_url,
+            "audio_duration": audio_duration,
+        }
+    })
+
+    # Wait for audio
+    wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+    await asyncio.sleep(wait_time)
+
+    return True
+
+
 async def _wait_for_human_input(
     game_id: str,
     player_id: str,
@@ -216,8 +287,11 @@ async def _wait_for_human_input(
     timeout: float = 60.0,
     extra_data: dict | None = None,
 ) -> str | None:
-    """Insan oyuncudan input bekle (WebSocket ile)."""
+    """Insan oyuncudan input bekle (WebSocket ile).
+    Non-matching event'leri queue'ya geri koyar, kaybolma yok."""
     queue = get_input_queue(game_id, player_id)
+
+    logger.warning(f"[WAIT] START: waiting for '{event_type}' from {player_id}, qsize={queue.qsize()}")
 
     your_turn_data = {
         "action_required": event_type,
@@ -231,22 +305,34 @@ async def _wait_for_human_input(
         "data": your_turn_data,
     })
 
-    logger.info(f"Waiting for {event_type} from {player_id} (timeout: {timeout}s)")
+    import time as _time
+    deadline = _time.monotonic() + timeout
 
-    try:
-        input_data = await asyncio.wait_for(queue.get(), timeout=timeout)
-
-        if input_data.get("event") == event_type:
-            content = input_data.get("content") or input_data.get("target") or input_data.get("choice")
-            logger.info(f"Received {event_type} from {player_id}")
-            return content
-        else:
-            logger.warning(f"Wrong event type from {player_id}: {input_data.get('event')}")
+    while True:
+        remaining = deadline - _time.monotonic()
+        if remaining <= 0:
+            logger.warning(f"[WAIT] TIMEOUT: {player_id} did not respond to {event_type}")
             return None
 
-    except asyncio.TimeoutError:
-        logger.warning(f"Timeout: {player_id} did not respond to {event_type}")
-        return None
+        try:
+            input_data = await asyncio.wait_for(queue.get(), timeout=remaining)
+        except asyncio.TimeoutError:
+            logger.warning(f"[WAIT] TIMEOUT: {player_id} did not respond to {event_type}")
+            return None
+
+        got_event = input_data.get("event", "")
+        logger.warning(f"[WAIT] Got from queue: event='{got_event}' (expected='{event_type}')")
+
+        if got_event == event_type:
+            content = input_data.get("content") or input_data.get("target") or input_data.get("choice")
+            logger.warning(f"[WAIT] MATCH! content='{(content or '')[:50]}'")
+            return content
+        else:
+            # Wrong event type — put it back so it's not lost
+            await queue.put(input_data)
+            logger.warning(f"[WAIT] Re-queued non-matching event '{got_event}', continuing to wait...")
+            # Small sleep to avoid busy loop if queue has only wrong events
+            await asyncio.sleep(0.1)
 
 
 # ═══════════════════════════════════════════════════
@@ -257,7 +343,7 @@ async def _game_loop_runner(game_id: str, state: Any):
     """
     Asenkron game loop — Prototype akisini adim adim WS broadcast ile calistirir.
     """
-    logger.info(f"Game loop starting: {game_id}")
+    logger.warning(f"🟢 GAME LOOP STARTING: {game_id}")
 
     # ═══ Lazy Import Game Engine ═══
     try:
@@ -302,15 +388,29 @@ async def _game_loop_runner(game_id: str, state: Any):
 
     day_limit = state.get("day_limit", 5)
 
-    # ═══ WS Bağlantı Bekleme — client'ların bağlanması için kısa süre ═══
-    await asyncio.sleep(2.0)
+    # ═══ STT Pre-warm — fal.ai serverless cold start'i onlemek icin ═══
+    try:
+        from src.services.api_client import transcribe_audio
+        # 0.5sn sessiz WAV ile warm-up (fal.ai makinesini uyandirir)
+        import base64
+        silent_wav = base64.b64decode(
+            "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA="
+        )
+        asyncio.create_task(_stt_keepalive(transcribe_audio, silent_wav, game_id))
+        logger.warning("[WARMUP] STT keepalive started (every 12s)")
+    except Exception as e:
+        logger.warning(f"[WARMUP] STT pre-warm failed to start: {e}")
 
-    # ═══ Character Reveal — İnsan oyunculara karakterlerini göster ═══
+    # ═══ WS Bağlantı Bekleme — client'ların bağlanması için kısa süre ═══
+    await asyncio.sleep(3.0)
+
+    # ═══ Character Reveal — broadcast ile gonder (send_to zamanlama sorunu yaratiyordu) ═══
     for p in state["players"]:
         if p.is_human:
-            await manager.send_to(game_id, p.slot_id, {
+            await manager.broadcast(game_id, {
                 "event": "character_reveal",
                 "data": {
+                    "target_player": p.slot_id,
                     "name": p.name,
                     "role_title": p.role_title,
                     "lore": p.lore,
@@ -1081,15 +1181,20 @@ async def _game_loop_runner(game_id: str, state: Any):
                 p.vote_target = None
 
     except Exception as e:
-        logger.error(f"Game loop error: {e}", exc_info=True)
+        import traceback
+        logger.error(f"💀 GAME LOOP CRASH: {e}")
+        logger.error(traceback.format_exc())
 
-        await manager.broadcast(game_id, {
-            "event": "error",
-            "data": {
-                "code": "game_loop_error",
-                "message": str(e),
-            }
-        })
+        try:
+            await manager.broadcast(game_id, {
+                "event": "error",
+                "data": {
+                    "code": "game_loop_error",
+                    "message": str(e),
+                }
+            })
+        except Exception:
+            pass
 
     finally:
         if game_id in _player_input_queues:
@@ -1098,7 +1203,7 @@ async def _game_loop_runner(game_id: str, state: Any):
         if game_id in _running_games:
             del _running_games[game_id]
 
-        logger.info(f"Game loop ended: {game_id}")
+        logger.warning(f"🔴 GAME LOOP ENDED: {game_id}")
 
 
 # ═══════════════════════════════════════════════════
@@ -1142,6 +1247,9 @@ async def _run_campfire_segment_ws(
     ws_dict = state.get("world_seed")
     use_orchestrator = get_reaction is not None and orchestrator_pick is not None
     turns_done = 0
+
+    human_names = [p.name for p in participants if p.is_human]
+    logger.warning(f"[CAMPFIRE] Starting segment: max_turns={max_turns}, participants={participant_names}, humans={human_names}")
 
     # ── Ilk konusmaci (onceki konusma yoksa random sec) ──
     recent_speeches = [m for m in state["campfire_history"]
@@ -1211,6 +1319,15 @@ async def _run_campfire_segment_ws(
             # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
             wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
             await asyncio.sleep(wait_time)
+
+            # Human interjection check — ilk konusma sonrasi
+            human_p = next((p for p in participants if p.is_human), None)
+            if human_p and not first.is_human:
+                interjected = await _process_human_interjection(
+                    game_id, state, human_p, participant_names, 1, max_turns,
+                )
+                if interjected:
+                    turns_done += 1
 
             # Ocak Tepki kontrolu (Katman 1+2)
             if check_ocak_tepki:
@@ -1303,6 +1420,7 @@ async def _run_campfire_segment_ws(
             speaker = participants[turns_done % len(participants)]
 
         # Konusma uret
+        logger.warning(f"[CAMPFIRE] Turn {turns_done}/{max_turns}: speaker={speaker.name} is_human={speaker.is_human}")
         if speaker.is_human:
             message = await _wait_for_human_input(
                 game_id=game_id,
@@ -1313,7 +1431,7 @@ async def _run_campfire_segment_ws(
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
             else:
-                message = await _rewrite_human_speech(message, speaker, state)
+                logger.warning(f"[CAMPFIRE] Human: '{message[:80]}' → TTS direkt")
         else:
             message = await generate_campfire_speech(state, speaker, participant_names=participant_names)
 
@@ -1364,6 +1482,16 @@ async def _run_campfire_segment_ws(
         # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
         await asyncio.sleep(wait_time)
+
+        # ── Human interjection check — her AI konusmasindan sonra ──
+        if not speaker.is_human:
+            human_p = next((p for p in participants if p.is_human), None)
+            if human_p:
+                interjected = await _process_human_interjection(
+                    game_id, state, human_p, participant_names, turns_done, max_turns,
+                )
+                if interjected:
+                    turns_done += 1
 
         # Ocak Tepki kontrolu (Katman 1+2)
         if check_ocak_tepki:
@@ -1504,6 +1632,56 @@ async def _run_room_conversation_ws(
         # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
         await asyncio.sleep(wait_time)
+
+        # ── Human interjection check — 1v1 gorusme ──
+        human_in_visit = next((p for p in [visitor, owner] if p.is_human), None)
+        if human_in_visit and not current.is_human:
+            hq = get_input_queue(game_id, human_in_visit.slot_id)
+            # Drain queue for matching event, re-queue non-matching
+            found_visit_data = None
+            stashed_visit = []
+            while True:
+                try:
+                    input_data = hq.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+                if input_data.get("content") and input_data.get("event") in ("visit_speak", "speak"):
+                    found_visit_data = input_data
+                    break
+                else:
+                    stashed_visit.append(input_data)
+            for item in stashed_visit:
+                await hq.put(item)
+
+            if found_visit_data:
+                h_content = found_visit_data["content"]
+                logger.warning(f"[VISIT-INTERJECT] Human interjection: '{h_content[:50]}'")
+                h_msg = await _rewrite_human_speech(h_content, human_in_visit, state)
+                h_entry = {"speaker": human_in_visit.name, "role_title": human_in_visit.role_title, "content": h_msg}
+                exchanges.append(h_entry)
+                human_in_visit.add_message("assistant", h_msg)
+                h_audio_url, h_audio_dur = await _generate_audio_url(
+                    h_msg, voice=getattr(human_in_visit, 'voice_id', 'alloy'),
+                    speed=getattr(human_in_visit, 'voice_speed', 1.0),
+                )
+                await manager.broadcast(game_id, {
+                    "event": "house_visit_exchange",
+                    "data": {
+                        "visit_id": visit_id,
+                        "speaker": human_in_visit.name,
+                        "role_title": human_in_visit.role_title,
+                        "content": h_msg,
+                        "turn": turn + 1,
+                        "max_exchanges": max_exchanges,
+                        "visitor": visitor.name,
+                        "host": owner.name,
+                        "audio_url": h_audio_url,
+                        "audio_duration": h_audio_dur,
+                        "context": visit_context,
+                    }
+                })
+                h_wait = min(max(h_audio_dur * 0.95, 2.0), 10.0) if h_audio_dur > 0 else 2.0
+                await asyncio.sleep(h_wait)
 
     # Visit data kaydet
     visit_data = {
@@ -1830,6 +2008,7 @@ async def _run_persistent_campfire_ws(
             continue
 
         # ── generate speech ──
+        logger.warning(f"[PERSISTENT-CF] Turn {total_turns}: speaker={speaker.name} is_human={speaker.is_human}")
         if speaker.is_human:
             message = await _wait_for_human_input(
                 game_id=game_id,
@@ -1840,7 +2019,7 @@ async def _run_persistent_campfire_ws(
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
             else:
-                message = await _rewrite_human_speech(message, speaker, state)
+                logger.warning(f"[PERSISTENT-CF] Human: '{message[:80]}' → TTS direkt")
         else:
             message = await generate_campfire_speech(
                 state, speaker, participant_names=participant_names,
@@ -1894,6 +2073,16 @@ async def _run_persistent_campfire_ws(
 
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
         await asyncio.sleep(wait_time)
+
+        # ── Human interjection check — persistent campfire ──
+        if not speaker.is_human:
+            human_p = next((p for p in participants if p.is_human), None)
+            if human_p:
+                interjected = await _process_human_interjection(
+                    game_id, state, human_p, participant_names, total_turns, max_total_turns,
+                )
+                if interjected:
+                    total_turns += 1
 
         # ocak tepki
         if check_ocak_tepki:

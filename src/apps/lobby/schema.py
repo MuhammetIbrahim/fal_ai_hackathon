@@ -16,7 +16,7 @@ class LobbyCreateRequest(BaseModel):
     """
     Yeni lobi oluşturma isteği.
     """
-    host_name: str = Field(..., min_length=2, max_length=30, description="Lobi sahibinin adı")
+    host_name: str = Field(..., min_length=1, max_length=30, description="Lobi sahibinin adı")
     max_players: int = Field(default=6, ge=3, le=10, description="Maksimum oyuncu sayısı")
     ai_count: int = Field(default=4, ge=0, le=9, description="AI oyuncu sayısı (kalan slotlar AI ile doldurulur)")
     day_limit: int = Field(default=5, ge=3, le=10, description="Maksimum gün sayısı")

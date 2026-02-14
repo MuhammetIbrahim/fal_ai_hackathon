@@ -45,6 +45,7 @@ export interface Speech {
   content: string
   audio_url?: string
   timestamp?: number
+  pending?: boolean  // true = user's immediate text, will be replaced by server rewrite
 }
 
 // ── Location decision ──

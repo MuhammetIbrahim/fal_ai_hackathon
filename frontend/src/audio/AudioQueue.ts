@@ -55,19 +55,30 @@ class AudioQueue {
 
   /**
    * Stop current playback and clear the entire queue.
-   * Fades out current audio before stopping.
+   * Stops immediately (no fade) to prevent overlap.
    */
   stop(): void {
     this.queue = []
 
     if (this.currentAudio) {
-      this.fadeOut(this.currentAudio, () => {
-        this.playing = false
-        this.currentAudio = null
-      })
-    } else {
-      this.playing = false
+      this.currentAudio.pause()
+      this.currentAudio.removeEventListener('ended', this.handleEnded)
+      this.currentAudio.removeEventListener('error', this.handleError)
+      this.currentAudio.removeAttribute('src')
+      this.currentAudio.load()
+      this.currentAudio = null
     }
+    this.playing = false
+  }
+
+  /**
+   * Immediately stop any current audio + clear queue, then play this URL.
+   * Ensures only one audio plays at a time — like voice_chat's single-audio approach.
+   */
+  playNow(url: string): void {
+    this.stop()
+    this.queue.push(url)
+    this.play()
   }
 
   /**

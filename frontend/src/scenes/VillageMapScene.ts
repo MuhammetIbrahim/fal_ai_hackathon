@@ -499,25 +499,24 @@ export class VillageMapScene implements Scene {
     }
 
     if (this.bgImage) {
-      // Draw background image covering the village area
-      const size = (HOUSE_RADIUS + HOUSE_SIZE) * 2 + 100
-      const ox = VILLAGE_CENTER.x - size / 2
-      const oy = VILLAGE_CENTER.y - size / 2
-      ctx.globalAlpha = 0.4
-      ctx.drawImage(this.bgImage, ox, oy, size, size)
+      // Draw background image covering the ENTIRE world map
+      const worldW = MAP_COLS * SCALED_TILE  // 2560
+      const worldH = MAP_ROWS * SCALED_TILE  // 1920
+      ctx.globalAlpha = 0.85
+      ctx.drawImage(this.bgImage, 0, 0, worldW, worldH)
       ctx.globalAlpha = 1.0
-    }
-
-    // Draw visible tiles as grass (on top of or without bg)
-    const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
-    for (let row = minRow; row <= maxRow; row++) {
-      for (let col = minCol; col <= maxCol; col++) {
-        const x = col * SCALED_TILE
-        const y = row * SCALED_TILE
-        ctx.fillStyle = this.bgImage ? rgba(COLORS.GRASS, 0.3) : COLORS.GRASS
-        ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
-        ctx.strokeStyle = rgba('#000000', 0.04)
-        ctx.strokeRect(x, y, SCALED_TILE, SCALED_TILE)
+    } else {
+      // No background image — draw solid grass tiles
+      const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
+      for (let row = minRow; row <= maxRow; row++) {
+        for (let col = minCol; col <= maxCol; col++) {
+          const x = col * SCALED_TILE
+          const y = row * SCALED_TILE
+          ctx.fillStyle = COLORS.GRASS
+          ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
+          ctx.strokeStyle = rgba('#000000', 0.04)
+          ctx.strokeRect(x, y, SCALED_TILE, SCALED_TILE)
+        }
       }
     }
   }
