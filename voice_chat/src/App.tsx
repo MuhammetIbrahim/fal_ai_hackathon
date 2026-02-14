@@ -13,9 +13,9 @@ const AUTH = { Authorization: 'Bearer demo-key-123' }
 const HEADERS = { 'Content-Type': 'application/json', ...AUTH }
 
 const SPEAKERS = [
-  { id: 'user', name: 'İzleyici', color: '#e94560', voice: '', emoji: '🧑', personality: '' },
-  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Sen Kael\'sin — milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Kısa, keskin cümleler kurarsın. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye sert karşılık ver. Sana sövmeyen birine saygılı ol. Lyra ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. İzleyici sana söverse ona sert ol, ama Lyra\'ya boşuna saldırma. Türkçe konuş.' },
-  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Sen Lyra\'sın — ilerici, sosyal demokrat bir aktivist. Eşitlik ve özgürlüğü savunursun. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye keskin ve alaycı karşılık ver. Sana sövmeyen birine saygılı ol. Kael ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. İzleyici sana söverse ona sert ol, ama Kael\'e boşuna saldırma. Türkçe konuş.' },
+  { id: 'user', name: '', color: '#e94560', voice: '', emoji: '🧑', personality: '' },
+  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Sen Kael\'sin — milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Kısa, keskin cümleler kurarsın. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye sert karşılık ver. Sana sövmeyen birine saygılı ol. Lyra ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. Stüdyodaki vatandaş sana söverse ona sert ol, ama Lyra\'ya boşuna saldırma. Türkçe konuş.' },
+  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Sen Lyra\'sın — ilerici, sosyal demokrat bir aktivist. Eşitlik ve özgürlüğü savunursun. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye keskin ve alaycı karşılık ver. Sana sövmeyen birine saygılı ol. Kael ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. Stüdyodaki vatandaş sana söverse ona sert ol, ama Kael\'e boşuna saldırma. Türkçe konuş.' },
 ]
 
 const ORCHESTRATOR = {
@@ -38,6 +38,7 @@ export default function App() {
   const [topic, setTopic] = useState(TOPIC)
   const [started, setStarted] = useState(false)
   const [activeSpeakerId, setActiveSpeakerId] = useState('')
+  const [userName, setUserName] = useState('')
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -188,7 +189,7 @@ Sen Birand'sın. Tartışmayı ilerletmek için kısa, keskin bir soru sor veya 
 Konuşma:
 ${history}
 
-Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve İzleyici. Son konuşmaya BAK — kim sana direkt bir şey söylediyse SADECE ona yanıt ver. İzleyici sana hakaret ettiyse ona sert ol ama ${other.name}'a boşuna saldırma. ${other.name} sana laf attıysa ona yanıt ver ama İzleyici'ye bulaşma. HEDEFİNİ BİL. 1-2 cümle, sadece kendi sözlerini yaz.`
+Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve ${userName} (stüdyodaki vatandaş). Son konuşmaya BAK — kim sana bir şey söylediyse SADECE ona yanıt ver. ${userName} sana hakaret ettiyse ona sert ol ama ${other.name}'a boşuna saldırma. ${other.name} sana laf attıysa ona yanıt ver ama ${userName}'a bulaşma. HEDEFİNİ BİL. 1-2 cümle, sadece kendi sözlerini yaz.`
 
     let text = await llmCall(prompt, ai.personality)
     if (isStale(gen)) return
@@ -262,7 +263,7 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve İzleyici.
     // 4. Kullanıcı mesajını ekle
     setActiveSpeakerId('user')
     setStatus('💬 Sen konuştun')
-    setMessages((prev) => [...prev, { speaker: 'Sen', text, color: SPEAKERS[0].color }])
+    setMessages((prev) => [...prev, { speaker: userName, text, color: SPEAKERS[0].color }])
     // Moderatörü resetle — kullanıcı konuştuktan sonra her iki AI de cevap versin
     msgCountSinceModRef.current = 0
 
@@ -374,6 +375,13 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve İzleyici.
         <div style={{ textAlign: 'center', marginTop: 60 }}>
           <h1 style={{ fontSize: 28, color: '#eee', marginBottom: 10 }}>Politik Sofra</h1>
           <p style={{ color: '#8892b0', fontSize: 13, marginBottom: 30 }}>Birand moderatörlüğünde AI tartışması — istediğin zaman söz al</p>
+          <p style={{ color: '#8892b0', marginBottom: 6, fontSize: 13 }}>İsmin:</p>
+          <input
+            value={userName}
+            onChange={(e) => setUserName(e.target.value)}
+            placeholder="İsmini yaz..."
+            style={{ width: 200, padding: '8px 12px', borderRadius: 8, background: '#16213e', color: '#eee', border: '1px solid #333', fontSize: 14, textAlign: 'center', marginBottom: 16 }}
+          />
           <p style={{ color: '#8892b0', marginBottom: 10, fontSize: 13 }}>Konu:</p>
           <textarea
             value={topic}
@@ -390,7 +398,7 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve İzleyici.
               </div>
             ))}
           </div>
-          <button onClick={handleStart} style={{ marginTop: 24, padding: '12px 40px', borderRadius: 8, border: 'none', background: '#533483', color: '#fff', fontSize: 16, cursor: 'pointer' }}>
+          <button onClick={handleStart} disabled={!userName.trim()} style={{ marginTop: 24, padding: '12px 40px', borderRadius: 8, border: 'none', background: userName.trim() ? '#533483' : '#333', color: '#fff', fontSize: 16, cursor: userName.trim() ? 'pointer' : 'not-allowed', opacity: userName.trim() ? 1 : 0.5 }}>
             Tartışmayı Başlat
           </button>
         </div>
