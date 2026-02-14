@@ -69,8 +69,9 @@ export const PHASE_NAMES: Record<string, string> = {
 }
 
 // ── API endpoints ──
-export const API_BASE = '/api'
-export const WS_BASE = '/ws'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || ''
+export const API_BASE = `${BACKEND_URL}/api`
+export const WS_BASE = `${BACKEND_URL}/ws`
 
 // ── Timing ──
 export const TRANSITION_DURATION = 1000 // ms

@@ -71,8 +71,15 @@ class WebSocketManager {
   private createConnection(): void {
     if (!this.gameId || !this.playerId) return
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${window.location.host}/ws/${this.gameId}/${this.playerId}`
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
+    let url: string
+    if (backendUrl) {
+      const wsUrl = backendUrl.replace(/^http/, 'ws')
+      url = `${wsUrl}/ws/${this.gameId}/${this.playerId}`
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      url = `${protocol}//${window.location.host}/ws/${this.gameId}/${this.playerId}`
+    }
 
     console.log('[WS] Connecting to', url)
 

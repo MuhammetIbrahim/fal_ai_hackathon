@@ -1,0 +1,12 @@
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY voice_chat/package.json voice_chat/package-lock.json* ./
+RUN npm install
+COPY voice_chat/ .
+RUN npm run build
+
+FROM node:20-alpine
+RUN npm i -g serve
+WORKDIR /app
+COPY --from=build /app/dist .
+CMD serve -s . -l ${PORT:-3000}
