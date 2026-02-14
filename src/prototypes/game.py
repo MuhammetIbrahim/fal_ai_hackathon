@@ -2392,6 +2392,26 @@ async def generate_sinama_event(state: GameState) -> dict | None:
         "icon": sinama_type["icon"],
     }
 
+    # ── Effect metadata (optional) ──
+    # If sinama affects a specific player, enrich event data
+    if sinama_type.get("has_effect"):
+        alive_players = [p for p in state.get("players", []) if p.alive]
+        if alive_players:
+            rng_target = random_module.Random(f"sinama_target_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+            target = rng_target.choice(alive_players)
+            
+            sinama.update({
+                "affected_player": target.name,
+                "effect_type": sinama_type.get("effect_type", "cursed"),
+                "effect_name": sinama_type.get("effect_name", "Sınama Laneti"),
+                "effect_description": sinama_type.get("effect_description", ""),
+                "consequence_text": sinama_type.get("consequence_text", "Sınamadan etkilendiniz"),
+                "duration": sinama_type.get("effect_duration", 2),
+                "is_critical": sinama_type.get("is_critical", True),
+                "event_title": sinama_type.get("event_title", sinama_type["label"]),
+                "severity": sinama_type.get("severity", "high"),
+            })
+
     state["_sinama"] = sinama
     print(f"  [Sinama] {sinama_type['label']}: {sinama['content'][:60]}...")
     return sinama
@@ -2456,6 +2476,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                     "tier": "T1",
                     "message": "Ocak kisa kivilcim atti; kalabalik huzursuzlandi.",
                     "contradiction_hint": hint,
+                    "target_player": speaker_name,
+                    "effect_type": "accused",
+                    "effect_name": "Şüpheli",
+                    "effect_description": "Ocak tepkisi nedeniyle şüphe altında",
+                    "consequence_text": "Oylama sırasında daha fazla dikkat çekebilir",
+                    "duration": 1,
+                    "is_critical": True,
+                    "event_title": "Ocak Kıvılcımı",
+                    "icon": "🔥",
+                    "severity": "high",
                 }
 
             # T2 — Oz-celiski → %70 kivilcim, %30 kul kaymasi
@@ -2472,6 +2502,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                         "tier": "T2",
                         "message": "Ocak'in koru parladi; soylediklerin birbiriyle celisiyor.",
                         "contradiction_hint": hint,
+                        "target_player": speaker_name,
+                        "effect_type": "marked",
+                        "effect_name": "İşaretli",
+                        "effect_description": "Kendi sözleriyle çelişti, Ocak işaretledi",
+                        "consequence_text": "Diğer oyuncular tarafından hedef olabilir",
+                        "duration": 2,
+                        "is_critical": True,
+                        "event_title": "Öz-Çelişki",
+                        "icon": "⚠️",
+                        "severity": "critical",
                     }
                 else:
                     # Kul Kaymasi — zorunlu soru uret
@@ -2489,6 +2529,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                         "message": "Kuller kaymaya basladi... Ocak sana bir soru soruyor.",
                         "contradiction_hint": hint,
                         "forced_question": forced_q,
+                        "target_player": speaker_name,
+                        "effect_type": "silenced",
+                        "effect_name": "Ocak Sorusu",
+                        "effect_description": "Ocak tarafından sorgulanıyor",
+                        "consequence_text": "Zorunlu olarak cevap vermeli",
+                        "duration": 1,
+                        "is_critical": True,
+                        "event_title": "Kül Kayması",
+                        "icon": "🔥",
+                        "severity": "critical",
                     }
     except (json.JSONDecodeError, KeyError):
         pass
@@ -2658,6 +2708,29 @@ async def generate_public_mini_event(state: GameState) -> dict | None:
         "content": result.output.strip(),
         "ui_object": template.get("ui_object", ""),
     }
+    
+    # ── Effect metadata (optional) ──
+    # If template specifies effect, enrich event data for frontend visualization
+    if template.get("has_effect"):
+        alive_players = [p for p in state.get("players", []) if p.alive]
+        if alive_players:
+            # Deterministik target selection
+            rng = random_module.Random(f"mini_target_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
+            target = rng.choice(alive_players)
+            
+            mini_event.update({
+                "target_player": target.name,
+                "effect_type": template.get("effect_type", "marked"),
+                "effect_name": template.get("effect_name", "Olay Etkisi"),
+                "effect_description": template.get("effect_description", ""),
+                "consequence_text": template.get("consequence_text", "Bir sonraki gün etkilenecek"),
+                "duration": template.get("effect_duration", 1),
+                "is_critical": template.get("is_critical", False),
+                "event_title": template.get("event_title", "Önemli Olay"),
+                "icon": template.get("icon", "⚡"),
+                "severity": template.get("severity", "medium"),
+            })
+    
     state["_mini_events"].append(mini_event)
     print(f"  [Mini Event] Kamu: {template['id']}: {mini_event['content'][:60]}...")
     return mini_event

@@ -18,6 +18,7 @@ import NightPanel from './NightPanel'
 import TransitionOverlay from './TransitionOverlay'
 import PlayerCardOverlay from './PlayerCardOverlay'
 import PixelButton from './PixelButton'
+import { EventCard } from './EventCard'
 
 // ── Lobby UI (inline) ──
 const LobbyUI: React.FC = () => {
@@ -563,6 +564,11 @@ export const UIRoot: React.FC = () => {
       {/* Player card overlay (character inspection on map click) */}
       <div className="pointer-events-auto">
         <PlayerCardOverlay />
+      </div>
+
+      {/* Event card modal (critical events) */}
+      <div className="pointer-events-auto">
+        <EventCard />
       </div>
     </div>
   )

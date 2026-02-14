@@ -10,6 +10,19 @@ export type Phase =
   | 'exile'
   | 'game_over'
 
+// ── Active Effect ──
+export interface ActiveEffect {
+  id: string
+  type: 'debuff' | 'buff' | 'restriction' | 'info' | 'status'
+  name: string
+  description: string
+  consequence_text: string
+  icon?: string
+  duration?: number // rounds remaining, undefined = permanent
+  source: string // event/action that caused it
+  timestamp: number
+}
+
 // ── Player ──
 export interface Player {
   slot_id: string
@@ -25,6 +38,7 @@ export interface Player {
   lore?: string
   archetype_label?: string
   avatar_url?: string
+  active_effects?: ActiveEffect[]
   // Client-side rendering
   x?: number
   y?: number
@@ -96,6 +110,22 @@ export interface OcakTepki {
   type: 'warning' | 'approval' | 'rage'
   message: string
   target?: string
+  target_player?: string
+  effect_type?: 'debuff' | 'buff' | 'restriction' | 'info'
+  consequence_text?: string
+}
+
+// ── Event Card (Critical events display) ──
+export interface EventCard {
+  id: string
+  title: string
+  description: string
+  target_player?: string
+  effect_type?: 'debuff' | 'buff' | 'restriction' | 'info' | 'critical'
+  consequence_text?: string
+  icon?: string
+  type: 'critical' | 'warning' | 'info'
+  require_acknowledgement?: boolean
 }
 
 // ── Proposal ──

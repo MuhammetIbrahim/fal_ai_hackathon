@@ -409,6 +409,54 @@ export class VillageMapScene implements Scene {
       ctx.fillStyle = COLORS.STONE
       ctx.font = '9px monospace'
       ctx.fillText(player.role_title, anim.currentX, anim.currentY + half + 18)
+
+      // ── Active Effect Icons ──
+      const effects = player.active_effects || []
+      if (effects.length > 0) {
+        const effectIcons: Record<string, string> = {
+          accused: '⚠️',
+          protected: '🛡️',
+          restricted: '🔒',
+          silenced: '🤐',
+          blessed: '✨',
+          cursed: '💀',
+          marked: '🎯',
+          default: '⚡',
+        }
+        
+        const iconSize = 20
+        const iconSpacing = 22
+        const startX = anim.currentX - (effects.length * iconSpacing) / 2 + iconSize / 2
+        const iconY = anim.currentY - half - 28
+
+        effects.forEach((effect, idx) => {
+          const iconX = startX + idx * iconSpacing
+          const icon = effectIcons[effect.type] || effectIcons.default
+          
+          // Background circle
+          ctx.save()
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.beginPath()
+          ctx.arc(iconX, iconY, iconSize / 2, 0, Math.PI * 2)
+          ctx.fill()
+          
+          // Icon emoji
+          ctx.font = '16px monospace'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(icon, iconX, iconY)
+          
+          // Glow effect
+          ctx.shadowColor = COLORS.TEXT_GOLD
+          ctx.shadowBlur = 8
+          ctx.strokeStyle = COLORS.TEXT_GOLD
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.arc(iconX, iconY, iconSize / 2, 0, Math.PI * 2)
+          ctx.stroke()
+          ctx.restore()
+        })
+      }
     }
 
     // ── Room activity indicators (speech bubble icon) ──

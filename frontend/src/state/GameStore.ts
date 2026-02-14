@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type {
   Phase, Player, Omen, Speech, LocationDecision, HouseVisit,
   ExileResult, NightResult, SpotlightCard, Sinama, OcakTepki,
-  Proposal, SozBorcu, UIObject, InputAction, GameOverData,
+  Proposal, SozBorcu, UIObject, InputAction, GameOverData, EventCard, ActiveEffect,
 } from './types'
 import { audioQueue } from '../audio/AudioQueue'
 
@@ -54,6 +54,7 @@ export interface GameStore {
   notification: { message: string; type: 'info' | 'warning' | 'error' } | null
   transitioning: boolean
   showParchment: boolean
+  eventCard: EventCard | null  // Critical event display
 
   // Actions
   setConnection: (gameId: string, playerId: string) => void
@@ -84,6 +85,10 @@ export interface GameStore {
   setTransitioning: (transitioning: boolean) => void
   setShowParchment: (show: boolean) => void
   setRound: (round: number) => void
+  setEventCard: (card: EventCard | null) => void
+  addPlayerEffect: (playerName: string, effect: ActiveEffect) => void
+  removePlayerEffect: (playerName: string, effectId: string) => void
+  clearPlayerEffects: (playerName: string) => void
 
   handleEvent: (event: string, data: Record<string, unknown>) => void
   reset: () => void
@@ -124,6 +129,7 @@ const initialState = {
   notification: null,
   transitioning: false,
   showParchment: false,
+  eventCard: null,
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -176,6 +182,36 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setTransitioning: (transitioning) => set({ transitioning }),
   setShowParchment: (show) => set({ showParchment: show }),
   setRound: (round) => set({ round }),
+  
+  setEventCard: (card) => set({ eventCard: card }),
+  
+  addPlayerEffect: (playerName, effect) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.name === playerName
+          ? { ...p, active_effects: [...(p.active_effects || []), effect] }
+          : p
+      ),
+    }))
+  },
+  
+  removePlayerEffect: (playerName, effectId) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.name === playerName
+          ? { ...p, active_effects: (p.active_effects || []).filter((e) => e.id !== effectId) }
+          : p
+      ),
+    }))
+  },
+  
+  clearPlayerEffects: (playerName) => {
+    set((state) => ({
+      players: state.players.map((p) =>
+        p.name === playerName ? { ...p, active_effects: [] } : p
+      ),
+    }))
+  },
 
   handleEvent: (event: string, data: Record<string, unknown>) => {
     const store = get()
@@ -311,15 +347,43 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
       }
 
-      case 'mini_event':
+      case 'mini_event': {
+        const message = (data.content as string) ?? 'Bir olay oldu'
         set({
-          notification: {
-            message: (data.content as string) ?? 'Bir olay oldu',
-            type: 'info',
-          },
+          notification: { message, type: 'info' },
         })
         setTimeout(() => set({ notification: null }), 5000)
+        
+        // If event has effect metadata, add it to player
+        if (data.target_player && data.effect_type && data.effect_name) {
+          const effect: ActiveEffect = {
+            id: `effect_${Date.now()}_${Math.random()}`,
+            type: data.effect_type as string,
+            name: data.effect_name as string,
+            description: data.effect_description as string || '',
+            consequence_text: data.consequence_text as string || '',
+            duration: data.duration as number || 1,
+            source: 'mini_event',
+          }
+          store.addPlayerEffect(data.target_player as string, effect)
+          
+          // Show critical event card if is_critical flag is true
+          if (data.is_critical) {
+            store.setEventCard({
+              id: `event_${Date.now()}`,
+              event_type: 'mini_event',
+              title: data.event_title as string || 'Olaylar',
+              description: message,
+              icon: data.icon as string || '⚠️',
+              severity: data.severity as 'low' | 'medium' | 'high' | 'critical' || 'medium',
+              target_player: data.target_player as string,
+              effect_type: data.effect_type as string,
+              consequence_text: data.consequence_text as string || '',
+            })
+          }
+        }
         break
+      }
 
       case 'morning_crisis':
         set({
@@ -460,16 +524,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
       }
 
-      case 'ocak_tepki':
-        set({
-          ocakTepki: {
-            type: data.type as OcakTepki['type'],
-            message: data.message as string,
-            target: data.target as string | undefined,
-          },
-        })
+      case 'ocak_tepki': {
+        const tepki: OcakTepki = {
+          type: data.type as OcakTepki['type'],
+          message: data.message as string,
+          target: data.target as string | undefined,
+          target_player: data.target_player as string | undefined,
+          effect_type: data.effect_type as string | undefined,
+          consequence_text: data.consequence_text as string | undefined,
+        }
+        set({ ocakTepki: tepki })
         setTimeout(() => set({ ocakTepki: null }), 5000)
+        
+        // If reaction has effect metadata, add it to player
+        if (data.target_player && data.effect_type && data.effect_name) {
+          const effect: ActiveEffect = {
+            id: `effect_${Date.now()}_${Math.random()}`,
+            type: data.effect_type as string,
+            name: data.effect_name as string,
+            description: data.effect_description as string || '',
+            consequence_text: data.consequence_text as string || '',
+            duration: data.duration as number || 1,
+            source: 'ocak_tepki',
+          }
+          store.addPlayerEffect(data.target_player as string, effect)
+          
+          // Show critical event card if is_critical flag is true
+          if (data.is_critical) {
+            store.setEventCard({
+              id: `event_${Date.now()}`,
+              event_type: 'ocak_tepki',
+              title: data.event_title as string || 'Ocak Tepkisi',
+              description: data.message as string,
+              icon: data.icon as string || '🔥',
+              severity: data.severity as 'low' | 'medium' | 'high' | 'critical' || 'high',
+              target_player: data.target_player as string,
+              effect_type: data.effect_type as string,
+              consequence_text: data.consequence_text as string || '',
+            })
+          }
+        }
         break
+      }
 
       case 'house_visit':
       case 'house_visit_start': {
@@ -574,11 +670,40 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break
       }
 
-      case 'sinama':
-        set({
-          sinama: data as unknown as Sinama,
-        })
+      case 'sinama': {
+        const sinamaData = data as unknown as Sinama
+        set({ sinama: sinamaData })
+        
+        // If sinama has effect metadata, add it to affected player
+        if (data.affected_player && data.effect_type && data.effect_name) {
+          const effect: ActiveEffect = {
+            id: `effect_${Date.now()}_${Math.random()}`,
+            type: data.effect_type as string,
+            name: data.effect_name as string,
+            description: data.effect_description as string || '',
+            consequence_text: data.consequence_text as string || '',
+            duration: data.duration as number || 1,
+            source: 'sinama',
+          }
+          store.addPlayerEffect(data.affected_player as string, effect)
+          
+          // Show critical event card if is_critical flag is true
+          if (data.is_critical) {
+            store.setEventCard({
+              id: `event_${Date.now()}`,
+              event_type: 'sinama',
+              title: data.event_title as string || 'Sınama Sonucu',
+              description: data.outcome as string || '',
+              icon: data.icon as string || '⚖️',
+              severity: data.severity as 'low' | 'medium' | 'high' | 'critical' || 'high',
+              target_player: data.affected_player as string,
+              effect_type: data.effect_type as string,
+              consequence_text: data.consequence_text as string || '',
+            })
+          }
+        }
         break
+      }
 
       case 'proposal':
         set({
