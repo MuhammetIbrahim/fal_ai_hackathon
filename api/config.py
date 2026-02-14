@@ -43,7 +43,6 @@ class APISettings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        env_prefix = "API_"
         extra = "ignore"
         populate_by_name = True
 

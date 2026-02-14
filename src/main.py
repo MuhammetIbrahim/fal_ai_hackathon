@@ -195,11 +195,25 @@ def create_app() -> FastAPI:
     from src.apps.game.router import router as game_router
     from src.apps.ws.router import router as ws_router
     from src.apps.lobby.router import router as lobby_router
-    
+
     app.include_router(game_router)
     app.include_router(ws_router)
     app.include_router(lobby_router)
-    
+
+    # Production: serve frontend static build if exists
+    import os
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+    if os.path.isdir(static_dir):
+        from fastapi.staticfiles import StaticFiles
+        from fastapi.responses import FileResponse
+
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_spa(full_path: str):
+            file_path = os.path.join(static_dir, full_path)
+            if os.path.isfile(file_path):
+                return FileResponse(file_path)
+            return FileResponse(os.path.join(static_dir, "index.html"))
+
     return app
 
 

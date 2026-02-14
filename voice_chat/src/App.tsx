@@ -8,6 +8,7 @@ interface Message {
   isOrchestrator?: boolean
 }
 
+const API_URL = import.meta.env.VITE_API_URL || ''
 const AUTH = { Authorization: 'Bearer demo-key-123' }
 const HEADERS = { 'Content-Type': 'application/json', ...AUTH }
 
@@ -61,7 +62,7 @@ export default function App() {
 
   // ── API helpers ──
   const llmCall = async (prompt: string, systemPrompt: string, temp = 0.8): Promise<string> => {
-    const res = await fetch('/v1/llm/generate', {
+    const res = await fetch(`${API_URL}/v1/llm/generate`, {
       method: 'POST', headers: HEADERS,
       body: JSON.stringify({ prompt, system_prompt: systemPrompt, temperature: temp }),
     })
@@ -70,7 +71,7 @@ export default function App() {
   }
 
   const ttsCall = async (text: string, voiceId: string): Promise<string | null> => {
-    const res = await fetch('/v1/voice/tts/sync', {
+    const res = await fetch(`${API_URL}/v1/voice/tts/sync`, {
       method: 'POST', headers: HEADERS,
       body: JSON.stringify({ text, voice: voiceId, speed: 1.0 }),
     })
@@ -316,7 +317,7 @@ Sen ${ai.name}'sın. ÖNCELİKLE son konuşana direkt cevap ver — özellikle "
         setStatus('📝 Ses tanınıyor...')
         const base64 = await blobToBase64(blob)
         try {
-          const res = await fetch('/v1/voice/stt', { method: 'POST', headers: HEADERS, body: JSON.stringify({ audio_base64: base64 }) })
+          const res = await fetch(`${API_URL}/v1/voice/stt`, { method: 'POST', headers: HEADERS, body: JSON.stringify({ audio_base64: base64 }) })
           if (!res.ok) throw new Error(`STT ${res.status}`)
           const data = await res.json()
           const text = data.text?.trim()
