@@ -48,6 +48,7 @@ export const ActionBar: React.FC = () => {
     try {
       // Stop current audio — user is interrupting to speak
       audioQueue.stop()
+      wsManager.send('interrupt', {})  // Signal backend immediately
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
@@ -95,6 +96,7 @@ export const ActionBar: React.FC = () => {
 
     // 1. Stop current audio — user is interrupting
     audioQueue.stop()
+    wsManager.send('interrupt', {})  // Signal backend immediately
 
     // 2. Show user's text immediately in chat
     const currentName = useGameStore.getState().myName
@@ -116,6 +118,7 @@ export const ActionBar: React.FC = () => {
     if (!trimmed) return
 
     audioQueue.stop()
+    wsManager.send('interrupt', {})  // Signal backend immediately
 
     // Add pending message to the correct visit tab (not campfire)
     const state = useGameStore.getState()

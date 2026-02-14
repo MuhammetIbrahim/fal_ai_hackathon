@@ -202,9 +202,10 @@ async def handle_client_event(
             return
         
         # Game loop'un queue'suna gönder
-        from src.core.game_loop import get_input_queue
+        from src.core.game_loop import get_input_queue, signal_human_interrupt
         queue = get_input_queue(game_id, player_id)
         await queue.put({"event": "speak", "content": content})
+        signal_human_interrupt(game_id)
 
         logger.warning(f"[QUEUE] speak text queued for {player_id}: '{content[:50]}' (qsize={queue.qsize()})")
     
@@ -310,9 +311,10 @@ async def handle_client_event(
             })
 
             # Game loop queue'suna gonder
-            from src.core.game_loop import get_input_queue
+            from src.core.game_loop import get_input_queue, signal_human_interrupt
             queue = get_input_queue(game_id, player_id)
             await queue.put({"event": speech_type, "content": content})
+            signal_human_interrupt(game_id)
 
             logger.warning(f"[QUEUE] speak_audio queued for {player_id}: event={speech_type} text='{content[:50]}' (qsize={queue.qsize()})")
 
@@ -342,12 +344,19 @@ async def handle_client_event(
             })
             return
 
-        from src.core.game_loop import get_input_queue
+        from src.core.game_loop import get_input_queue, signal_human_interrupt
         queue = get_input_queue(game_id, player_id)
         await queue.put({"event": "visit_speak", "content": content})
+        signal_human_interrupt(game_id)
 
         logger.info(f"🏠 {player_id} spoke in visit: {game_id}")
     
+    # ═══ INTERRUPT (Early signal — frontend mikrofon/send aninda) ═══
+    elif event_type == "interrupt":
+        from src.core.game_loop import signal_human_interrupt
+        signal_human_interrupt(game_id)
+        logger.info(f"⚡ Interrupt signal from {player_id} in {game_id}")
+
     # ═══ UNKNOWN EVENT ═══
     else:
         await websocket.send_json({

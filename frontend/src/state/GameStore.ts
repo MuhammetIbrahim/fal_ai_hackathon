@@ -728,6 +728,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         set({ sceneBackgrounds: data as Record<string, string> })
         break
 
+      case 'speech_interrupted':
+        audioQueue.stop()
+        break
+
       case 'error':
         set({
           notification: {

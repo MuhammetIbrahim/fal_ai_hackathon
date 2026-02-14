@@ -140,6 +140,33 @@ _player_input_queues: Dict[str, Dict[str, asyncio.Queue]] = {}
 # Running game tasks
 _running_games: Dict[str, asyncio.Task] = {}
 
+# Per-game interrupt events — human player signals immediate wakeup
+_human_interrupt_events: Dict[str, asyncio.Event] = {}
+
+
+def get_interrupt_event(game_id: str) -> asyncio.Event:
+    if game_id not in _human_interrupt_events:
+        _human_interrupt_events[game_id] = asyncio.Event()
+    return _human_interrupt_events[game_id]
+
+
+def signal_human_interrupt(game_id: str):
+    """Called from WS router when human sends speak/speak_audio/interrupt."""
+    event = get_interrupt_event(game_id)
+    event.set()
+
+
+async def _interruptible_sleep(game_id: str, duration: float) -> bool:
+    """Sleep that can be cut short by human input.
+    Returns True if interrupted, False if timed out normally."""
+    event = get_interrupt_event(game_id)
+    event.clear()
+    try:
+        await asyncio.wait_for(event.wait(), timeout=duration)
+        return True
+    except asyncio.TimeoutError:
+        return False
+
 
 def get_input_queue(game_id: str, player_id: str) -> asyncio.Queue:
     """
@@ -273,9 +300,11 @@ async def _process_human_interjection(
         }
     })
 
-    # Wait for audio
+    # Wait for audio (interruptible)
     wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
-    await asyncio.sleep(wait_time)
+    interrupted = await _interruptible_sleep(game_id, wait_time)
+    if interrupted:
+        logger.warning(f"[INTERRUPT] Human interjection audio wait interrupted")
 
     return True
 
@@ -1200,6 +1229,9 @@ async def _game_loop_runner(game_id: str, state: Any):
         if game_id in _player_input_queues:
             del _player_input_queues[game_id]
 
+        if game_id in _human_interrupt_events:
+            del _human_interrupt_events[game_id]
+
         if game_id in _running_games:
             del _running_games[game_id]
 
@@ -1316,9 +1348,11 @@ async def _run_campfire_segment_ws(
                 }
             })
 
-            # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+            # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
             wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
-            await asyncio.sleep(wait_time)
+            interrupted = await _interruptible_sleep(game_id, wait_time)
+            if interrupted:
+                logger.warning(f"[INTERRUPT] Sleep interrupted by human input (first speaker)")
 
             # Human interjection check — ilk konusma sonrasi
             human_p = next((p for p in participants if p.is_human), None)
@@ -1479,9 +1513,11 @@ async def _run_campfire_segment_ws(
             }
         })
 
-        # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+        # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
-        await asyncio.sleep(wait_time)
+        interrupted = await _interruptible_sleep(game_id, wait_time)
+        if interrupted:
+            logger.warning(f"[INTERRUPT] Sleep interrupted by human input (campfire loop)")
 
         # ── Human interjection check — her AI konusmasindan sonra ──
         if not speaker.is_human:
@@ -1629,9 +1665,11 @@ async def _run_room_conversation_ws(
             }
         })
 
-        # Audio suresi kadar bekle — TTS fail olsa bile minimum 2s bekle
+        # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
-        await asyncio.sleep(wait_time)
+        interrupted = await _interruptible_sleep(game_id, wait_time)
+        if interrupted:
+            logger.warning(f"[INTERRUPT] Sleep interrupted by human input (room visit)")
 
         # ── Human interjection check — 1v1 gorusme ──
         human_in_visit = next((p for p in [visitor, owner] if p.is_human), None)
@@ -1681,7 +1719,7 @@ async def _run_room_conversation_ws(
                     }
                 })
                 h_wait = min(max(h_audio_dur * 0.95, 2.0), 10.0) if h_audio_dur > 0 else 2.0
-                await asyncio.sleep(h_wait)
+                await _interruptible_sleep(game_id, h_wait)
 
     # Visit data kaydet
     visit_data = {
@@ -2072,7 +2110,9 @@ async def _run_persistent_campfire_ws(
         })
 
         wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
-        await asyncio.sleep(wait_time)
+        interrupted = await _interruptible_sleep(game_id, wait_time)
+        if interrupted:
+            logger.warning(f"[INTERRUPT] Sleep interrupted by human input (persistent campfire)")
 
         # ── Human interjection check — persistent campfire ──
         if not speaker.is_human:
