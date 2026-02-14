@@ -51,6 +51,8 @@ export class ExileScene implements Scene {
   private exileTargetY = 0
   private exileColor = '#888888'
   private exileName = ''
+  private exileType = ''
+  private exileRole = ''
   private exileDir: 'up' | 'down' | 'left' | 'right' = 'down'
 
   // Fog
@@ -93,6 +95,8 @@ export class ExileScene implements Scene {
       if (exiledPlayer) {
         this.exileSlotId = exiledPlayer.slot_id
         this.exileName = exiledPlayer.name
+        this.exileType = exileResult.exiled_type
+        this.exileRole = exileResult.exiled_role
         const idx = players.indexOf(exiledPlayer)
         this.exileColor = exiledPlayer.color ?? getPlayerColor(idx)
       }
@@ -253,7 +257,12 @@ export class ExileScene implements Scene {
     }
 
     // ── Draw exiled character (walking away) ──
+    const progress = clamp(this.time / EXILE_DURATION, 0, 1)
     const animFrame = Math.floor(this.time * 4) % 4
+    
+    // Fade out exile character as they walk into fog
+    ctx.save()
+    ctx.globalAlpha = 1 - progress * 0.7
     SpriteSheet.drawPlaceholderCharacter(
       ctx,
       this.exileX - CHAR_SCALED / 2,
@@ -264,12 +273,15 @@ export class ExileScene implements Scene {
       true, // still drawn as alive (walking away)
     )
 
-    // Exile name tag
+    // Exile name tag (more prominent)
     ctx.fillStyle = COLORS.ACCENT_RED
-    ctx.font = 'bold 12px monospace'
+    ctx.font = 'bold 16px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
+    ctx.shadowColor = 'rgba(0,0,0,0.8)'
+    ctx.shadowBlur = 4
     ctx.fillText(this.exileName, this.exileX, this.exileY + CHAR_SCALED / 2 + 4)
+    ctx.restore()
 
     ctx.restore()
 
@@ -287,19 +299,51 @@ export class ExileScene implements Scene {
       ctx.fillRect(0, 0, w, h)
     }
 
-    // ── "SURGÜN" title ──
+    // ── "SÜRGÜN" title and dramatic reveal ──
     ctx.save()
     const titleAlpha = clamp(this.time / 1.5, 0, 0.9)
+    
+    // Title
     ctx.fillStyle = rgba(COLORS.ACCENT_RED, titleAlpha)
-    ctx.font = 'bold 32px monospace'
+    ctx.font = 'bold 48px monospace'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'top'
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'
+    ctx.shadowBlur = 8
     ctx.fillText('SÜRGÜN', w / 2, 24)
-
-    // Exiled name subtitle
-    ctx.fillStyle = rgba(COLORS.TEXT_LIGHT, titleAlpha * 0.7)
-    ctx.font = '18px monospace'
-    ctx.fillText(this.exileName, w / 2, 64)
+    
+    // Exile announcement
+    ctx.fillStyle = rgba(COLORS.TEXT_LIGHT, titleAlpha)
+    ctx.font = 'bold 24px monospace'
+    ctx.shadowBlur = 6
+    ctx.fillText(`${this.exileName} köyden kovuldu.`, w / 2, 90)
+    
+    // Dramatic reveal (fade in after 1.5 seconds)
+    if (this.time > 1.5) {
+      const revealAlpha = clamp((this.time - 1.5) / 1.0, 0, 1)
+      
+      // Determine color based on type
+      const isYankiDogmus = this.exileType.toLowerCase().includes('yanki') || 
+                            this.exileType.toLowerCase().includes('yankı')
+      const revealColor = isYankiDogmus ? COLORS.ACCENT_RED : COLORS.TEXT_LIGHT
+      
+      ctx.fillStyle = rgba(revealColor, revealAlpha)
+      ctx.font = 'bold 28px monospace'
+      ctx.shadowColor = isYankiDogmus ? 'rgba(200,0,0,0.9)' : 'rgba(255,255,200,0.7)'
+      ctx.shadowBlur = 12
+      ctx.fillText('Gerçek Kimliği:', w / 2, 140)
+      
+      ctx.font = 'bold 36px monospace'
+      ctx.shadowBlur = 16
+      ctx.fillText(this.exileType.toUpperCase(), w / 2, 180)
+      
+      // Role subtitle
+      ctx.fillStyle = rgba(COLORS.TEXT_LIGHT, revealAlpha * 0.8)
+      ctx.font = '20px monospace'
+      ctx.shadowBlur = 4
+      ctx.fillText(`(${this.exileRole})`, w / 2, 230)
+    }
+    
     ctx.restore()
   }
 

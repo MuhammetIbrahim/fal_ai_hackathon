@@ -401,6 +401,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           exileResult: {
             exiled: (data.exiled as string) ?? '',
             active_players: (data.active_players as string[]) ?? [],
+            exiled_type: (data.exiled_type as string) ?? '',
+            exiled_role: (data.exiled_role as string) ?? '',
           },
           votes: (data.votes as Record<string, string>) ?? store.votes,
           phase: 'exile',

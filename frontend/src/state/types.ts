@@ -66,6 +66,8 @@ export interface HouseVisit {
 export interface ExileResult {
   exiled: string
   active_players: string[]
+  exiled_type: string
+  exiled_role: string
 }
 
 // ── Night result ──
