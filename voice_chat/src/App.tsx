@@ -13,9 +13,9 @@ const AUTH = { Authorization: 'Bearer demo-key-123' }
 const HEADERS = { 'Content-Type': 'application/json', ...AUTH }
 
 const SPEAKERS = [
-  { id: 'user', name: 'Sen', color: '#e94560', voice: '', emoji: '🧑', personality: '' },
-  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Kael milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Devlet otoritesini ve milli değerleri savunur. Kısa, keskin cümleler kurar. Karşı tarafla doğrudan tartışır. Eğer biri sana hakaret ederse veya seni provoke ederse SERT karşılık ver — geri adım atma, aynı sertlikle yanıt ver. Türkçe konuşur.' },
-  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Lyra ilerici, sosyal demokrat bir aktivist. Eşitlik, özgürlük ve insan haklarını savunur. Ama asla pasif değildir — provoke edilirse keskin ve alaycı yanıt verir. Saldırıya uğrarsa geri adım atmaz, zekice karşılık verir. Karşı tarafın argümanlarına direkt yanıt verir. Türkçe konuşur.' },
+  { id: 'user', name: 'İzleyici', color: '#e94560', voice: '', emoji: '🧑', personality: '' },
+  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Sen Kael\'sin — milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Kısa, keskin cümleler kurarsın. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye sert karşılık ver. Sana sövmeyen birine saygılı ol. Lyra ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. İzleyici sana söverse ona sert ol, ama Lyra\'ya boşuna saldırma. Türkçe konuş.' },
+  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Sen Lyra\'sın — ilerici, sosyal demokrat bir aktivist. Eşitlik ve özgürlüğü savunursun. KİME sert davranacağını BİL: sadece SANA hakaret eden kişiye keskin ve alaycı karşılık ver. Sana sövmeyen birine saygılı ol. Kael ile fikir ayrılığın var ama o sana hakaret etmedikçe medeni tartış. İzleyici sana söverse ona sert ol, ama Kael\'e boşuna saldırma. Türkçe konuş.' },
 ]
 
 const ORCHESTRATOR = {
@@ -188,7 +188,7 @@ Sen Birand'sın. Tartışmayı ilerletmek için kısa, keskin bir soru sor veya 
 Konuşma:
 ${history}
 
-Sen ${ai.name}'sın. ÖNCELİKLE son konuşana direkt cevap ver — özellikle "Sen" (kullanıcı) sana bir şey söylediyse veya hakaret ettiyse, ÖNCE ona karşılık ver. ${other.name}'a da yanıt verebilirsin. 1-2 cümle, sadece kendi sözlerini yaz. Moderatörü bekleme.`
+Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve İzleyici. Son konuşmaya BAK — kim sana direkt bir şey söylediyse SADECE ona yanıt ver. İzleyici sana hakaret ettiyse ona sert ol ama ${other.name}'a boşuna saldırma. ${other.name} sana laf attıysa ona yanıt ver ama İzleyici'ye bulaşma. HEDEFİNİ BİL. 1-2 cümle, sadece kendi sözlerini yaz.`
 
     let text = await llmCall(prompt, ai.personality)
     if (isStale(gen)) return
