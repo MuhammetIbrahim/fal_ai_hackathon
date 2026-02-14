@@ -46,6 +46,19 @@ export interface GameStore {
   playerLocations: Record<string, string>  // name → 'campfire' | 'home' | 'visiting:TargetName'
   sceneBackgrounds: Record<string, string>  // campfire, village, house_interior, night → URL
 
+  // Active speaker tracking (for spectator UI)
+  currentSpeaker: string | null
+
+  // Pipeline metrics (live latency display)
+  pipelineMetrics: {
+    speaker: string
+    llm_ms: number
+    tts_ms: number
+    total_ms: number
+    text_len: number
+    voice: string
+  } | null
+
   // Character inspection
   inspectedPlayer: string | null  // player name when clicking a character on the map
 
@@ -99,6 +112,7 @@ export interface GameStore {
   setSelectedRoom: (room: string | null) => void
   setPlayerLocations: (locs: Record<string, string>) => void
   setInspectedPlayer: (name: string | null) => void
+  setCurrentSpeaker: (name: string | null) => void
   setInputRequired: (input: InputAction | null) => void
   setNotification: (notification: { message: string; type: 'info' | 'warning' | 'error' } | null) => void
   setTransitioning: (transitioning: boolean) => void
@@ -147,6 +161,8 @@ const initialState = {
   selectedRoom: 'campfire' as string | null,
   playerLocations: {} as Record<string, string>,
   sceneBackgrounds: {} as Record<string, string>,
+  currentSpeaker: null as string | null,
+  pipelineMetrics: null,
   inspectedPlayer: null as string | null,
   inputRequired: null,
   notification: null,
@@ -242,6 +258,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
   setPlayerLocations: (locs) => set({ playerLocations: locs }),
+  setCurrentSpeaker: (name) => set({ currentSpeaker: name }),
   setInspectedPlayer: (name) => set({ inspectedPlayer: name }),
   setInputRequired: (input) => set({ inputRequired: input }),
   setNotification: (notification) => set({ notification }),
@@ -313,6 +330,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // Stop stale audio only on real phase transitions
         if (isNewPhase) {
           audioQueue.stop()
+          set({ currentSpeaker: null })
         }
 
         // Clear phase-specific data on phase change
@@ -439,18 +457,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       case 'campfire_speech': {
         const cfAudioUrl = data.audio_url as string | undefined
+        const cfSpeaker = data.speaker as string
         store.addSpeech({
-          speaker: data.speaker as string,
+          speaker: cfSpeaker,
           content: data.content as string,
           audio_url: cfAudioUrl,
         })
-        // Audio senkron: eski sesi kes, yenisini hemen cal (voice_chat mantigi)
-        if (cfAudioUrl) {
-          const currentRoom = store.selectedRoom ?? 'campfire'
-          if (currentRoom === 'campfire') {
+        // Track current speaker + pipeline metrics for spectator UI
+        const cfPipeline = data.pipeline as { llm_ms: number; tts_ms: number; total_ms: number; text_len: number; voice: string } | undefined
+        set({
+          currentSpeaker: cfSpeaker,
+          pipelineMetrics: cfPipeline ? { speaker: cfSpeaker, ...cfPipeline } : null,
+        })
+        // Audio senkron: cumle segmentlerini siraya koy (paralel TTS)
+        const cfSegments = data.audio_segments as { url: string; duration: number }[] | undefined
+        const currentRoom = store.selectedRoom ?? 'campfire'
+        if (currentRoom === 'campfire') {
+          if (cfSegments && cfSegments.length > 0) {
+            // Birden fazla segment: ilkini playNow, gerisini enqueue
+            audioQueue.playNow(cfSegments[0].url)
+            for (let i = 1; i < cfSegments.length; i++) {
+              audioQueue.enqueue(cfSegments[i].url)
+            }
+          } else if (cfAudioUrl) {
             audioQueue.playNow(cfAudioUrl)
           }
         }
+        // Clear currentSpeaker after total audio duration (fallback 8s)
+        const totalAudioDuration = cfSegments
+          ? cfSegments.reduce((sum, s) => sum + (s.duration || 0), 0) * 1000
+          : 0
+        const estimatedDuration = totalAudioDuration > 0 ? totalAudioDuration : (cfAudioUrl ? 8000 : 4000)
+        setTimeout(() => {
+          const s = get()
+          if (s.currentSpeaker === cfSpeaker) set({ currentSpeaker: null })
+        }, estimatedDuration)
         break
       }
 

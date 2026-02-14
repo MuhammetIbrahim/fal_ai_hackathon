@@ -105,65 +105,65 @@ MYTH_VARIANTS = [
     MythVariant(
         name="Mavi Titreme",
         rumor="Ocak bu ay mavi titriyor. Boyle olunca 'onlar' gelir derler.",
-        origin_story="Buyuk Sessizlik'te sozler taslara gomuldu. Sesler ham izlerini kaybetti.",
-        existential_question="Insani insan yapan bedel mi, hatira mi?",
+        origin_story="Büyük Sessizlik'te sözler taşlara gömüldü. Sesler ham izlerini kaybetti.",
+        existential_question="İnsanı insan yapan bedel mi, hatıra mı?",
     ),
     MythVariant(
         name="Kul Yazmasi",
-        rumor="Kul, isimleri yazmaya basladi. Bazilari henuz olmemis isimleri.",
-        origin_story="Konsey bir gunahi muhurledi, duman geri sizdi. O gunden beri kuller konusuyor.",
-        existential_question="Dogru mu toplulugu yasatir, yoksa korku mu?",
+        rumor="Kül, isimleri yazmaya başladı. Bazıları henüz ölmemiş isimleri.",
+        origin_story="Konsey bir günahı mühürledi, duman geri sızdı. O günden beri küller konuşuyor.",
+        existential_question="Doğru mu topluluğu yaşatır, yoksa korku mu?",
     ),
     MythVariant(
         name="Can Izi",
-        rumor="Her surgende can calar. Ama bazen can kendiligindan caliyor.",
-        origin_story="Eski Bekci bir can dikti. 'Gercek olmayanlar cani duyamaz' dedi. Ama herkes duydugunu iddia etti.",
-        existential_question="Affetmek mi zayiflik, yoksa insanlik mi?",
+        rumor="Her sürgünde çan çalar. Ama bazen çan kendiliğinden çalıyor.",
+        origin_story="Eski Bekçi bir çan dikti. 'Gerçek olmayanlar çanı duyamaz' dedi. Ama herkes duyduğunu iddia etti.",
+        existential_question="Affetmek mi zayıflık, yoksa insanlık mı?",
     ),
 ]
 
 # -- Gunluk Alametler --
 DAILY_OMENS = [
-    "Kuzgunlar cemberin ustunde uc tur atti.",
-    "Bir evin esiginde is yerine tuz bulundu.",
-    "Ocak kulunde ince bir can izi cikti.",
-    "Ruzgar bugün kelime taklit ediyor, dikkatli ol.",
-    "Muhur kapisinda catlak gorundu.",
-    "Bu sabah cesmenin suyu bulanik akti.",
-    "Gece boyunca kopekler havladi. Hicbiri uyumadi.",
-    "Sabah ciginde kan rengi izler bulundu.",
-    "Meydandaki tas sutunun golgesi bugun ters tarafa dustu.",
-    "Eski kuyu bu gece yanki yapti. Icine kim fisildadi?",
+    "Kuzgunlar çemberin üstünde üç tur attı.",
+    "Bir evin eşiğinde is yerine tuz bulundu.",
+    "Ocak külünde ince bir çan izi çıktı.",
+    "Rüzgâr bugün kelime taklit ediyor, dikkatli ol.",
+    "Mühür kapısında çatlak göründü.",
+    "Bu sabah çeşmenin suyu bulanık aktı.",
+    "Gece boyunca köpekler havladı. Hiçbiri uyumadı.",
+    "Sabah çiğinde kan rengi izler bulundu.",
+    "Meydandaki taş sütunun gölgesi bugün ters tarafa düştü.",
+    "Eski kuyu bu gece yankı yaptı. İçine kim fısıldadı?",
 ]
 
 # -- Rituel Cumleleri --
 HAND_RAISE_PHRASES = [
-    "Ates isterim.",
-    "Sozumu ocaga baglarim.",
-    "Cemberden soz talep ederim.",
+    "Ateş isterim.",
+    "Sözümü ocağa bağlarım.",
+    "Çemberden söz talep ederim.",
 ]
 
 OATH_REFRESH_PHRASES = [
-    "Kulum sozum, sozum kulum.",
-    "Atesin yaninda dilim temiz.",
-    "Yemin tazelenir: dis diyarlarin dili burada gecmez.",
+    "Külüm sözüm, sözüm külüm.",
+    "Ateşin yanında dilim temiz.",
+    "Yemin tazelenir: dış diyarların dili burada geçmez.",
 ]
 
 EXILE_PHRASES = [
-    "Cember disina adim at. Atesin seni artik tanimiyor.",
-    "Konsey kararini verdi. Kapin muhurlendi.",
-    "Atesin isigi senden cekildi. Yolun Sis-Disi'na.",
+    "Çember dışına adım at. Ateşin seni artık tanımıyor.",
+    "Konsey kararını verdi. Kapın mühürlendi.",
+    "Ateşin ışığı senden çekildi. Yolun Sis-Dışı'na.",
 ]
 
 # -- Yer Isimleri Parcalari --
-SETTLEMENT_PARTS = ["Kul", "Sis", "Bozkir", "Corak", "Demir", "Ocak", "Kara"]
-SETTLEMENT_SUFFIXES = ["Ocagi", "Kalesi", "Yurdu", "Kapisi", "Siginagi", "Cemberi"]
+SETTLEMENT_PARTS = ["Kül", "Sis", "Bozkır", "Çorak", "Demir", "Ocak", "Kara"]
+SETTLEMENT_SUFFIXES = ["Ocağı", "Kalesi", "Yurdu", "Kapısı", "Sığınağı", "Çemberi"]
 
-FOREST_PARTS = ["Fisiltili", "Golge", "Diken", "Kurt", "Baykus", "Sogut-Kara"]
-FOREST_SUFFIXES = ["Ormani", "Korulugu", "Gecidi", "Vadisi"]
+FOREST_PARTS = ["Fısıltılı", "Gölge", "Diken", "Kurt", "Baykuş", "Söğüt-Kara"]
+FOREST_SUFFIXES = ["Ormanı", "Koruluğu", "Geçidi", "Vadisi"]
 
-WASTES_PARTS = ["Kara", "Tuz", "Kul", "Catlak", "Olu", "Sis"]
-WASTES_SUFFIXES = ["Colu", "Ovasi", "Diyari", "Boslugu", "Disi"]
+WASTES_PARTS = ["Kara", "Tuz", "Kül", "Çatlak", "Ölü", "Sis"]
+WASTES_SUFFIXES = ["Çölü", "Ovası", "Diyarı", "Boşluğu", "Dışı"]
 
 # -- Taboo Kelimeler --
 TABOO_CORE = [

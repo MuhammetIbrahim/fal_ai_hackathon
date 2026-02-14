@@ -37,6 +37,7 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null)
   const { getColor, getAvatar } = usePlayerLookup()
+  const currentSpeaker = useGameStore((s) => s.currentSpeaker)
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,66 +45,100 @@ const ChatMessages: React.FC<{ speeches: Speech[]; emptyText?: string; large?: b
     }
   }, [speeches])
 
-  const textSize = large ? 'text-[11px]' : 'text-[8px]'
-  const nameSize = large ? 'text-[12px]' : 'text-[8px]'
-  const sepSize = large ? 'text-[9px]' : 'text-[7px]'
-  const avatarSize = large ? 'w-7 h-7' : 'w-5 h-5'
+  const textSize = large ? 'text-[13px]' : 'text-[11px]'
+  const nameSize = large ? 'text-[13px]' : 'text-[11px]'
+  const sepSize = large ? 'text-[11px]' : 'text-[9px]'
+  const avatarPx = large ? 44 : 36
 
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto px-3 py-2 space-y-2 scrollbar-thin min-h-0"
+      className="flex-1 overflow-y-auto px-3 py-3 space-y-3 scrollbar-thin min-h-0"
     >
       {speeches.length === 0 && (
-        <p className={`text-stone ${sepSize} text-center mt-4 opacity-50 font-pixel`}>
-          {emptyText ?? 'Bekleniyor...'}
-        </p>
+        <div className="flex flex-col items-center justify-center mt-8 gap-2">
+          <div className="w-8 h-8 rounded-full bg-wood/10 flex items-center justify-center">
+            <span className="text-stone text-sm opacity-40">...</span>
+          </div>
+          <p className={`text-stone ${sepSize} text-center opacity-40 font-pixel`}>
+            {emptyText ?? 'Bekleniyor...'}
+          </p>
+        </div>
       )}
 
       {speeches.map((speech, idx) => {
         // Separator message
         if (speech.speaker === '---') {
           return (
-            <div key={idx} className="flex items-center gap-2 my-1">
-              <div className="flex-1 h-px bg-wood/30" />
-              <span className={`text-stone ${sepSize} font-pixel whitespace-nowrap`}>
+            <div key={idx} className="flex items-center gap-3 my-2 px-2">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
+              <span className={`text-stone ${sepSize} font-pixel whitespace-nowrap opacity-60`}>
                 {speech.content.replace(/---/g, '').trim()}
               </span>
-              <div className="flex-1 h-px bg-wood/30" />
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
             </div>
           )
         }
 
         const avatarUrl = getAvatar(speech.speaker)
+        const color = getColor(speech.speaker)
+        const isSpeaking = currentSpeaker === speech.speaker && idx === speeches.length - 1
 
         return (
-          <div key={idx} className="flex gap-2">
+          <div
+            key={idx}
+            className={`flex gap-2.5 group transition-all duration-300 ${speech.pending ? 'opacity-60' : ''}`}
+            style={{
+              backgroundColor: isSpeaking ? `${color}08` : 'transparent',
+              borderRadius: '6px',
+              padding: isSpeaking ? '4px' : '0',
+              boxShadow: isSpeaking ? `inset 0 0 20px ${color}10` : 'none',
+            }}
+          >
             {/* Avatar */}
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt={speech.speaker}
-                className={`${avatarSize} rounded-full flex-shrink-0 object-cover border border-wood/40 mt-0.5`}
+                className="flex-shrink-0 object-cover mt-0.5"
+                style={{
+                  width: avatarPx,
+                  height: avatarPx,
+                  borderRadius: '50%',
+                  border: `2px solid ${color}40`,
+                }}
               />
             ) : (
               <div
-                className={`${avatarSize} rounded-full flex-shrink-0 flex items-center justify-center border border-wood/40 mt-0.5`}
-                style={{ backgroundColor: getColor(speech.speaker) + '33' }}
+                className="flex-shrink-0 flex items-center justify-center mt-0.5"
+                style={{
+                  width: avatarPx,
+                  height: avatarPx,
+                  borderRadius: '50%',
+                  backgroundColor: color + '20',
+                  border: `2px solid ${color}40`,
+                }}
               >
-                <span className="text-[7px] font-pixel font-bold" style={{ color: getColor(speech.speaker) }}>
+                <span className="text-[8px] font-pixel font-bold" style={{ color }}>
                   {speech.speaker.charAt(0)}
                 </span>
               </div>
             )}
             {/* Message */}
-            <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex flex-col gap-0.5 min-w-0 flex-1">
               <span
                 className={`${nameSize} font-pixel font-bold`}
-                style={{ color: getColor(speech.speaker) }}
+                style={{ color }}
               >
                 {speech.speaker}
               </span>
-              <p className={`${speech.pending ? 'text-stone italic' : 'text-text-light'} ${textSize} font-pixel leading-relaxed`}>
+              <p
+                className={`${speech.pending ? 'text-stone italic' : 'text-text-light/90'} ${textSize} font-pixel leading-relaxed`}
+                style={{
+                  borderLeft: `2px solid ${color}30`,
+                  paddingLeft: '8px',
+                }}
+              >
                 {speech.content}{speech.pending ? ' ...' : ''}
               </p>
             </div>
@@ -132,17 +167,15 @@ export const RoomChatOverlay: React.FC = () => {
   const playerLocations = useGameStore((s) => s.playerLocations)
   const myName = useGameStore((s) => s.myName)
   const prevVisitCountRef = useRef(0)
-  const lastManualSwitchRef = useRef(0)  // timestamp of last manual tab click
+  const lastManualSwitchRef = useRef(0)
 
-  // Detect if human is in a house visit
   const myLocation = myName ? playerLocations[myName] : undefined
   const isInVisit = myLocation?.startsWith('visiting:')
   const myVisitHost = isInVisit ? myLocation!.split(':')[1] : null
 
-  // Build tab list: campfire always first, then each active house visit
   const tabs: TabInfo[] = useMemo(() => {
     const result: TabInfo[] = [
-      { id: 'campfire', label: 'Ocak', icon: '🔥', speeches },
+      { id: 'campfire', label: 'Ocak', icon: '\uD83D\uDD25', speeches },
     ]
 
     for (const visit of houseVisits) {
@@ -150,8 +183,8 @@ export const RoomChatOverlay: React.FC = () => {
         myName !== null && (visit.host === myName || visit.visitor === myName)
       result.push({
         id: `visit:${visit.visit_id}`,
-        label: `${visit.visitor} → ${visit.host}`,
-        icon: isMyVisit ? '🏠' : '🏠',
+        label: `${visit.visitor} \u2192 ${visit.host}`,
+        icon: '\uD83C\uDFE0',
         speeches: visit.speeches,
         emptyText: `${visit.visitor} ile ${visit.host} konusuyor...`,
         isMine: isMyVisit,
@@ -161,8 +194,6 @@ export const RoomChatOverlay: React.FC = () => {
     return result
   }, [speeches, houseVisits, myName])
 
-  // Auto-switch to human's own visit tab when it appears
-  // Don't auto-switch if user recently clicked a tab (within 5 seconds)
   useEffect(() => {
     const newCount = houseVisits.length
     const oldCount = prevVisitCountRef.current
@@ -170,11 +201,9 @@ export const RoomChatOverlay: React.FC = () => {
       const newest = houseVisits[newCount - 1]
       const recentManualSwitch = Date.now() - lastManualSwitchRef.current < 5000
 
-      // If the new visit involves me, always switch to it (my own visit is priority)
       if (myName && (newest.host === myName || newest.visitor === myName)) {
         setSelectedRoom(newest.visit_id)
       } else if (!recentManualSwitch) {
-        // Only auto-switch if user hasn't manually clicked a tab recently
         const currentRoom = useGameStore.getState().selectedRoom
         if (!currentRoom || currentRoom === 'campfire') {
           setSelectedRoom(newest.visit_id)
@@ -184,18 +213,14 @@ export const RoomChatOverlay: React.FC = () => {
     prevVisitCountRef.current = newCount
   }, [houseVisits.length, houseVisits, setSelectedRoom, myName])
 
-  // Find active tab based on selectedRoom
   const activeTab = useMemo(() => {
     if (!selectedRoom || selectedRoom === 'campfire') {
       return tabs[0]
     }
 
-    // Try to find a visit tab where selectedRoom matches visit_id
     const visitTab = tabs.find((t) => {
       if (t.id === 'campfire') return false
-      // Extract visit_id from tab id (format: 'visit:VISIT_ID')
       const visitId = t.id.replace('visit:', '')
-      // selectedRoom is now a visit_id, so directly compare
       return visitId === selectedRoom
     })
     if (visitTab) return visitTab
@@ -203,30 +228,38 @@ export const RoomChatOverlay: React.FC = () => {
     return tabs[0]
   }, [selectedRoom, tabs, houseVisits])
 
-  // Immersive mode: when human is in a visit and viewing their visit tab
   const isImmersiveVisit = isInVisit && activeTab.isMine
 
-  // Panel dimensions based on mode
-  const panelClass = isImmersiveVisit
-    ? 'fixed inset-x-0 top-12 bottom-16 z-30 flex flex-col mx-auto max-w-2xl border-2 border-text-gold/60 bg-bg-dark/98 shadow-2xl shadow-black/60'
-    : 'fixed right-0 top-12 bottom-16 w-[320px] z-30 flex flex-col border-2 border-wood/60 bg-bg-dark/95 shadow-lg shadow-black/40'
-
   return (
-    <div className={panelClass}>
+    <div
+      className={
+        isImmersiveVisit
+          ? 'fixed inset-x-0 top-12 bottom-16 z-30 flex flex-col mx-auto max-w-2xl bg-[#120e06]/98 shadow-2xl shadow-black/60'
+          : 'fixed right-0 top-12 bottom-16 w-[340px] z-30 flex flex-col bg-[#120e06]/95 shadow-xl shadow-black/40'
+      }
+      style={{
+        borderLeft: isImmersiveVisit ? 'none' : '1px solid rgba(139,94,60,0.3)',
+        borderTop: isImmersiveVisit ? '1px solid rgba(218,165,32,0.3)' : 'none',
+        backdropFilter: 'blur(8px)',
+      }}
+    >
       {/* Immersive visit header */}
       {isImmersiveVisit && (
-        <div className="flex-shrink-0 flex items-center justify-center gap-3 px-4 py-2 border-b-2 border-text-gold/30 bg-[#2a1f10]/80">
-          <span className="text-[10px] font-pixel text-text-gold">
-            🏠 Ev Ziyareti
+        <div className="flex-shrink-0 flex items-center justify-center gap-3 px-4 py-2.5 bg-gradient-to-r from-transparent via-[#2a1f10]/60 to-transparent"
+             style={{ borderBottom: '1px solid rgba(218,165,32,0.2)' }}>
+          <span className="text-[10px] font-pixel text-text-gold tracking-wider">
+            EV ZIYARETI
           </span>
-          <span className="text-[9px] font-pixel text-text-light">
-            {myVisitHost}'in Evi
+          <span className="text-[8px] font-pixel text-stone">|</span>
+          <span className="text-[9px] font-pixel text-text-light/80">
+            {myVisitHost}&apos;in Evi
           </span>
         </div>
       )}
 
       {/* Tab bar */}
-      <div className="flex-shrink-0 flex overflow-x-auto border-b-2 border-wood/30 scrollbar-thin">
+      <div className="flex-shrink-0 flex overflow-x-auto scrollbar-thin"
+           style={{ borderBottom: '1px solid rgba(139,94,60,0.2)' }}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab.id
           return (
@@ -241,19 +274,23 @@ export const RoomChatOverlay: React.FC = () => {
                   setSelectedRoom(parts[1])
                 }
               }}
-              className={`flex-shrink-0 px-2 py-1.5 text-[8px] font-pixel whitespace-nowrap transition-colors ${
+              className={`flex-shrink-0 px-3 py-2 text-[8px] font-pixel whitespace-nowrap transition-all duration-200 relative ${
                 isActive
-                  ? 'text-text-gold border-b-2 border-text-gold font-bold bg-wood/10'
+                  ? 'text-text-gold font-bold'
                   : tab.isMine
-                    ? 'text-fire-orange hover:text-text-gold hover:bg-wood/5 font-bold'
-                    : 'text-stone hover:text-text-light hover:bg-wood/5'
+                    ? 'text-fire-orange hover:text-text-gold font-bold'
+                    : 'text-stone/70 hover:text-text-light'
               }`}
             >
               <span className="mr-1">{tab.icon}</span>
-              {tab.isMine ? `★ ${tab.label}` : tab.label}
-              {/* New message indicator for non-active tabs */}
+              {tab.isMine ? `\u2605 ${tab.label}` : tab.label}
+              {/* Active indicator line */}
+              {isActive && (
+                <div className="absolute bottom-0 left-1 right-1 h-[2px] bg-text-gold rounded-full" />
+              )}
+              {/* New message dot */}
               {!isActive && tab.speeches.length > 0 && (
-                <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-fire-orange animate-pulse" />
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-fire-orange animate-pulse" />
               )}
             </button>
           )

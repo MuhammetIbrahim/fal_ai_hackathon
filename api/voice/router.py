@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from api.deps import get_tenant
 from api.jobs import job_manager
 from api.voice import service
-from api.voice.schema import TTSRequest, STTRequest, VoiceListResponse, TTSStreamRequest
+from api.voice.schema import TTSRequest, STTRequest, VoiceListResponse, TTSStreamRequest, TTSSyncResponse
 
 router = APIRouter(prefix="/v1/voice", tags=["voice"])
 
@@ -13,6 +13,12 @@ router = APIRouter(prefix="/v1/voice", tags=["voice"])
 async def text_to_speech(body: TTSRequest, tenant_id: str = Depends(get_tenant)):
     job = job_manager.submit(tenant_id, "tts", service.tts(body))
     return {"job_id": job.job_id, "status": job.status}
+
+
+@router.post("/tts/sync", response_model=TTSSyncResponse)
+async def text_to_speech_sync(body: TTSRequest, tenant_id: str = Depends(get_tenant)):
+    """Synchronous TTS — returns result directly without job polling."""
+    return await service.tts(body)
 
 
 @router.post("/tts/stream")

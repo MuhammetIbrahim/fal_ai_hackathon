@@ -1,12 +1,11 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useGameStore } from '../state/GameStore'
-import { createLobby, joinLobby, startLobby, createGame, startGame } from '../net/api'
+import { createGame, startGame } from '../net/api'
 import { wsManager } from '../net/websocket'
 import { audioQueue } from '../audio/AudioQueue'
 
 import StatusHUD from './StatusHUD'
 import ActionBar from './ActionBar'
-import ChatLog from './ChatLog'
 import RoomChatOverlay from './RoomChatOverlay'
 import OmenDisplay from './OmenDisplay'
 import VoteOverlay from './VoteOverlay'
@@ -18,424 +17,308 @@ import NightPanel from './NightPanel'
 import TransitionOverlay from './TransitionOverlay'
 import PlayerCardOverlay from './PlayerCardOverlay'
 import PixelButton from './PixelButton'
+import PipelineMetrics from './PipelineMetrics'
 
-// ── Lobby UI (inline) ──
-const LobbyUI: React.FC = () => {
-  const lobbyCode = useGameStore((s) => s.lobbyCode)
-  const gameId = useGameStore((s) => s.gameId)
-  const playerId = useGameStore((s) => s.playerId)
-  const connected = useGameStore((s) => s.connected)
-  const players = useGameStore((s) => s.players)
+// ── Loading messages that cycle during character generation ──
+const LOADING_STEPS = [
+  'Köy kuruluyor...',
+  'Karakterler şekilleniyor...',
+  'Hikâyeler yazılıyor...',
+  'Roller dağıtılıyor...',
+  'Sesler atanıyor...',
+  'Son hazırlıklar yapılıyor...',
+]
+
+// ── Atmospheric Loading Screen ──
+const LoadingScreen: React.FC = () => {
+  const [stepIndex, setStepIndex] = useState(0)
+  const [dots, setDots] = useState('')
+
+  // Cycle through loading steps
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStepIndex((prev) => (prev + 1) % LOADING_STEPS.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  // Animated dots
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length >= 3 ? '' : prev + '.'))
+    }, 500)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Deep dark background */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at center, #1a1208 0%, #0d0a04 50%, #030201 100%)',
+        }}
+      />
+
+      {/* Animated fire glow — pulsing */}
+      <div
+        className="absolute bottom-[30%] left-1/2 -translate-x-1/2 w-[400px] h-[400px] pointer-events-none animate-pulse"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,140,0,0.12) 0%, rgba(255,80,0,0.06) 40%, transparent 70%)',
+          animationDuration: '3s',
+        }}
+      />
+
+      {/* Floating embers (CSS particles) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: i % 3 === 0 ? '3px' : '2px',
+              height: i % 3 === 0 ? '3px' : '2px',
+              backgroundColor: `rgba(255,${140 + (i % 4) * 20},0,${0.3 + (i % 3) * 0.2})`,
+              left: `${30 + (i * 3.7) % 40}%`,
+              bottom: `${10 + (i * 7) % 30}%`,
+              animation: `float-up ${4 + (i % 3) * 2}s ease-out infinite`,
+              animationDelay: `${i * 0.6}s`,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Center content */}
+      <div className="relative flex flex-col items-center gap-8">
+        {/* Fire icon with glow */}
+        <div
+          className="text-[48px] animate-pulse"
+          style={{
+            filter: 'drop-shadow(0 0 30px rgba(255,140,0,0.5))',
+            animationDuration: '2s',
+          }}
+        >
+          🔥
+        </div>
+
+        {/* Title */}
+        <h1
+          className="text-text-gold text-[18px] font-pixel tracking-[0.2em]"
+          style={{ textShadow: '0 0 16px rgba(218,165,32,0.4)' }}
+        >
+          Ocak Yemini
+        </h1>
+
+        {/* Loading message */}
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-text-light/80 text-[10px] font-pixel tracking-wider transition-all duration-500">
+            {LOADING_STEPS[stepIndex]}{dots}
+          </p>
+
+          {/* Progress bar */}
+          <div
+            className="w-[200px] h-[3px] rounded-full overflow-hidden"
+            style={{ backgroundColor: 'rgba(139,94,60,0.2)' }}
+          >
+            <div
+              className="h-full rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, rgba(218,165,32,0.6), rgba(255,140,0,0.8))',
+                animation: 'loading-bar 3s ease-in-out infinite',
+              }}
+            />
+          </div>
+
+          {/* 3 character slots */}
+          <div className="flex gap-6 mt-4">
+            {['alloy', 'zeynep', 'ali'].map((voice, i) => (
+              <div
+                key={voice}
+                className="flex flex-col items-center gap-2 animate-pulse"
+                style={{ animationDelay: `${i * 0.5}s`, animationDuration: '2.5s' }}
+              >
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{
+                    border: '1px solid rgba(218,165,32,0.3)',
+                    backgroundColor: 'rgba(218,165,32,0.05)',
+                    boxShadow: '0 0 16px rgba(218,165,32,0.08)',
+                  }}
+                >
+                  <span className="text-text-gold/40 text-[16px] font-pixel">?</span>
+                </div>
+                <span className="text-stone/30 text-[7px] font-pixel">
+                  {voice === 'alloy' ? 'Ses 1' : voice === 'zeynep' ? 'Ses 2' : 'Ses 3'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CSS animations */}
+      <style>{`
+        @keyframes float-up {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 0.5; }
+          100% { transform: translateY(-200px) scale(0.3); opacity: 0; }
+        }
+        @keyframes loading-bar {
+          0% { width: 0%; }
+          50% { width: 80%; }
+          100% { width: 100%; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ── Landing / Demo Start Screen ──
+const LandingUI: React.FC = () => {
   const setConnection = useGameStore((s) => s.setConnection)
-  const setLobbyCode = useGameStore((s) => s.setLobbyCode)
   const setMyName = useGameStore((s) => s.setMyName)
   const setNotification = useGameStore((s) => s.setNotification)
 
-  const [joinCode, setJoinCode] = useState('')
-  const [playerName, setPlayerName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [isHost, setIsHost] = useState(false)
-  const [totalPlayers, setTotalPlayers] = useState(4)
-  const [aiCount, setAiCount] = useState(3)
 
-  const handleCreateLobby = useCallback(async () => {
-    const name = playerName.trim()
-    if (!name) {
-      setNotification({ message: 'Isim gir!', type: 'error' })
-      setTimeout(() => setNotification(null), 2000)
-      return
-    }
-    try {
-      setLoading(true)
-      const result = await createLobby(name, totalPlayers, aiCount) as any
-      setLobbyCode(result.lobby_code)
-      setIsHost(true)
-      setMyName(name)
-      // Host is already P0 from create — no need to join again
-      setConnection(result.lobby_code, 'P0')
-      // Set initial player list from lobby response so the Start button enables
-      if (result.players) {
-        useGameStore.getState().setPlayers(result.players)
-      }
-    } catch (err) {
-      setNotification({
-        message: `Lobi olusturulamadi: ${(err as Error).message}`,
-        type: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [playerName, totalPlayers, aiCount, setLobbyCode, setConnection, setMyName, setNotification])
-
-  const handleJoinLobby = useCallback(async () => {
-    const code = joinCode.trim().toUpperCase()
-    const name = playerName.trim()
-    if (!code || !name) return
-
-    try {
-      setLoading(true)
-      const result = await joinLobby(code, name)
-      setLobbyCode(code)
-      setConnection(result.slot_id, result.slot_id)
-      setMyName(name)
-    } catch (err) {
-      setNotification({
-        message: `Lobiye katilamadi: ${(err as Error).message}`,
-        type: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [joinCode, playerName, setLobbyCode, setConnection, setMyName, setNotification])
-
-  const handleStartGame = useCallback(async () => {
-    audioQueue.unlock()
-    if (!lobbyCode) return
-    const name = playerName.trim()
-    if (!name) return
-
-    try {
-      setLoading(true)
-      setNotification({ message: 'Lobi baslatiliyor...', type: 'info' })
-      const result = await startLobby(lobbyCode, name)
-      const gId = result.game_id
-
-      // Connect WebSocket BEFORE starting game to avoid missing first events
-      if (playerId) {
-        wsManager.connect(gId, playerId)
-        setConnection(gId, playerId)
-      }
-
-      // Wait for WS connection to establish
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Start the game (LLM character generation — can take 30-60s)
-      setNotification({ message: 'Karakterler olusturuluyor... (30-60 sn)', type: 'info' })
-      await startGame(gId)
-      setNotification(null)
-    } catch (err) {
-      setNotification({
-        message: `Oyun baslatilamadi: ${(err as Error).message}`,
-        type: 'error',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }, [lobbyCode, playerId, playerName, setConnection, setNotification])
-
-  const handleAIDemo = useCallback(async () => {
+  const handleStartDemo = useCallback(async () => {
     audioQueue.unlock()
     try {
       setLoading(true)
-      // Create a game with all AI players (6 players, 6 AI, 3 days)
-      const result = await createGame(6, 6, 3)
+      // 3 AI players, 3 AI, 1 day — short demo
+      const result = await createGame(3, 3, 1)
       const gId = result.game_id
 
-      // Connect WS BEFORE starting game to avoid missing the first phase_change
+      // Connect WS as spectator
       wsManager.connect(gId, 'spectator')
       setConnection(gId, 'spectator')
       setMyName('Seyirci')
 
-      // Wait for WS connection to establish
+      // Wait for WS connection
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // Start the game (generates characters + starts game loop)
+      // Start the game (character generation + game loop)
       await startGame(gId)
     } catch (err) {
       setNotification({
         message: `Demo baslatilamadi: ${(err as Error).message}`,
         type: 'error',
       })
-    } finally {
       setLoading(false)
     }
   }, [setConnection, setMyName, setNotification])
 
+  // Show loading screen when loading
+  if (loading) return <LoadingScreen />
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto py-8">
-      {/* Backdrop — dark with subtle vignette */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Background */}
       <div
         className="absolute inset-0"
         style={{
           background: 'radial-gradient(ellipse at center, #1a1208 0%, #0d0a04 60%, #050302 100%)',
         }}
       />
-      {/* Ambient fire glow at bottom center */}
+
+      {/* Fire glow */}
       <div
         className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse at bottom center, rgba(255,140,0,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at bottom center, rgba(255,140,0,0.1) 0%, transparent 70%)',
         }}
       />
 
-      {/* ── Main card ── */}
+      {/* Card */}
       <div className="relative w-[420px] max-w-[92vw]">
-        {/* Outermost glow ring */}
-        <div
-          className="absolute -inset-[12px] pointer-events-none rounded-sm"
-          style={{
-            border: '1px solid rgba(218,165,32,0.08)',
-            boxShadow: '0 0 80px rgba(255,140,0,0.06), 0 0 120px rgba(218,165,32,0.04)',
-          }}
-        />
-
-        {/* Outer ornamental border — double line effect */}
+        {/* Outer glow */}
         <div
           className="absolute -inset-[6px] pointer-events-none"
           style={{
-            border: '2px solid #5C3A1E',
-            boxShadow: '0 0 0 1px #3a2210, inset 0 0 0 1px rgba(218,165,32,0.1), 0 0 50px rgba(255,140,0,0.1)',
+            border: '1px solid rgba(92,58,30,0.4)',
+            boxShadow: '0 0 60px rgba(255,140,0,0.08)',
           }}
         />
 
-        {/* Inner card */}
         <div
-          className="relative border border-wood/60"
+          className="relative"
           style={{
             background: 'linear-gradient(180deg, #1c140a 0%, #14100a 40%, #0f0b06 70%, #1a1208 100%)',
-            boxShadow: 'inset 0 1px 0 rgba(218,165,32,0.15), inset 0 -1px 0 rgba(218,165,32,0.05), 0 16px 48px rgba(0,0,0,0.8)',
+            border: '1px solid rgba(139,94,60,0.5)',
+            boxShadow: 'inset 0 1px 0 rgba(218,165,32,0.15), 0 16px 48px rgba(0,0,0,0.8)',
           }}
         >
-          {/* Top decorative bar — gold accent */}
+          {/* Top accent */}
           <div className="h-[2px] bg-gradient-to-r from-transparent via-text-gold/50 to-transparent" />
-          <div className="h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
 
-          {/* Corner ornaments — larger L-shaped */}
-          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-text-gold/40" />
-          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-text-gold/40" />
-          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-text-gold/40" />
-          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-text-gold/40" />
-
-          {/* Corner diamond accents */}
-          <div className="absolute top-2 left-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
-          <div className="absolute top-2 right-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
-          <div className="absolute bottom-2 left-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
-          <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rotate-45 bg-text-gold/20" />
+          {/* Corner ornaments */}
+          <div className="absolute top-0 left-0 w-5 h-5 border-t border-l border-text-gold/30" />
+          <div className="absolute top-0 right-0 w-5 h-5 border-t border-r border-text-gold/30" />
+          <div className="absolute bottom-0 left-0 w-5 h-5 border-b border-l border-text-gold/30" />
+          <div className="absolute bottom-0 right-0 w-5 h-5 border-b border-r border-text-gold/30" />
 
           {/* Content */}
-          <div className="px-10 py-8 flex flex-col items-center">
-            {/* ── Title section ── */}
-            <div className="flex flex-col items-center gap-3 mb-8">
-              {/* Fire emoji as logo */}
-              <div className="text-[32px] mb-1" style={{ textShadow: '0 0 20px rgba(255,140,0,0.5)' }}>
-                🔥
-              </div>
-              <h1
-                className="text-text-gold text-[20px] font-pixel tracking-[0.15em]"
-                style={{ textShadow: '0 0 12px rgba(218,165,32,0.3)' }}
-              >
-                Ocak Yemini
-              </h1>
-              <p className="text-stone text-[9px] font-pixel tracking-wider">
-                Sosyal Deduksiyon Oyunu
-              </p>
-              {/* Decorative divider under title */}
-              <div className="flex items-center gap-3 w-full mt-2">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/40" />
-                <div className="w-1.5 h-1.5 rotate-45 border border-text-gold/40" />
-                <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/40" />
-              </div>
+          <div className="px-10 py-10 flex flex-col items-center">
+            {/* Logo */}
+            <div
+              className="text-[40px] mb-4"
+              style={{ textShadow: '0 0 24px rgba(255,140,0,0.5)' }}
+            >
+              🔥
             </div>
 
-            {/* ── Not in lobby yet ── */}
-            {!lobbyCode && (
-              <div className="flex flex-col items-center gap-5 w-full">
-                {/* Name input */}
-                <div className="w-full max-w-[280px]">
-                  <label className="block text-stone text-[8px] font-pixel mb-2 text-center tracking-wider uppercase">
-                    Karakter Adin
-                  </label>
-                  <input
-                    type="text"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="Isim gir..."
-                    className="w-full px-5 py-3 bg-[#0f0b06] border-2 border-wood/50 text-text-light font-pixel text-[11px] outline-none focus:border-text-gold/80 placeholder:text-stone/40 text-center transition-colors"
-                    style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)' }}
-                  />
-                </div>
+            {/* Title */}
+            <h1
+              className="text-text-gold text-[22px] font-pixel tracking-[0.15em] mb-2"
+              style={{ textShadow: '0 0 14px rgba(218,165,32,0.3)' }}
+            >
+              Ocak Yemini
+            </h1>
 
-                {/* Player/AI count config */}
-                <div className="w-full max-w-[280px] flex gap-4">
-                  <div className="flex-1">
-                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
-                      Toplam Oyuncu
-                    </label>
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => { const v = Math.max(3, totalPlayers - 1); setTotalPlayers(v); setAiCount(Math.min(aiCount, v - 1)) }}
-                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
-                      >-</button>
-                      <span className="text-text-gold text-[12px] font-pixel w-6 text-center">{totalPlayers}</span>
-                      <button
-                        onClick={() => setTotalPlayers(Math.min(10, totalPlayers + 1))}
-                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
-                      >+</button>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
-                      AI Sayisi
-                    </label>
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => setAiCount(Math.max(1, aiCount - 1))}
-                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
-                      >-</button>
-                      <span className="text-text-gold text-[12px] font-pixel w-6 text-center">{aiCount}</span>
-                      <button
-                        onClick={() => setAiCount(Math.min(totalPlayers - 1, aiCount + 1))}
-                        className="px-2 py-1 border border-wood/50 text-stone text-[10px] font-pixel hover:border-text-gold"
-                      >+</button>
-                    </div>
-                  </div>
-                </div>
-                <span className="text-stone/50 text-[7px] font-pixel">
-                  {totalPlayers - aiCount} insan + {aiCount} AI = {totalPlayers} oyuncu
-                </span>
+            <p className="text-stone/70 text-[9px] font-pixel tracking-wider mb-2">
+              AI Sosyal Dedüksiyon Oyunu
+            </p>
 
-                {/* Action buttons */}
-                <div className="flex flex-col items-center gap-3 w-full max-w-[280px]">
-                  <PixelButton
-                    label="Lobi Olustur"
-                    onClick={handleCreateLobby}
-                    variant="fire"
-                    size="lg"
-                    disabled={loading || !playerName.trim()}
-                  />
+            {/* Subtitle */}
+            <p className="text-text-light/50 text-[8px] font-pixel text-center leading-relaxed max-w-[260px] mb-8">
+              3 AI karakter, benzersiz sesler ve kişilikler.
+              Kim sahtekar, kim masum? İzle ve keşfet.
+            </p>
 
-                  <PixelButton
-                    label="AI Demo (Sadece Izle)"
-                    onClick={handleAIDemo}
-                    variant="stone"
-                    size="lg"
-                    disabled={loading}
-                  />
-                </div>
+            {/* Divider */}
+            <div className="flex items-center gap-3 w-full max-w-[260px] mb-8">
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/40" />
+              <div className="w-1.5 h-1.5 rotate-45 border border-text-gold/30" />
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/40" />
+            </div>
 
-                {/* Divider */}
-                <div className="flex items-center gap-4 w-full max-w-[280px] my-1">
-                  <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/30" />
-                  <span className="text-stone/60 text-[8px] font-pixel uppercase tracking-widest">veya</span>
-                  <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/30" />
-                </div>
+            {/* Start button */}
+            <PixelButton
+              label="Demoyu Başlat"
+              onClick={handleStartDemo}
+              variant="fire"
+              size="lg"
+              disabled={loading}
+            />
 
-                {/* Join lobby */}
-                <div className="flex gap-3 items-end">
-                  <div>
-                    <label className="block text-stone text-[7px] font-pixel mb-1.5 text-center tracking-wider uppercase">
-                      Lobi Kodu
-                    </label>
-                    <input
-                      type="text"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                      placeholder="ABCDEF"
-                      maxLength={8}
-                      className="px-4 py-3 bg-[#0f0b06] border-2 border-stone/40 text-text-light font-pixel text-[11px] outline-none focus:border-text-gold/80 placeholder:text-stone/30 w-[160px] text-center uppercase tracking-[0.2em] transition-colors"
-                      style={{ boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.4)' }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleJoinLobby()
-                      }}
-                    />
-                  </div>
-                  <PixelButton
-                    label="Katil"
-                    onClick={handleJoinLobby}
-                    variant="wood"
-                    disabled={loading || !joinCode.trim() || !playerName.trim()}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── In a lobby ── */}
-            {lobbyCode && (
-              <div className="flex flex-col items-center gap-5 w-full">
-                {/* Lobby code display */}
-                <div
-                  className="border-2 border-text-gold/30 px-8 py-4 text-center"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(218,165,32,0.06) 0%, transparent 100%)',
-                    boxShadow: '0 0 20px rgba(218,165,32,0.05)',
-                  }}
-                >
-                  <span className="text-stone text-[8px] font-pixel block mb-2 tracking-wider uppercase">
-                    Lobi Kodu
-                  </span>
-                  <span
-                    className="text-text-gold text-[18px] font-pixel tracking-[0.4em]"
-                    style={{ textShadow: '0 0 8px rgba(218,165,32,0.3)' }}
-                  >
-                    {lobbyCode}
-                  </span>
-                </div>
-
-                {/* Player list */}
-                <div className="w-full max-w-[280px] border-2 border-wood/30 bg-[#0f0b06]/60 px-5 py-4">
-                  <span className="text-stone text-[8px] font-pixel block mb-3 tracking-wider uppercase">
-                    Oyuncular ({players.length})
-                  </span>
-                  <div className="space-y-2">
-                    {players.length === 0 && (
-                      <span className="text-stone/40 text-[9px] font-pixel">
-                        Oyuncu bekleniyor...
-                      </span>
-                    )}
-                    {players.map((p, idx) => (
-                      <div key={p.slot_id} className="flex items-center gap-3 py-1 border-b border-wood/10 last:border-0">
-                        <span className="text-stone/40 text-[8px] font-pixel w-4">{idx + 1}.</span>
-                        <div className="w-2 h-2 rounded-full bg-green-400/80" />
-                        <span className="text-text-light text-[10px] font-pixel">
-                          {p.name}
-                        </span>
-                        {p.role_title && p.role_title !== 'Villager' && (
-                          <span className="text-stone/50 text-[8px] font-pixel ml-auto">
-                            {p.role_title}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Connection status */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-2 h-2 rounded-full ${connected ? 'bg-green-400' : 'bg-fire-red animate-pulse'}`}
-                  />
-                  <span className="text-stone text-[8px] font-pixel">
-                    {connected ? 'Baglanti kuruldu' : 'Baglanti bekleniyor...'}
-                  </span>
-                </div>
-
-                {/* Start game button (host only) */}
-                {isHost && (
-                  <div className="mt-2">
-                    <PixelButton
-                      label="Oyunu Baslat"
-                      onClick={handleStartGame}
-                      variant="fire"
-                      size="lg"
-                      disabled={loading || players.length < 1}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Loading indicator */}
-            {loading && (
-              <div className="mt-4 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-fire-orange animate-pulse" />
-                <span className="text-fire-orange text-[9px] font-pixel animate-pulse">
-                  Yukleniyor...
-                </span>
-              </div>
-            )}
+            {/* Tech badges */}
+            <div className="flex items-center gap-3 mt-8">
+              <span className="text-stone/30 text-[7px] font-pixel tracking-wider">
+                fal.ai TTS
+              </span>
+              <div className="w-0.5 h-0.5 rounded-full bg-stone/20" />
+              <span className="text-stone/30 text-[7px] font-pixel tracking-wider">
+                Gemini LLM
+              </span>
+              <div className="w-0.5 h-0.5 rounded-full bg-stone/20" />
+              <span className="text-stone/30 text-[7px] font-pixel tracking-wider">
+                Real-time WS
+              </span>
+            </div>
           </div>
 
-          {/* Bottom decorative bar */}
+          {/* Bottom accent */}
           <div className="h-px bg-gradient-to-r from-transparent via-wood/30 to-transparent" />
           <div className="h-[2px] bg-gradient-to-r from-transparent via-text-gold/30 to-transparent" />
         </div>
@@ -454,12 +337,12 @@ const CharacterInfoButton: React.FC = () => {
 
   return (
     <>
-      {/* Floating button — top-left */}
       <button
         onClick={() => setShowMyCharacter(!showMyCharacter)}
-        className="fixed top-3 left-3 z-40 flex items-center gap-2 px-3 py-2 border border-text-gold/40 hover:border-text-gold/70 transition-all"
+        className="fixed top-3 left-3 z-40 flex items-center gap-2 px-3 py-2 rounded transition-all"
         style={{
           background: 'linear-gradient(180deg, rgba(26,18,8,0.95) 0%, rgba(15,11,6,0.95) 100%)',
+          border: '1px solid rgba(218,165,32,0.3)',
           boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
         }}
       >
@@ -467,16 +350,16 @@ const CharacterInfoButton: React.FC = () => {
           {myCharacterInfo.name}
         </span>
         <span className="text-stone/50 text-[8px] font-pixel">
-          {showMyCharacter ? '▲' : '▼'}
+          {showMyCharacter ? '\u25B2' : '\u25BC'}
         </span>
       </button>
 
-      {/* Dropdown panel */}
       {showMyCharacter && (
         <div
-          className="fixed top-12 left-3 z-40 w-[280px] border border-text-gold/40"
+          className="fixed top-12 left-3 z-40 w-[280px] rounded-lg overflow-hidden"
           style={{
             background: 'linear-gradient(180deg, rgba(26,18,8,0.98) 0%, rgba(15,11,6,0.98) 100%)',
+            border: '1px solid rgba(218,165,32,0.3)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
           }}
         >
@@ -486,7 +369,7 @@ const CharacterInfoButton: React.FC = () => {
               <img
                 src={myCharacterInfo.avatar_url}
                 alt={myCharacterInfo.name}
-                className="w-16 h-16 border border-wood/40 self-center"
+                className="w-16 h-16 rounded border border-wood/40 self-center"
                 style={{ imageRendering: 'pixelated' }}
               />
             )}
@@ -502,11 +385,6 @@ const CharacterInfoButton: React.FC = () => {
             <span className={`text-[8px] font-pixel text-center ${myCharacterInfo.player_type === 'et_can' ? 'text-green-400' : 'text-red-400'}`}>
               {myCharacterInfo.player_type === 'et_can' ? 'Et u Can (Koylu)' : 'Yanki Dogmus (Sahtekar)'}
             </span>
-            {myCharacterInfo.archetype_label && (
-              <span className="text-wood text-[8px] font-pixel text-center">
-                {myCharacterInfo.archetype_label}
-              </span>
-            )}
             {myCharacterInfo.lore && (
               <p className="text-text-light/60 text-[8px] font-pixel text-center leading-relaxed mt-1">
                 {myCharacterInfo.lore}
@@ -532,27 +410,26 @@ const CharacterRevealModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/80" />
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
       <div
-        className="relative max-w-sm w-full mx-4 border-2 border-text-gold/60"
+        className="relative max-w-sm w-full mx-4 rounded-lg overflow-hidden"
         style={{
           background: 'linear-gradient(180deg, #1a1208 0%, #14100a 50%, #1a1208 100%)',
+          border: '1px solid rgba(218,165,32,0.4)',
           boxShadow: '0 0 60px rgba(218,165,32,0.15), 0 12px 40px rgba(0,0,0,0.7)',
         }}
       >
         <div className="h-[3px] bg-gradient-to-r from-transparent via-text-gold/40 to-transparent" />
         <div className="px-8 py-6 flex flex-col items-center gap-4">
-          {/* Avatar */}
           {characterCard.avatar_url && (
             <img
               src={characterCard.avatar_url}
               alt={characterCard.name}
-              className="w-24 h-24 border-2 border-wood/50"
+              className="w-24 h-24 rounded-lg border border-wood/40"
               style={{ imageRendering: 'pixelated' }}
             />
           )}
 
-          {/* Name */}
           <h2
             className="text-text-gold text-[16px] font-pixel tracking-wider"
             style={{ textShadow: '0 0 12px rgba(218,165,32,0.3)' }}
@@ -560,41 +437,30 @@ const CharacterRevealModal: React.FC = () => {
             {characterCard.name}
           </h2>
 
-          {/* Role */}
           <span className="text-stone text-[10px] font-pixel">
             {characterCard.role_title}
           </span>
 
-          {/* Side */}
           <span className={`text-[10px] font-pixel ${sideColor}`}>
             {sideLabel}
           </span>
 
-          {/* Archetype */}
-          {characterCard.archetype_label && (
-            <span className="text-wood text-[9px] font-pixel">
-              {characterCard.archetype_label}
-            </span>
-          )}
-
-          {/* Lore */}
           {characterCard.lore && (
             <p className="text-text-light/70 text-[9px] font-pixel text-center leading-relaxed max-h-[120px] overflow-y-auto">
               {characterCard.lore}
             </p>
           )}
 
-          {/* Divider */}
           <div className="flex items-center gap-3 w-full mt-2">
             <div className="flex-1 h-px bg-gradient-to-r from-transparent to-wood/40" />
             <div className="w-1.5 h-1.5 rotate-45 border border-text-gold/40" />
             <div className="flex-1 h-px bg-gradient-to-l from-transparent to-wood/40" />
           </div>
 
-          {/* Close button */}
           <button
             onClick={() => setCharacterCard(null)}
-            className="px-6 py-2 border-2 border-text-gold/50 text-text-gold text-[10px] font-pixel tracking-wider hover:bg-text-gold/10 transition-colors"
+            className="px-6 py-2 rounded text-text-gold text-[10px] font-pixel tracking-wider hover:bg-text-gold/10 transition-colors"
+            style={{ border: '1px solid rgba(218,165,32,0.4)' }}
           >
             Anladim
           </button>
@@ -605,69 +471,161 @@ const CharacterRevealModal: React.FC = () => {
   )
 }
 
-// ── Game Over UI (inline) ──
+// ── Game Over UI ──
 const GameOverUI: React.FC = () => {
   const gameOver = useGameStore((s) => s.gameOver)
 
   if (!gameOver) return null
 
   const winnerLabel = gameOver.winner === 'et_can' ? 'Et u Can' : 'Yanki Dogmus'
+  const winnerColor = gameOver.winner === 'et_can' ? '#4ac850' : '#DC143C'
 
   return (
     <div className="fixed inset-0 z-45 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" />
+      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+
+      {/* Sparkle particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: '2px',
+              height: '2px',
+              backgroundColor: i % 2 === 0 ? 'rgba(218,165,32,0.8)' : 'rgba(255,255,255,0.6)',
+              left: `${(i * 5.3 + 10) % 100}%`,
+              top: `${(i * 7.1 + 5) % 100}%`,
+              animation: `sparkle ${1.5 + (i % 3) * 0.5}s ease-in-out infinite`,
+              animationDelay: `${i * 0.15}s`,
+            }}
+          />
+        ))}
+      </div>
 
       <div
-        className="relative max-w-lg w-full mx-4 p-8"
+        className="relative max-w-lg w-full mx-4 rounded-lg overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #d4b896 0%, #c4a876 50%, #d4b896 100%)',
-          border: '6px double #8B5E3C',
-          boxShadow: '0 0 0 2px #5C3A1E, 0 8px 32px rgba(0,0,0,0.6)',
+          background: 'linear-gradient(180deg, #1a1208 0%, #14100a 50%, #0f0b06 100%)',
+          border: '1px solid rgba(218,165,32,0.4)',
+          boxShadow: '0 0 60px rgba(218,165,32,0.1), 0 16px 48px rgba(0,0,0,0.7)',
         }}
       >
-        <h1 className="text-[14px] font-pixel text-[#2a1f10] text-center mb-2">
-          Oyun Sonu
-        </h1>
+        {/* Winner banner */}
+        <div
+          className="py-4 text-center"
+          style={{
+            background: `linear-gradient(180deg, ${winnerColor}15 0%, transparent 100%)`,
+            borderBottom: `1px solid ${winnerColor}30`,
+          }}
+        >
+          <div className="text-[24px] mb-2">🏆</div>
+          <h1 className="text-[14px] font-pixel text-text-light tracking-wider mb-1">
+            Oyun Sonu
+          </h1>
+          <h2
+            className="text-[12px] font-pixel font-bold tracking-wider"
+            style={{ color: winnerColor, textShadow: `0 0 12px ${winnerColor}40` }}
+          >
+            Kazanan: {winnerLabel}
+          </h2>
+        </div>
 
-        <h2 className="text-[12px] font-pixel text-text-gold text-center mb-6">
-          Kazanan: {winnerLabel}
-        </h2>
+        {/* Character cards */}
+        <div className="px-6 py-5">
+          <div className="flex gap-5 justify-center flex-wrap">
+            {gameOver.players.map((p) => {
+              const isWinner = p.player_type === gameOver.winner
+              const sideColor = p.player_type === 'et_can' ? '#4ac850' : '#DC143C'
 
-        {/* Player results */}
-        <div className="space-y-2">
-          {gameOver.players.map((p) => (
-            <div
-              key={p.name}
-              className="flex items-center justify-between px-3 py-1.5 border-2 border-wood/30 bg-[#c4a876]/50"
-            >
-              <div className="flex items-center gap-2">
+              return (
                 <div
-                  className={`w-2 h-2 rounded-full ${
-                    p.player_type === gameOver.winner ? 'bg-text-gold' : 'bg-accent-red'
-                  }`}
-                />
-                <span className="text-[9px] font-pixel text-[#2a1f10]">
-                  {p.name}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-[8px] font-pixel text-[#5a4a30]">
-                  {p.role_title}
-                </span>
-                <span
-                  className={`text-[7px] font-pixel px-1.5 py-0.5 border ${
-                    p.player_type === 'et_can'
-                      ? 'border-green-600/50 text-green-800 bg-green-100/30'
-                      : 'border-fire-red/50 text-accent-red bg-red-100/30'
-                  }`}
+                  key={p.name}
+                  className="flex flex-col items-center gap-3 px-5 py-4 rounded-lg"
+                  style={{
+                    minWidth: '140px',
+                    border: `1px solid ${isWinner ? sideColor + '50' : 'rgba(107,107,107,0.2)'}`,
+                    backgroundColor: isWinner ? sideColor + '0a' : 'rgba(30,30,30,0.3)',
+                    boxShadow: isWinner ? `0 0 24px ${sideColor}15, inset 0 0 20px ${sideColor}08` : 'none',
+                  }}
                 >
-                  {p.player_type === 'et_can' ? 'Et u Can' : 'Yanki Dogmus'}
-                </span>
-              </div>
-            </div>
-          ))}
+                  {/* Avatar */}
+                  {p.avatar_url ? (
+                    <img
+                      src={p.avatar_url}
+                      alt={p.name}
+                      className="w-20 h-20 rounded-full object-cover"
+                      style={{
+                        border: `3px solid ${sideColor}50`,
+                        boxShadow: isWinner ? `0 0 20px ${sideColor}30` : 'none',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-20 h-20 rounded-full flex items-center justify-center"
+                      style={{
+                        backgroundColor: sideColor + '15',
+                        border: `3px solid ${sideColor}40`,
+                      }}
+                    >
+                      <span className="text-[24px] font-pixel font-bold" style={{ color: sideColor }}>
+                        {p.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+
+                  <span className="text-text-light text-[11px] font-pixel font-bold text-center">
+                    {p.name}
+                  </span>
+
+                  <span className="text-stone/70 text-[9px] font-pixel text-center">
+                    {p.role_title}
+                  </span>
+
+                  <span
+                    className="text-[8px] font-pixel px-3 py-1 rounded-full"
+                    style={{
+                      color: sideColor,
+                      border: `1px solid ${sideColor}40`,
+                      backgroundColor: sideColor + '10',
+                    }}
+                  >
+                    {p.player_type === 'et_can' ? 'Et u Can' : 'Yanki Dogmus'}
+                  </span>
+
+                  {isWinner && (
+                    <span className="text-[8px] font-pixel text-text-gold font-bold">★ Kazanan</span>
+                  )}
+                  {!p.alive && (
+                    <span className="text-[7px] font-pixel text-accent-red/60">Sürgün</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Replay button */}
+        <div
+          className="flex justify-center py-4"
+          style={{ borderTop: '1px solid rgba(139,94,60,0.2)' }}
+        >
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 rounded text-text-gold text-[10px] font-pixel tracking-wider hover:bg-text-gold/10 transition-colors"
+            style={{ border: '1px solid rgba(218,165,32,0.3)' }}
+          >
+            Tekrar İzle
+          </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes sparkle {
+          0%, 100% { opacity: 0; transform: scale(0); }
+          50% { opacity: 1; transform: scale(1.5); }
+        }
+      `}</style>
     </div>
   )
 }
@@ -683,12 +641,11 @@ export const UIRoot: React.FC = () => {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-20">
-      {/* Always visible layers (pointer-events on individual children) */}
+      {/* Always visible layers */}
       <div className="pointer-events-auto">
         <StatusHUD />
       </div>
 
-      {/* Character info button — visible during gameplay (not lobby) */}
       {phase !== 'lobby' && (
         <div className="pointer-events-auto">
           <CharacterInfoButton />
@@ -703,16 +660,22 @@ export const UIRoot: React.FC = () => {
         <NotificationToast />
       </div>
 
-      {/* Phase-specific UI */}
+      {/* Live pipeline metrics overlay */}
+      {phase !== 'lobby' && (
+        <div className="pointer-events-auto">
+          <PipelineMetrics />
+        </div>
+      )}
+
+      {/* Lobby — now just the landing page */}
       {phase === 'lobby' && (
         <div className="pointer-events-auto">
-          <LobbyUI />
+          <LandingUI />
         </div>
       )}
 
       {phase === 'morning' && (
         <>
-          {/* Parchment narrator modal */}
           {showParchment && morningText && (
             <div className="pointer-events-auto">
               <ParchmentModal
@@ -723,14 +686,12 @@ export const UIRoot: React.FC = () => {
             </div>
           )}
 
-          {/* Omen cards */}
           {!showParchment && (
             <div className="pointer-events-auto">
               <OmenDisplay />
             </div>
           )}
 
-          {/* Spotlight card reveal */}
           {!showParchment && spotlightCards.length > 0 && (
             <div className="pointer-events-auto">
               <CardReveal cards={spotlightCards} />
@@ -773,29 +734,22 @@ export const UIRoot: React.FC = () => {
         </div>
       )}
 
-      {phase === 'exile' && (
-        <>{/* Canvas handles exile animation; no extra overlay needed */}</>
-      )}
-
       {phase === 'game_over' && (
         <div className="pointer-events-auto">
           <GameOverUI />
         </div>
       )}
 
-      {/* Proposal panel (can appear in any phase) */}
       {proposal && (
         <div className="pointer-events-auto">
           <ProposalPanel />
         </div>
       )}
 
-      {/* Player card overlay (character inspection on map click) */}
       <div className="pointer-events-auto">
         <PlayerCardOverlay />
       </div>
 
-      {/* Character reveal modal (shown once at game start) */}
       <div className="pointer-events-auto">
         <CharacterRevealModal />
       </div>

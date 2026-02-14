@@ -4,6 +4,33 @@ import { wsManager } from '../net/websocket'
 import { audioQueue } from '../audio/AudioQueue'
 import PixelButton from './PixelButton'
 
+const PHASE_NARRATIONS: Record<string, string> = {
+  morning: 'Köyde yeni bir gün başlıyor...',
+  campfire: 'Karakterler ateş başında tartışıyor',
+  vote: 'Oylama başladı — kim sürgün edilecek?',
+  night: 'Gece çöktü, herkes evine çekildi...',
+  exile: 'Sürgün kararı verildi...',
+  game_over: 'Oyun bitti!',
+}
+
+const PHASE_ICONS: Record<string, string> = {
+  morning: '\u2600',
+  campfire: '\uD83D\uDD25',
+  vote: '\uD83D\uDDF3',
+  night: '\uD83C\uDF19',
+  exile: '\u2694',
+  game_over: '\uD83C\uDFC6',
+}
+
+const PHASE_LABELS: Record<string, string> = {
+  morning: 'Sabah',
+  campfire: 'Ateş Başı',
+  vote: 'Oylama',
+  night: 'Gece',
+  exile: 'Sürgün',
+  game_over: 'Oyun Bitti',
+}
+
 export const ActionBar: React.FC = () => {
   const inputRequired = useGameStore((s) => s.inputRequired)
   const phase = useGameStore((s) => s.phase)
@@ -11,23 +38,20 @@ export const ActionBar: React.FC = () => {
   const myName = useGameStore((s) => s.myName)
   const playerId = useGameStore((s) => s.playerId)
   const playerLocations = useGameStore((s) => s.playerLocations)
+  const currentSpeaker = useGameStore((s) => s.currentSpeaker)
 
-  // Spectator mode: no interaction allowed
   const isSpectator = playerId === 'spectator' || myName === 'Seyirci'
 
-  // Detect if human is currently in a house visit (location = "visiting:X")
   const myLocation = myName ? playerLocations[myName] : undefined
   const isInVisit = myLocation?.startsWith('visiting:') || inputRequired?.type === 'visit_speak'
 
   const [text, setText] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
-  const [sentWaiting] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
 
-  // Focus input when it's the player's turn
   useEffect(() => {
     if (
       inputRequired?.type === 'speak' ||
@@ -37,7 +61,6 @@ export const ActionBar: React.FC = () => {
     }
   }, [inputRequired])
 
-  // Reset vote target when input type changes
   useEffect(() => {
     setSelectedTarget(null)
   }, [inputRequired?.type])
@@ -46,9 +69,7 @@ export const ActionBar: React.FC = () => {
 
   const startRecording = useCallback(async () => {
     try {
-      // Stop current audio — user is interrupting to speak
       audioQueue.stop()
-      wsManager.send('interrupt', {})  // Signal backend immediately
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
@@ -63,7 +84,6 @@ export const ActionBar: React.FC = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         stream.getTracks().forEach((t) => t.stop())
 
-        // Convert to base64 and send
         const reader = new FileReader()
         reader.onloadend = () => {
           const base64 = (reader.result as string).split(',')[1]
@@ -94,11 +114,8 @@ export const ActionBar: React.FC = () => {
     const trimmed = text.trim()
     if (!trimmed) return
 
-    // 1. Stop current audio — user is interrupting
     audioQueue.stop()
-    wsManager.send('interrupt', {})  // Signal backend immediately
 
-    // 2. Show user's text immediately in chat
     const currentName = useGameStore.getState().myName
     if (currentName) {
       useGameStore.getState().addSpeech({
@@ -108,7 +125,6 @@ export const ActionBar: React.FC = () => {
       })
     }
 
-    // 3. Send to server
     wsManager.send('speak', { content: trimmed })
     setText('')
   }, [text])
@@ -118,9 +134,7 @@ export const ActionBar: React.FC = () => {
     if (!trimmed) return
 
     audioQueue.stop()
-    wsManager.send('interrupt', {})  // Signal backend immediately
 
-    // Add pending message to the correct visit tab (not campfire)
     const state = useGameStore.getState()
     const currentName = state.myName
     if (currentName) {
@@ -169,49 +183,101 @@ export const ActionBar: React.FC = () => {
   const isLocationChoice = inputRequired?.type === 'location_choice'
   const isMyTurn = inputRequired?.type === 'speak' || inputRequired?.type === 'visit_speak'
 
-  // Show text input during campfire phase (covers both campfire chat and house visits)
   const showTextInput = isCampfire
 
-  // Spectator: show a passive status bar, no interaction
+  // ── Spectator: rich narration bar ──
   if (isSpectator) {
-    const phaseLabel =
-      isCampfire ? 'Ates Basi' :
-      isVote ? 'Oylama' :
-      phase === 'morning' ? 'Sabah' :
-      phase === 'night' ? 'Gece' :
-      phase === 'exile' ? 'Surgun' :
-      'Izleniyor'
+    const phaseIcon = PHASE_ICONS[phase] ?? ''
+    const phaseLabel = PHASE_LABELS[phase] ?? 'Izleniyor'
+    const narration = currentSpeaker
+      ? `${currentSpeaker} konuşuyor...`
+      : PHASE_NARRATIONS[phase] ?? 'İzleniyor...'
 
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 py-2 border-t-4 border-stone bg-bg-dark/90 shadow-lg shadow-black/50">
-        <span className="text-stone text-[9px] font-pixel">
-          Seyirci Modu — {phaseLabel}
-        </span>
+      <div
+        className="fixed bottom-0 left-0 right-0 z-40 flex items-center px-5 py-2.5"
+        style={{
+          background: 'linear-gradient(to top, rgba(18,14,6,0.98), rgba(18,14,6,0.85))',
+          borderTop: '1px solid rgba(139,94,60,0.3)',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        {/* Left: Phase icon + label */}
+        <div className="flex items-center gap-2 min-w-[120px]">
+          <span className="text-base">{phaseIcon}</span>
+          <span className="text-text-gold text-[10px] font-pixel font-bold tracking-wider">
+            {phaseLabel}
+          </span>
+        </div>
+
+        {/* Center: Narration text */}
+        <div className="flex-1 flex items-center justify-center gap-2">
+          {currentSpeaker && (
+            <div
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{
+                backgroundColor: players.find(p => p.name === currentSpeaker)?.color ?? '#DAA520',
+                boxShadow: `0 0 8px ${players.find(p => p.name === currentSpeaker)?.color ?? '#DAA520'}60`,
+              }}
+            />
+          )}
+          <span className="text-text-light/80 text-[9px] font-pixel tracking-wide">
+            {narration}
+          </span>
+        </div>
+
+        {/* Right: Audio wave animation */}
+        <div className="flex items-center gap-0.5 min-w-[60px] justify-end">
+          {currentSpeaker ? (
+            <>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-[2px] rounded-full"
+                  style={{
+                    backgroundColor: '#DAA520',
+                    animation: `audioWave 0.8s ease-in-out ${i * 0.1}s infinite alternate`,
+                    height: `${6 + Math.random() * 8}px`,
+                  }}
+                />
+              ))}
+              <style>{`
+                @keyframes audioWave {
+                  0% { height: 4px; opacity: 0.4; }
+                  100% { height: 14px; opacity: 1; }
+                }
+              `}</style>
+            </>
+          ) : (
+            <span className="text-stone/30 text-[8px] font-pixel">SEYIRCI</span>
+          )}
+        </div>
       </div>
     )
   }
 
-  // Vote and location choice override text input
+  // Vote
   if (isVote) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 border-t-4 border-fire-red bg-bg-dark/95 shadow-lg shadow-black/50">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-fire-orange text-[10px] font-pixel animate-pulse">
-            Oylama Zamani!
-          </span>
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-t from-[#120e06] to-[#120e06]/95 backdrop-blur-sm"
+           style={{ borderTop: '2px solid rgba(220,20,60,0.4)' }}>
+        <div className="flex flex-col items-center gap-2.5 max-w-lg w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-fire-red animate-pulse" />
+            <span className="text-fire-orange text-[10px] font-pixel tracking-wider">
+              OYLAMA ZAMANI
+            </span>
+            <div className="w-1.5 h-1.5 rounded-full bg-fire-red animate-pulse" />
+          </div>
           {selectedTarget ? (
             <div className="flex items-center gap-3">
-              <span className="text-text-light text-[10px]">
+              <span className="text-text-light text-[9px] font-pixel">
                 Oy: <span className="text-text-gold font-bold">{selectedTarget}</span>
               </span>
-              <PixelButton
-                label="Onayla"
-                onClick={handleVote}
-                variant="fire"
-              />
+              <PixelButton label="Onayla" onClick={handleVote} variant="fire" />
             </div>
           ) : (
-            <span className="text-text-light text-[10px] opacity-70">
+            <span className="text-stone text-[9px] opacity-60 font-pixel">
               Surgun icin bir oyuncu sec
             </span>
           )}
@@ -222,11 +288,20 @@ export const ActionBar: React.FC = () => {
                 <button
                   key={p.slot_id}
                   onClick={() => setSelectedTarget(p.name)}
-                  className={`px-3 py-1.5 text-[9px] font-pixel border-2 transition-all ${
+                  className={`px-3 py-1.5 text-[9px] font-pixel transition-all duration-150 ${
                     selectedTarget === p.name
-                      ? 'border-text-gold bg-[#3a2a10] text-text-gold scale-110'
-                      : 'border-stone bg-[#2a2a2a] text-text-light hover:border-wood hover:scale-105'
+                      ? 'text-text-gold scale-105'
+                      : 'text-text-light/70 hover:text-text-light hover:scale-105'
                   }`}
+                  style={{
+                    border: selectedTarget === p.name
+                      ? '2px solid rgba(218,165,32,0.6)'
+                      : '1px solid rgba(107,107,107,0.3)',
+                    backgroundColor: selectedTarget === p.name
+                      ? 'rgba(218,165,32,0.1)'
+                      : 'rgba(42,42,42,0.5)',
+                    borderRadius: '4px',
+                  }}
                 >
                   {p.name}
                 </button>
@@ -237,12 +312,14 @@ export const ActionBar: React.FC = () => {
     )
   }
 
+  // Location choice
   if (isLocationChoice) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 border-t-4 border-text-gold bg-bg-dark/95 shadow-lg shadow-black/50">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-text-gold text-[10px] font-pixel animate-pulse">
-            Nereye gideceksin?
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-t from-[#120e06] to-[#120e06]/95 backdrop-blur-sm"
+           style={{ borderTop: '2px solid rgba(218,165,32,0.3)' }}>
+        <div className="flex flex-col items-center gap-2.5">
+          <span className="text-text-gold text-[10px] font-pixel tracking-wider">
+            NEREYE GIDECEKSIN?
           </span>
           <div className="flex flex-wrap gap-2 justify-center">
             <PixelButton
@@ -274,45 +351,53 @@ export const ActionBar: React.FC = () => {
     )
   }
 
+  // Text input (campfire + house visits)
   if (showTextInput) {
-    const placeholder = isInVisit ? 'Konus...' : 'Soz al...'
+    const placeholder = isInVisit ? 'Konus...' : 'Soz al — istedigin an yaz...'
     const sendHandler = isInVisit ? handleSendVisitSpeech : handleSendSpeech
-    const buttonLabel = isInVisit ? 'Konus' : 'Soz Al'
+    const buttonLabel = isInVisit ? 'Konus' : 'Gonder'
 
     return (
       <div
-        className={`fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 border-t-4 shadow-lg shadow-black/50 transition-all ${
-          isMyTurn
-            ? 'border-text-gold bg-[#2a1f10]/95 animate-pulse'
-            : 'border-wood bg-bg-dark/90'
-        }`}
+        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-3 bg-gradient-to-t from-[#120e06] to-[#120e06]/90 backdrop-blur-sm transition-all duration-300"
+        style={{
+          borderTop: isMyTurn
+            ? '2px solid rgba(218,165,32,0.5)'
+            : '1px solid rgba(139,94,60,0.3)',
+        }}
       >
-        <div className="flex items-center gap-2 w-full max-w-xl">
+        <div className="flex items-center gap-2.5 w-full max-w-xl">
           {isMyTurn && (
-            <span className="text-text-gold text-[9px] font-pixel whitespace-nowrap animate-pulse">
-              Sira sende!
-            </span>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded animate-pulse"
+                 style={{ backgroundColor: 'rgba(218,165,32,0.1)', border: '1px solid rgba(218,165,32,0.3)' }}>
+              <div className="w-1.5 h-1.5 rounded-full bg-text-gold" />
+              <span className="text-text-gold text-[8px] font-pixel whitespace-nowrap">
+                Siran!
+              </span>
+            </div>
           )}
-          {sentWaiting && !isMyTurn && (
-            <span className="text-stone text-[8px] font-pixel whitespace-nowrap">
-              Gonderildi
-            </span>
-          )}
+          {/* Mic button */}
           <button
             onMouseDown={startRecording}
             onMouseUp={stopRecording}
             onMouseLeave={stopRecording}
             onTouchStart={startRecording}
             onTouchEnd={stopRecording}
-            className={`px-3 py-2 border-2 font-pixel text-[10px] transition-all ${
+            className={`px-3 py-2.5 font-pixel text-[10px] transition-all duration-150 rounded ${
               isRecording
-                ? 'bg-red-900 border-red-500 text-red-300 animate-pulse'
-                : 'bg-[#2a1f10] border-wood text-stone hover:border-text-gold hover:text-text-light'
+                ? 'bg-red-900/60 text-red-300 animate-pulse shadow-[0_0_12px_rgba(220,20,60,0.3)]'
+                : 'bg-[#1a1208] text-stone hover:text-text-light hover:bg-[#2a1f10]'
             }`}
-            title="Basilı tut ve konus"
+            style={{
+              border: isRecording
+                ? '1px solid rgba(220,20,60,0.5)'
+                : '1px solid rgba(139,94,60,0.3)',
+            }}
+            title="Basili tut ve konus"
           >
-            {isRecording ? '...' : '🎤'}
+            {isRecording ? '...' : '\uD83C\uDF99'}
           </button>
+          {/* Text input */}
           <input
             ref={inputRef}
             type="text"
@@ -320,29 +405,52 @@ export const ActionBar: React.FC = () => {
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isMyTurn ? 'Sira sende! Yaz ve Enter...' : placeholder}
-            className={`flex-1 px-3 py-2 border-2 text-text-light font-pixel text-[10px] outline-none placeholder:text-stone ${
-              isMyTurn
-                ? 'bg-[#3a2a10] border-text-gold'
-                : 'bg-[#2a1f10] border-wood focus:border-text-gold'
-            }`}
+            className="flex-1 px-3 py-2.5 text-text-light font-pixel text-[10px] outline-none placeholder:text-stone/50 bg-[#0f0b05] rounded transition-all duration-200"
+            style={{
+              border: isMyTurn
+                ? '1px solid rgba(218,165,32,0.4)'
+                : '1px solid rgba(139,94,60,0.25)',
+            }}
           />
-          <PixelButton
-            label={buttonLabel}
+          {/* Send button */}
+          <button
             onClick={sendHandler}
-            variant={isMyTurn ? 'fire' : 'stone'}
             disabled={!text.trim()}
-          />
+            className={`px-4 py-2.5 font-pixel text-[9px] font-bold tracking-wider rounded transition-all duration-150 ${
+              text.trim()
+                ? 'text-text-gold hover:scale-105 active:scale-95'
+                : 'text-stone/30 cursor-not-allowed'
+            }`}
+            style={{
+              border: text.trim()
+                ? '1px solid rgba(218,165,32,0.4)'
+                : '1px solid rgba(107,107,107,0.15)',
+              backgroundColor: text.trim()
+                ? 'rgba(218,165,32,0.1)'
+                : 'transparent',
+            }}
+          >
+            {buttonLabel}
+          </button>
         </div>
       </div>
     )
   }
 
-  // Default: waiting state (morning, night, exile, etc.)
+  // Default: waiting
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 py-3 border-t-4 border-wood bg-bg-dark/90 shadow-lg shadow-black/50">
-      <span className="text-text-light text-[10px] opacity-60">
-        Bekleniyor...
-      </span>
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-center px-4 py-3 bg-[#120e06]/90 backdrop-blur-sm"
+         style={{ borderTop: '1px solid rgba(139,94,60,0.2)' }}>
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          <div className="w-1 h-1 rounded-full bg-stone/40 animate-pulse" style={{ animationDelay: '0ms' }} />
+          <div className="w-1 h-1 rounded-full bg-stone/40 animate-pulse" style={{ animationDelay: '300ms' }} />
+          <div className="w-1 h-1 rounded-full bg-stone/40 animate-pulse" style={{ animationDelay: '600ms' }} />
+        </div>
+        <span className="text-stone/50 text-[9px] font-pixel">
+          Bekleniyor
+        </span>
+      </div>
     </div>
   )
 }

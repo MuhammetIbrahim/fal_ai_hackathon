@@ -16,19 +16,22 @@ export const ProposalPanel: React.FC = () => {
   return (
     <div className="fixed inset-0 z-45 flex items-center justify-center">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-black/65 backdrop-blur-sm" />
 
-      {/* Parchment panel */}
+      {/* Panel */}
       <div
-        className="relative max-w-md w-full mx-4 p-6"
+        className="relative max-w-md w-full mx-4 p-7 rounded-lg"
         style={{
-          background: 'linear-gradient(135deg, #d4b896 0%, #c4a876 50%, #d4b896 100%)',
-          border: '4px solid #8B5E3C',
-          boxShadow: '0 0 0 2px #5C3A1E, 0 8px 32px rgba(0,0,0,0.6)',
+          background: 'linear-gradient(135deg, #d8bc96 0%, #c8a878 50%, #d4b890 100%)',
+          border: '1px solid rgba(139,94,60,0.5)',
+          boxShadow: '0 0 0 1px rgba(92,58,30,0.2), 0 16px 48px rgba(0,0,0,0.5)',
         }}
       >
+        {/* Top accent */}
+        <div className="absolute top-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-[#8B5E3C]/40 to-transparent" />
+
         {/* Title */}
-        <h2 className="text-[12px] font-pixel text-[#2a1f10] text-center mb-2">
+        <h2 className="text-[12px] font-pixel text-[#2a1f10] text-center mb-2 tracking-wider">
           {proposal.title}
         </h2>
 
@@ -38,14 +41,14 @@ export const ProposalPanel: React.FC = () => {
         </p>
 
         {/* Divider */}
-        <div className="w-full h-0.5 bg-wood/40 mb-4" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-[#8B5E3C]/40 to-transparent mb-5" />
 
-        {/* Options side by side */}
+        {/* Options */}
         <div className="flex gap-4 justify-center">
           {proposal.options.map((option) => (
             <div
               key={option.id}
-              className="flex flex-col items-center gap-2 flex-1"
+              className="flex flex-col items-center gap-2.5 flex-1"
             >
               <PixelButton
                 label={option.label}

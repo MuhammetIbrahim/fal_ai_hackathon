@@ -48,31 +48,42 @@ export const SpeechBubble: React.FC<SpeechBubbleProps> = ({
       }}
     >
       {/* Speaker name */}
-      <div className="text-text-gold text-[8px] font-pixel text-center mb-1">
+      <div
+        className="text-text-gold text-[8px] font-pixel text-center mb-1"
+        style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
+      >
         {speaker}
       </div>
 
       {/* Bubble body */}
-      <div className="relative bg-white border-2 border-black px-3 py-2 max-w-[250px]">
-        <p className="text-[#1a1208] text-[9px] font-pixel leading-relaxed break-words">
+      <div
+        className="relative px-3 py-2 max-w-[250px] rounded-lg"
+        style={{
+          backgroundColor: 'rgba(18,14,6,0.92)',
+          border: '1px solid rgba(139,94,60,0.35)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
+        <p className="text-text-light/90 text-[9px] font-pixel leading-relaxed break-words">
           {content}
         </p>
 
         {/* Triangle pointer */}
         <div
-          className="absolute left-1/2 -bottom-2 -translate-x-1/2 w-0 h-0"
+          className="absolute left-1/2 -bottom-[6px] -translate-x-1/2 w-0 h-0"
           style={{
-            borderLeft: '6px solid transparent',
-            borderRight: '6px solid transparent',
-            borderTop: '8px solid black',
+            borderLeft: '5px solid transparent',
+            borderRight: '5px solid transparent',
+            borderTop: '6px solid rgba(139,94,60,0.35)',
           }}
         />
         <div
-          className="absolute left-1/2 -bottom-[5px] -translate-x-1/2 w-0 h-0"
+          className="absolute left-1/2 -bottom-[4px] -translate-x-1/2 w-0 h-0"
           style={{
             borderLeft: '4px solid transparent',
             borderRight: '4px solid transparent',
-            borderTop: '6px solid white',
+            borderTop: '5px solid rgba(18,14,6,0.92)',
           }}
         />
       </div>

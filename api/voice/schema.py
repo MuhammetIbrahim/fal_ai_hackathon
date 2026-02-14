@@ -23,6 +23,12 @@ class VoiceListResponse(BaseModel):
     voices: list[VoiceInfo]
 
 
+class TTSSyncResponse(BaseModel):
+    audio_url: str
+    inference_time_ms: float | None = None
+    audio_duration_sec: float | None = None
+
+
 class TTSStreamRequest(BaseModel):
     text: str = Field(..., description="Sese cevrilecek metin")
     voice: str = Field("alloy", description="Ses ID (alloy, zeynep, ali)")

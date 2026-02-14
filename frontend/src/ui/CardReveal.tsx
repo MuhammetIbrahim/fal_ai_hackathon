@@ -7,15 +7,21 @@ interface CardRevealProps {
 }
 
 const borderColors: Record<SpotlightCard['type'], string> = {
-  spotlight: 'border-text-gold',
-  sinama: 'border-fire-red',
-  kriz: 'border-[#8a2be2]',
+  spotlight: 'rgba(218,165,32,0.6)',
+  sinama: 'rgba(220,20,60,0.5)',
+  kriz: 'rgba(138,43,226,0.5)',
+}
+
+const glowColors: Record<SpotlightCard['type'], string> = {
+  spotlight: 'rgba(218,165,32,0.2)',
+  sinama: 'rgba(220,20,60,0.15)',
+  kriz: 'rgba(138,43,226,0.15)',
 }
 
 const labelColors: Record<SpotlightCard['type'], string> = {
-  spotlight: 'text-text-gold',
-  sinama: 'text-fire-red',
-  kriz: 'text-[#8a2be2]',
+  spotlight: '#DAA520',
+  sinama: '#DC143C',
+  kriz: '#8a2be2',
 }
 
 const typeLabels: Record<SpotlightCard['type'], string> = {
@@ -27,7 +33,6 @@ const typeLabels: Record<SpotlightCard['type'], string> = {
 export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => {
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set())
 
-  // Auto-reveal sequentially with delay
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
 
@@ -39,7 +44,6 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
       )
     })
 
-    // Call onComplete after all cards revealed
     if (cards.length > 0) {
       timers.push(
         setTimeout(() => {
@@ -59,7 +63,7 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
 
       <div className="relative flex gap-6">
         {cards.map((card, idx) => {
@@ -81,31 +85,44 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
               >
                 {/* Card Back */}
                 <div
-                  className="absolute inset-0 border-4 border-stone bg-[#1a1a2e] flex items-center justify-center shadow-lg shadow-black/50"
-                  style={{ backfaceVisibility: 'hidden' }}
+                  className="absolute inset-0 flex items-center justify-center rounded-lg"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    border: '1px solid rgba(107,107,107,0.3)',
+                    backgroundColor: 'rgba(20,20,35,0.9)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  }}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <span className="text-4xl text-stone">?</span>
-                    <div className="w-12 h-0.5 bg-stone/40" />
-                    <span className="text-[8px] font-pixel text-stone/60 uppercase">
+                    <span className="text-4xl text-stone/50">?</span>
+                    <div className="w-10 h-px bg-gradient-to-r from-transparent via-stone/30 to-transparent" />
+                    <span className="text-[8px] font-pixel text-stone/40 uppercase tracking-wider">
                       Kart
                     </span>
                   </div>
-                  {/* Decorative pattern */}
-                  <div className="absolute inset-2 border border-stone/20" />
+                  {/* Inner border */}
+                  <div
+                    className="absolute inset-2 rounded"
+                    style={{ border: '1px solid rgba(107,107,107,0.12)' }}
+                  />
                 </div>
 
                 {/* Card Front */}
                 <div
-                  className={`absolute inset-0 border-4 ${borderColors[card.type]} flex flex-col items-center justify-center p-3 gap-3 shadow-lg shadow-black/50`}
+                  className="absolute inset-0 flex flex-col items-center justify-center p-4 gap-3 rounded-lg"
                   style={{
                     backfaceVisibility: 'hidden',
                     transform: 'rotateY(180deg)',
-                    background: 'linear-gradient(135deg, #d4b896 0%, #c4a876 50%, #d4b896 100%)',
+                    background: 'linear-gradient(135deg, #d8bc96 0%, #c8a878 50%, #d4b890 100%)',
+                    border: `1px solid ${borderColors[card.type]}`,
+                    boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 20px ${glowColors[card.type]}`,
                   }}
                 >
                   {/* Type label */}
-                  <span className={`text-[8px] font-pixel uppercase tracking-wider ${labelColors[card.type]}`}>
+                  <span
+                    className="text-[8px] font-pixel uppercase tracking-[0.15em]"
+                    style={{ color: labelColors[card.type] }}
+                  >
                     {typeLabels[card.type]}
                   </span>
 
@@ -114,16 +131,16 @@ export const CardReveal: React.FC<CardRevealProps> = ({ cards, onComplete }) => 
                     {card.title}
                   </h3>
 
-                  <div className="w-full h-0.5 bg-wood/40" />
+                  <div className="w-full h-px bg-gradient-to-r from-transparent via-[#8B5E3C]/40 to-transparent" />
 
                   {/* Description */}
                   <p className="text-[8px] font-pixel text-[#4a3a20] text-center leading-relaxed">
                     {card.description}
                   </p>
 
-                  {/* Target if applicable */}
+                  {/* Target */}
                   {card.target && (
-                    <span className="text-[8px] font-pixel text-accent-red mt-1">
+                    <span className="text-[8px] font-pixel text-[#8B0000] mt-1">
                       Hedef: {card.target}
                     </span>
                   )}

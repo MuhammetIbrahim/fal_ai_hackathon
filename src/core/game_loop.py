@@ -56,13 +56,44 @@ def _clean_text_for_tts(text: str) -> str:
 
 _tts_path_added = False
 
+
+def _split_sentences(text: str) -> list[str]:
+    """Metni cumlelere bol. Kisa cumleleri birlestir."""
+    # Split on sentence-ending punctuation
+    parts = _re.split(r'(?<=[.!?…])\s+', text.strip())
+    parts = [p.strip() for p in parts if p.strip()]
+    if not parts:
+        return [text.strip()] if text.strip() else []
+
+    # Merge very short fragments (< 20 chars) with the next sentence
+    merged = []
+    buf = ""
+    for p in parts:
+        if buf:
+            buf += " " + p
+            if len(buf) >= 20:
+                merged.append(buf)
+                buf = ""
+        elif len(p) < 20 and p != parts[-1]:
+            buf = p
+        else:
+            merged.append(p)
+    if buf:
+        if merged:
+            merged[-1] += " " + buf
+        else:
+            merged.append(buf)
+
+    return merged
+
+
 async def _generate_audio_url(
     content: str,
     voice: str = "alloy",
     speed: float = 1.0,
 ) -> tuple[str | None, float]:
     """TTS uret, (audio_url, duration_sec) don. Hata → (None, 0).
-    Senkron: await et, text ile birlikte gonder.
+    B2B API sync endpoint kullanir — job poll yok, direkt sonuc.
     voice: 'alloy' | 'zeynep' | 'ali'
     """
     try:
@@ -81,6 +112,42 @@ async def _generate_audio_url(
     except Exception as e:
         logger.warning(f"TTS generation failed: {e}")
         return None, 0.0
+
+
+async def _generate_audio_parallel(
+    content: str,
+    voice: str = "alloy",
+    speed: float = 1.0,
+) -> list[tuple[str | None, float]]:
+    """Metni 2 parcaya bolup paralel TTS uret. [(url, duration), ...] dondurur.
+    Max 2 segment — daha fazlasi ses karismasi yapiyor.
+    """
+    clean = _clean_text_for_tts(content)
+    if not clean or len(clean) < 3:
+        return [(None, 0.0)]
+
+    # Kisa metinleri bolme — tek TTS yeterli
+    if len(clean) < 100:
+        result = await _generate_audio_url(content, voice=voice, speed=speed)
+        return [result]
+
+    sentences = _split_sentences(clean)
+    if len(sentences) <= 1:
+        result = await _generate_audio_url(content, voice=voice, speed=speed)
+        return [result]
+
+    # Max 2 gruba bol (ses karismasi onleme)
+    mid = len(sentences) // 2
+    group1 = " ".join(sentences[:mid])
+    group2 = " ".join(sentences[mid:])
+    chunks = [group1, group2]
+
+    # Paralel TTS — 2 parca concurrent
+    import asyncio as _aio
+    tasks = [_generate_audio_url(s, voice=voice, speed=speed) for s in chunks]
+    results = await _aio.gather(*tasks)
+    logger.warning(f"[TTS-PARALLEL] 2 groups from {len(sentences)} sentences, chars={[len(s) for s in chunks]}")
+    return list(results)
 
 
 async def _rewrite_human_speech(text: str, character, state: dict) -> str:
@@ -152,15 +219,19 @@ def get_interrupt_event(game_id: str) -> asyncio.Event:
 
 def signal_human_interrupt(game_id: str):
     """Called from WS router when human sends speak/speak_audio/interrupt."""
-    event = get_interrupt_event(game_id)
-    event.set()
+    if game_id not in _human_interrupt_events:
+        return  # Game not running — don't create orphan entries
+    _human_interrupt_events[game_id].set()
 
 
 async def _interruptible_sleep(game_id: str, duration: float) -> bool:
     """Sleep that can be cut short by human input.
     Returns True if interrupted, False if timed out normally."""
     event = get_interrupt_event(game_id)
-    event.clear()
+    # If already set (stale signal), return immediately as interrupted
+    if event.is_set():
+        event.clear()
+        return True
     try:
         await asyncio.wait_for(event.wait(), timeout=duration)
         return True
@@ -170,8 +241,13 @@ async def _interruptible_sleep(game_id: str, duration: float) -> bool:
 
 async def _race_ai_generation(game_id: str, coro) -> tuple:
     """Race an AI generation coroutine against human interrupt event.
-    Returns (result, False) on normal completion, (None, True) if interrupted."""
+    Returns (result, False) on normal completion, (None, True) if interrupted.
+    On generation error returns (None, False)."""
     event = get_interrupt_event(game_id)
+    # If already interrupted (stale signal), honour it immediately
+    if event.is_set():
+        event.clear()
+        return None, True
     event.clear()
 
     gen_task = asyncio.create_task(coro)
@@ -196,7 +272,12 @@ async def _race_ai_generation(game_id: str, coro) -> tuple:
         await interrupt_task
     except (asyncio.CancelledError, Exception):
         pass
-    return gen_task.result(), False
+
+    try:
+        return gen_task.result(), False
+    except Exception as e:
+        logger.warning(f"AI generation failed: {e}")
+        return None, False
 
 
 def get_input_queue(game_id: str, player_id: str) -> asyncio.Queue:
@@ -298,6 +379,12 @@ async def _process_human_interjection(
 
     content = found_data.get("content", "")
     logger.warning(f"[INTERJECT] Processing human interjection: '{content[:50]}'")
+
+    # Notify all clients to stop playing current audio
+    await manager.broadcast(game_id, {
+        "event": "speech_interrupted",
+        "data": {}
+    })
 
     # Rewrite in character voice
     message = await _rewrite_human_speech(content, human_player, state)
@@ -517,7 +604,54 @@ async def _game_loop_runner(game_id: str, state: Any):
             "data": scene_backgrounds,
         })
 
-    await asyncio.sleep(2)  # Karakter gösterimini okumak için bekle
+    # Avatar ve background URL'lerinin erişilebilir olduğunu doğrula
+    # Frontend'e preload sinyali gönder, sonra hazır olana kadar bekle
+    avatar_urls = [p.avatar_url for p in state["players"] if p.avatar_url]
+    bg_urls = [v for v in scene_backgrounds.values() if v]
+    all_urls = avatar_urls + bg_urls
+
+    if all_urls:
+        # Frontend'e preload emri gönder
+        await manager.broadcast(game_id, {
+            "event": "preload_assets",
+            "data": {"urls": all_urls, "count": len(all_urls)},
+        })
+
+        # URL'lerin erişilebilir olup olmadığını kontrol et (HEAD request)
+        import httpx
+        ready_count = 0
+        max_wait = 30  # max 30 saniye bekle
+        check_interval = 1.0
+
+        for attempt in range(int(max_wait / check_interval)):
+            ready_count = 0
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    for url in all_urls:
+                        try:
+                            resp = await client.head(url)
+                            if resp.status_code < 400:
+                                ready_count += 1
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
+            logger.info(f"Asset check: {ready_count}/{len(all_urls)} ready (attempt {attempt + 1})")
+
+            if ready_count == len(all_urls):
+                break
+
+            # Her check'te ilerlemeyi bildir
+            await manager.broadcast(game_id, {
+                "event": "assets_loading",
+                "data": {"ready": ready_count, "total": len(all_urls)},
+            })
+            await asyncio.sleep(check_interval)
+
+        logger.info(f"Assets ready: {ready_count}/{len(all_urls)} — proceeding")
+    else:
+        await asyncio.sleep(2)
 
     game_log = {
         "game_id": game_id,
@@ -730,43 +864,46 @@ async def _game_loop_runner(game_id: str, state: Any):
             except Exception as e:
                 logger.warning(f"Sinama echo failed: {e}")
 
-            # ── 2b. FLUID FREE PHASE ──
-            _fluid_state_lock = asyncio.Lock()
+            # ── 2b. FLUID FREE PHASE (skip if FREE_ROAM_ROUNDS == 0) ──
+            if FREE_ROAM_ROUNDS > 0:
+                _fluid_state_lock = asyncio.Lock()
 
-            await manager.broadcast(game_id, {
-                "event": "free_roam_start",
-                "data": {
-                    "round": round_n,
-                    "roam_round": 1,
-                    "total_roam_rounds": FREE_ROAM_ROUNDS,
-                    "mode": "fluid",
-                }
-            })
+                await manager.broadcast(game_id, {
+                    "event": "free_roam_start",
+                    "data": {
+                        "round": round_n,
+                        "roam_round": 1,
+                        "total_roam_rounds": FREE_ROAM_ROUNDS,
+                        "mode": "fluid",
+                    }
+                })
 
-            await _run_fluid_free_phase(
-                game_id=game_id,
-                state=state,
-                state_lock=_fluid_state_lock,
-                generate_campfire_speech=generate_campfire_speech,
-                generate_location_decision=generate_location_decision,
-                generate_1v1_speech=generate_1v1_speech,
-                generate_institution_scene=generate_institution_scene,
-                generate_private_mini_event=generate_private_mini_event,
-                generate_house_entry_event=generate_house_entry_event,
-                get_alive_players=get_alive_players,
-                find_player=find_player,
-                maybe_update_campfire_summary=maybe_update_campfire_summary,
-                get_reaction=get_reaction,
-                orchestrator_pick=orchestrator_pick,
-                check_moderation=check_moderation,
-                check_ocak_tepki=check_ocak_tepki,
-                free_roam_rounds=FREE_ROAM_ROUNDS,
-                campfire_turns_per_round=CAMPFIRE_TURNS_PER_ROUND,
-                room_exchanges=ROOM_EXCHANGES,
-                institution_locations=INSTITUTION_LOCATIONS,
-            )
+                await _run_fluid_free_phase(
+                    game_id=game_id,
+                    state=state,
+                    state_lock=_fluid_state_lock,
+                    generate_campfire_speech=generate_campfire_speech,
+                    generate_location_decision=generate_location_decision,
+                    generate_1v1_speech=generate_1v1_speech,
+                    generate_institution_scene=generate_institution_scene,
+                    generate_private_mini_event=generate_private_mini_event,
+                    generate_house_entry_event=generate_house_entry_event,
+                    get_alive_players=get_alive_players,
+                    find_player=find_player,
+                    maybe_update_campfire_summary=maybe_update_campfire_summary,
+                    get_reaction=get_reaction,
+                    orchestrator_pick=orchestrator_pick,
+                    check_moderation=check_moderation,
+                    check_ocak_tepki=check_ocak_tepki,
+                    free_roam_rounds=FREE_ROAM_ROUNDS,
+                    campfire_turns_per_round=CAMPFIRE_TURNS_PER_ROUND,
+                    room_exchanges=ROOM_EXCHANGES,
+                    institution_locations=INSTITUTION_LOCATIONS,
+                )
 
-            logger.info(f"Fluid free phase completed for round {round_n}")
+                logger.info(f"Fluid free phase completed for round {round_n}")
+            else:
+                logger.info(f"Free roam skipped (FREE_ROAM_ROUNDS=0) for round {round_n}")
 
             # ── 2b-post. POLITIK ONERGE (Katman 4) ──
             try:
@@ -1027,7 +1164,7 @@ async def _game_loop_runner(game_id: str, state: Any):
                         "exiled_role": player.role_title if player else "unknown",
                         "votes": vote_map,
                         "active_players": remaining,
-                        "message": f"{exiled_name} surgun edildi!",
+                        "message": f"{exiled_name} sürgün edildi!",
                     }
                 })
 
@@ -1038,12 +1175,12 @@ async def _game_loop_runner(game_id: str, state: Any):
                     "data": {
                         "exiled": None,
                         "votes": vote_map,
-                        "message": "Beraberlik! Kimse surgun edilmedi.",
+                        "message": "Beraberlik! Kimse sürgün edilmedi.",
                     }
                 })
 
             # Cumulative summary guncelle (cross-round memory)
-            vote_result_text = f"Surgun: {exiled_name}" if exiled_name else "Kimse surgun edilmedi (berabere)"
+            vote_result_text = f"Sürgün: {exiled_name}" if exiled_name else "Kimse sürgün edilmedi (berabere)"
             state["cumulative_summary"] = await update_cumulative_summary(
                 state.get("cumulative_summary", ""),
                 round_n,
@@ -1323,6 +1460,8 @@ async def _run_campfire_segment_ws(
         ai_participants = [p for p in participants if not p.is_human]
         first = random_module.choice(ai_participants) if ai_participants else participants[0]
 
+        import time as _time
+        _first_llm_start = _time.perf_counter()
         if first.is_human:
             message = await _wait_for_human_input(
                 game_id=game_id,
@@ -1336,6 +1475,7 @@ async def _run_campfire_segment_ws(
                 message = await _rewrite_human_speech(message, first, state)
         else:
             message = await generate_campfire_speech(state, first, participant_names=participant_names)
+        _first_llm_ms = (_time.perf_counter() - _first_llm_start) * 1000
 
         # Moderator check
         mod_ok = True
@@ -1359,11 +1499,20 @@ async def _run_campfire_segment_ws(
             })
             first.add_message("assistant", message)
 
-            # TTS senkron — text + audio birlikte gonder (herkes icin)
-            audio_url, audio_duration = await _generate_audio_url(
+            # TTS paralel cumle bazli — kisa cumle = hizli TTS
+            _first_tts_start = _time.perf_counter()
+            audio_segments = await _generate_audio_parallel(
                 message, voice=getattr(first, 'voice_id', 'alloy'),
                 speed=getattr(first, 'voice_speed', 1.0),
             )
+            _first_tts_ms = (_time.perf_counter() - _first_tts_start) * 1000
+            _first_total_ms = _first_llm_ms + _first_tts_ms
+
+            # Ilk segment = ana audio, toplam duration = sum
+            audio_url = audio_segments[0][0] if audio_segments else None
+            audio_duration = sum(d for _, d in audio_segments)
+
+            logger.warning(f"[PIPELINE] {first.name} (first): LLM={_first_llm_ms:.0f}ms TTS={_first_tts_ms:.0f}ms Total={_first_total_ms:.0f}ms segs={len(audio_segments)}")
 
             await manager.broadcast(game_id, {
                 "event": "campfire_speech",
@@ -1375,7 +1524,15 @@ async def _run_campfire_segment_ws(
                     "max_turns": max_turns,
                     "participants": participant_names,
                     "audio_url": audio_url,
-                    "audio_duration": audio_duration,
+                    "audio_duration": audio_segments[0][1] if audio_segments else 0,
+                    "audio_segments": [{"url": u, "duration": d} for u, d in audio_segments if u],
+                    "pipeline": {
+                        "llm_ms": round(_first_llm_ms),
+                        "tts_ms": round(_first_tts_ms),
+                        "total_ms": round(_first_total_ms),
+                        "text_len": len(message),
+                        "voice": getattr(first, 'voice_id', 'alloy'),
+                    },
                 }
             })
 
@@ -1419,7 +1576,7 @@ async def _run_campfire_segment_ws(
                 except Exception as e:
                     logger.warning(f"Ocak tepki check failed: {e}")
 
-        turns_done = 1
+        turns_done = max(turns_done, 1)
 
     # ── Sonraki turlar: orchestrator ile konusmaci sec ──
     while turns_done < max_turns:
@@ -1428,7 +1585,8 @@ async def _run_campfire_segment_ws(
         last_speeches = [m for m in state["campfire_history"]
                          if m.get("type") == "speech" and m.get("name") in participant_names]
         if not last_speeches:
-            break
+            logger.warning(f"No speeches in campfire_history yet (turn {turns_done}), continuing anyway")
+            last_speeches = [{"name": participants[0].name if participants else "unknown", "content": "..."}]
         last_speech = last_speeches[-1]
 
         # Konusmaci secimi
@@ -1444,27 +1602,9 @@ async def _run_campfire_segment_ws(
             else:
                 reactions = []
 
-            # Insan oyuncular icin otomatik "WANT" ekle (her zaman konusma hakki var)
-            human_participants = []
-            for p in participants:
-                if p.is_human and p.name != last_speech["name"]:
-                    reactions.append({"name": p.name, "wants": True, "reason": "insan oyuncu — oncelikli"})
-                    human_participants.append(p)
-
-            # Check if human player hasn't spoken recently — force their turn every 3rd turn
-            force_human = False
-            if human_participants:
-                human_name = human_participants[0].name
-                recent_speakers = [m["name"] for m in state["campfire_history"][-3:]
-                                   if m.get("type") == "speech"]
-                if human_name not in recent_speakers and turns_done % 3 == 0:
-                    force_human = True
-                    logger.info(f"Forcing human turn for {human_name} (hasn't spoken in 3 turns)")
-
-            if force_human:
-                action, name = "NEXT", human_participants[0].name
-            else:
-                action, name = await orchestrator_pick(state, reactions)
+            # Human'lar orchestrator'a dahil DEGIL — interrupt ile konusurlar (voice_chat pattern)
+            # Sadece AI oyunculardan reaction topla
+            action, name = await orchestrator_pick(state, reactions)
 
             if action == "END":
                 break
@@ -1480,23 +1620,32 @@ async def _run_campfire_segment_ws(
             speaker = find_player(state, name)
             if not speaker or not speaker.alive:
                 continue
+            # Human orchestrator tarafindan secilmemeli — AI'lar konusur, human interrupt ile girer
+            if speaker.is_human:
+                ai_parts = [p for p in participants if not p.is_human and p.alive]
+                speaker = random_module.choice(ai_parts) if ai_parts else speaker
         else:
-            # Fallback: round-robin
-            speaker = participants[turns_done % len(participants)]
+            # Fallback: round-robin (sadece AI'lar)
+            ai_parts = [p for p in participants if not p.is_human and p.alive]
+            if ai_parts:
+                speaker = ai_parts[turns_done % len(ai_parts)]
+            else:
+                speaker = participants[turns_done % len(participants)]
 
-        # Konusma uret
+        # Konusma uret — human asla buraya dusmez, interrupt ile _process_human_interjection'dan girer
         logger.warning(f"[CAMPFIRE] Turn {turns_done}/{max_turns}: speaker={speaker.name} is_human={speaker.is_human}")
+        import time as _time
+        _llm_start = _time.perf_counter()
         if speaker.is_human:
+            # Edge case: tum oyuncular human (olmamali ama guvenlik)
             message = await _wait_for_human_input(
                 game_id=game_id,
                 player_id=speaker.slot_id,
                 event_type="speak",
-                timeout=30.0,
+                timeout=10.0,
             )
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
-            else:
-                logger.warning(f"[CAMPFIRE] Human: '{message[:80]}' → TTS direkt")
         else:
             message, gen_cancelled = await _race_ai_generation(
                 game_id,
@@ -1510,6 +1659,7 @@ async def _run_campfire_segment_ws(
                         game_id, state, human_p, participant_names, turns_done, max_turns,
                     )
                 continue
+        _llm_ms = (_time.perf_counter() - _llm_start) * 1000
 
         # Moderator check
         mod_ok = True
@@ -1534,13 +1684,21 @@ async def _run_campfire_segment_ws(
         })
         speaker.add_message("assistant", message)
 
-        # TTS senkron — text + audio birlikte gonder (herkes icin)
-        audio_url, audio_duration = await _generate_audio_url(
+        # TTS paralel cumle bazli
+        _tts_start = _time.perf_counter()
+        audio_segments = await _generate_audio_parallel(
             message, voice=getattr(speaker, 'voice_id', 'alloy'),
             speed=getattr(speaker, 'voice_speed', 1.0),
         )
+        _tts_ms = (_time.perf_counter() - _tts_start) * 1000
+        _total_ms = _llm_ms + _tts_ms
 
-        # Broadcast text + audio together
+        audio_url = audio_segments[0][0] if audio_segments else None
+        audio_duration = sum(d for _, d in audio_segments)
+
+        logger.warning(f"[PIPELINE] {speaker.name}: LLM={_llm_ms:.0f}ms TTS={_tts_ms:.0f}ms Total={_total_ms:.0f}ms segs={len(audio_segments)}")
+
+        # Broadcast text + audio together (with pipeline metrics)
         await manager.broadcast(game_id, {
             "event": "campfire_speech",
             "data": {
@@ -1551,7 +1709,15 @@ async def _run_campfire_segment_ws(
                 "max_turns": max_turns,
                 "participants": participant_names,
                 "audio_url": audio_url,
-                "audio_duration": audio_duration,
+                "audio_duration": audio_segments[0][1] if audio_segments else 0,
+                "audio_segments": [{"url": u, "duration": d} for u, d in audio_segments if u],
+                "pipeline": {
+                    "llm_ms": round(_llm_ms),
+                    "tts_ms": round(_tts_ms),
+                    "total_ms": round(_total_ms),
+                    "text_len": len(message),
+                    "voice": getattr(speaker, 'voice_id', 'alloy'),
+                },
             }
         })
 
@@ -2091,28 +2257,8 @@ async def _run_persistent_campfire_ws(
                 raw = await asyncio.gather(*reaction_tasks, return_exceptions=True)
                 reactions = [r for r in raw if isinstance(r, dict)]
 
-            # humans always eligible
-            for p in participants:
-                if p.is_human and p.name != last_speech["name"]:
-                    reactions.append({"name": p.name, "wants": True, "reason": "insan oyuncu"})
-
-            # force human every 3rd turn
-            human_parts = [p for p in participants
-                           if p.is_human and p.name != last_speech["name"]]
-            force_human = False
-            if human_parts:
-                h_name = human_parts[0].name
-                recent_speakers = [
-                    m["name"] for m in state["campfire_history"][-3:]
-                    if m.get("type") == "speech"
-                ]
-                if h_name not in recent_speakers and total_turns % 3 == 0:
-                    force_human = True
-
-            if force_human:
-                action, name = "NEXT", human_parts[0].name
-            else:
-                action, name = await orchestrator_pick(state, reactions)
+            # Human'lar orchestrator'a dahil DEGIL — interrupt ile konusurlar (voice_chat pattern)
+            action, name = await orchestrator_pick(state, reactions)
 
             if action == "END":
                 # orchestrator says stop — skip turn, don't break the loop
@@ -2131,22 +2277,26 @@ async def _run_persistent_campfire_ws(
             ai_parts = [p for p in participants if not p.is_human]
             speaker = random_module.choice(ai_parts) if ai_parts else participants[0]
 
+        # Human orchestrator tarafindan secilmemeli — AI'lar konusur, human interrupt ile girer
+        if speaker and speaker.is_human:
+            ai_parts = [p for p in participants if not p.is_human and p.alive]
+            speaker = random_module.choice(ai_parts) if ai_parts else speaker
+
         if not speaker or not speaker.alive:
             continue
 
-        # ── generate speech ──
+        # ── generate speech — human asla buraya dusmez, interrupt ile girer ──
         logger.warning(f"[PERSISTENT-CF] Turn {total_turns}: speaker={speaker.name} is_human={speaker.is_human}")
         if speaker.is_human:
+            # Edge case: tum oyuncular human
             message = await _wait_for_human_input(
                 game_id=game_id,
                 player_id=speaker.slot_id,
                 event_type="speak",
-                timeout=30.0,
+                timeout=10.0,
             )
             if not message:
                 message = f"[{speaker.name} sessiz kaldi]"
-            else:
-                logger.warning(f"[PERSISTENT-CF] Human: '{message[:80]}' → TTS direkt")
         else:
             message, gen_cancelled = await _race_ai_generation(
                 game_id,
@@ -2569,7 +2719,7 @@ async def _run_fluid_free_phase(
         if gone_count > 0:
             movement_msg = (
                 f"Serbest dolasim: {gone_count} kisi ates basindan ayrildi. "
-                f"Geriye kalanlar burada konusmaya devam ediyor."
+                f"Geriye kalanlar burada konuşmaya devam ediyor."
             )
             async with state_lock:
                 state["campfire_history"].append({

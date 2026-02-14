@@ -249,17 +249,16 @@ async def tts_generate(
     response_format: str = "mp3",
     voice: str = "alloy",
 ) -> TTSResult:
-    """Sesi uret, CDN URL dondur."""
+    """Sesi uret, CDN URL dondur. Sync endpoint — job polling yok."""
     body = {"text": text, "speed": speed, "response_format": response_format, "voice": voice}
     try:
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(
-                f"{_api_base_url}/v1/voice/tts",
+                f"{_api_base_url}/v1/voice/tts/sync",
                 headers=_headers(), json=body,
             )
             resp.raise_for_status()
-            job_data = resp.json()
-            result = await _poll_job(client, job_data["job_id"])
+            result = resp.json()
         return TTSResult(
             audio_url=result["audio_url"],
             inference_time_ms=result.get("inference_time_ms"),

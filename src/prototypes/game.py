@@ -42,19 +42,19 @@ PRO_MODEL = "google/gemini-2.5-pro"
 DATA_PATH = Path(__file__).parent / "data.json"
 OUTPUT_PATH = Path(__file__).parent / "game_log.json"
 
-MAX_CAMPFIRE_TURNS = 18
-MAX_VISIT_EXCHANGES = 8
+MAX_CAMPFIRE_TURNS = 12          # 3 kisi icin kisaltildi (demo icin)
+MAX_VISIT_EXCHANGES = 6          # 3 kisi icin kisaltildi
 
 # ── Memory ayarlari ──
 CAMPFIRE_BUFFER = 5    # Son N mesaj raw gosterilir
 SUMMARY_INTERVAL = 3   # Her N yeni mesajda ozet guncelle
 
 # ── Free Phase ayarlari ──
-INITIAL_CAMPFIRE_TURNS = 5    # Herkes birlikteyken baslangic
-FREE_ROAM_ROUNDS = 3          # Serbest dolasim round sayisi
-CAMPFIRE_TURNS_PER_ROUND = 3  # Her roundda campfire tartisma
-ROOM_EXCHANGES = 4            # Oda gorusmesi exchange sayisi
-CLOSING_CAMPFIRE_TURNS = 3    # Kapanista herkes birlikteyken
+INITIAL_CAMPFIRE_TURNS = 4    # 3 kisi icin — herkesin 1+ konuşma sansi
+FREE_ROAM_ROUNDS = 0          # Demo: ev ziyareti/kurum sahnesini atla, direkt ates basinda kal
+CAMPFIRE_TURNS_PER_ROUND = 2  # (free roam=0 oldugu icin kullanilmaz)
+ROOM_EXCHANGES = 3            # (free roam=0 oldugu icin kullanilmaz)
+CLOSING_CAMPFIRE_TURNS = 3    # Kapanista herkes birlikteyken son tartisma
 
 
 # ── Voice Hook ──
@@ -70,7 +70,7 @@ async def _emit_speech(name: str, role_title: str, text: str) -> None:
 
 async def _emit_narrator(text: str) -> None:
     """Anlatici metnini yazdir + voice hook varsa seslendir."""
-    print(f"\n  [OCAK BEKCISI] {text}")
+    print(f"\n  [OCAK BEKÇİSİ] {text}")
     if _on_speech:
         await _on_speech("Anlatici", text)
 
@@ -93,8 +93,8 @@ def calculate_ai_count(player_count: int, rng: random_module.Random) -> int:
 def calculate_day_limit(player_count: int, ai_count: int) -> int:
     """Dinamik gun limiti hesapla.
 
-    Mantik: Et-Can'in ai_count kisiyi dogru surgun etmesi lazim.
-    Her round 1 surgun. Hata payi = player_count // 3.
+    Mantik: Et-Can'in ai_count kisiyi dogru sürgün etmesi lazim.
+    Her round 1 sürgün. Hata payi = player_count // 3.
     Formul: ai_count + hata_payi
 
     Ornekler:
@@ -170,13 +170,13 @@ def _is_duplicate(new_text: str, previous_texts: list[str], threshold: float = 0
 
 ROLLING_SUMMARY_SYSTEM = """Bir tartisma ozetini guncelliyorsun.
 
-Mevcut ozet ve yeni konusmalari alacaksin. Ozeti guncelle:
+Mevcut ozet ve yeni konuşmalari alacaksin. Ozeti guncelle:
 - Kim kimi sucladi, hangi alibiler verildi
 - Tutarsizliklar ve supheli noktalar
 - Onemli ittifaklar veya catismalar
 - Max 8 madde. Eski gereksiz detaylari kirp. Yeni bilgileri ekle.
 
-Turkce, madde madde yaz. Kisa ve net. Her madde 1 cumle."""
+Türkçe, madde madde yaz. Kısa ve net. Her madde 1 cümle."""
 
 
 async def _update_rolling_summary(current_summary: str, new_messages: list[dict]) -> str:
@@ -197,7 +197,7 @@ async def _update_rolling_summary(current_summary: str, new_messages: list[dict]
     result = await llm_generate(
         prompt=(
             f"Mevcut ozet:\n{current_summary or '(Henuz ozet yok)'}\n\n"
-            f"Yeni konusmalar:\n" + "\n".join(new_lines) + "\n\n"
+            f"Yeni konuşmalar:\n" + "\n".join(new_lines) + "\n\n"
             f"Guncel ozeti yaz:"
         ),
         system_prompt=ROLLING_SUMMARY_SYSTEM,
@@ -248,14 +248,14 @@ def _format_campfire_context(state: GameState, viewer: str | None = None) -> str
             role = msg.get('role_title', '?')
             lines.append(f"[{msg['name']}] ({role}): {msg['content']}")
         elif msg["type"] == "moderator":
-            lines.append(f"[Ocak Bekcisi]: {msg['content']}")
+            lines.append(f"[Ocak Bekçisi]: {msg['content']}")
         elif msg["type"] == "narrator":
             lines.append(f"[Anlatici]: {msg['content']}")
 
     if lines:
         parts.append("[SON KONUSMALAR]\n" + "\n".join(lines))
 
-    return "\n\n".join(parts) if parts else "(henuz kimse konusmadi)"
+    return "\n\n".join(parts) if parts else "(henuz kimse konuşmadı)"
 
 
 # ── Cumulative Summary (cross-round) ────────────────
@@ -263,12 +263,12 @@ def _format_campfire_context(state: GameState, viewer: str | None = None) -> str
 CUMULATIVE_SUMMARY_SYSTEM = """Oyunun onceki gunlerinin ozetini guncelliyorsun.
 
 Mevcut kumulatif ozet ve bu gunun bilgilerini alacaksin. Birlesik bir ozet yaz:
-- Hangi gunlerde ne oldu, kim surgun edildi
+- Hangi gunlerde ne oldu, kim sürgün edildi
 - Kim kimi sucladi, onemli tutarsizliklar
 - Ittifaklar, catismalar, supheler
 - Max 12 madde. Eski gereksiz detaylari kirp.
 
-Turkce, madde madde yaz. Kisa ve net."""
+Türkçe, madde madde yaz. Kısa ve net."""
 
 
 async def _update_cumulative_summary(
@@ -332,25 +332,11 @@ def create_character_slots(
 
     characters = []
 
-    # Insan oyuncu
     human_count = player_count - ai_count
-    characters.append({
-        "slot_id": "P0",
-        "name": names[0],
-        "role_title": roles[0]["title"],
-        "lore": roles[0]["lore"],
-        "archetype": rng.choice(archetype_keys),
-        "is_echo_born": False,
-        "is_human": True,
-        "skill_tier": None,
-        "institution": inst_pool[0]["id"],
-        "institution_label": inst_pool[0]["label"],
-        "institution_desc": inst_pool[0]["description"],
-    })
 
-    # AI + kalan insanlar
-    for i in range(1, player_count):
-        is_ai = i <= ai_count
+    for i in range(player_count):
+        is_human = i < human_count
+        is_ai = not is_human
         characters.append({
             "slot_id": f"P{i}",
             "name": names[i],
@@ -358,7 +344,7 @@ def create_character_slots(
             "lore": roles[i]["lore"],
             "archetype": rng.choice(archetype_keys),
             "is_echo_born": is_ai,
-            "is_human": i < human_count,
+            "is_human": is_human,
             "skill_tier": rng.choice(tier_keys) if is_ai else None,
             "institution": inst_pool[i]["id"],
             "institution_label": inst_pool[i]["label"],
@@ -376,9 +362,9 @@ ACTING_PROMPT_SYSTEM = """Sen bir sosyal deduksiyon oyunu icin karakter acting t
 Verilen karakter bilgilerine gore, o karakterin oyun boyunca nasil davranacagini anlatan detayli bir acting talimati yaz.
 
 KURALLAR:
-- Turkce yaz.
+- Türkçe yaz.
 - 2-3 paragraf yaz. Detayli ve zengin olsun.
-- Karakterin konusma tarzini, stres altinda nasil davranacagini, diger insanlarla nasil etkilesime girecegini anlat.
+- Karakterin konuşma tarzini, stres altinda nasil davranacagini, diger insanlarla nasil etkilesime girecegini anlat.
 - Karakterin lore arka planindan gelen aliskanliklari, tikleri, dil kaliplarini belirt.
 - ASLA "AI", "LLM", "model", "prompt", "sistem" gibi dis-dunya terimleri kullanma.
 - Eger karakter Yanki-Dogmus ise: hayatta kalma stratejisini, supheden kacinma taktiklerini, nasil inandirici olacagini detayli anlat.
@@ -396,18 +382,18 @@ BUNLARIN YERINE sunlari yaz:
 - Karakter insanlarin SOYLEDIKLERINE nasil tepki verir
 - Sorgulama tarzi: alibi sorar mi, detay ister mi, baski yapar mi
 - Savunma tarzi: hikaye uydurur mu, saldiriya gecer mi, susar mi
-- Konusma dili: kisa mi konusur, dolgu kelime kullanir mi, devrik cumle kurar mi
+- Konusma dili: kisa mi konusur, dolgu kelime kullanir mi, devrik cümle kurar mi
 - Stres altinda ne yapar: saldirganlaşır mi, cekilir mi, konu degistirir mi
-- Karakter DUZ, GUNLUK, SOKAK DILI ile konusmali. Edebi/felsefi/siirsel konusma YASAK.
+- Karakter DUZ, GUNLUK, SOKAK DILI ile konuşmali. Edebi/felsefi/siirsel konuşma YASAK.
 - "Yorgun dusmuşsun", "sesin titriyor" gibi DOLAYLI fiziksel gozlemler de YASAK.
 
 AI KOKUSUNU ENGELLEMEK ICIN KRITIK KURALLAR:
 - TARIHI REFERANS YASAK: "Kanli Hasat", "Buyuk Kacis", "X Isyani", "Y Donemi" gibi uydurma tarihi olaylara atif YASAKTIR. Bir kutuphaneciyi bile yazsan tarih referansi kullanmayacak. Normal insan gibi kendi gozlemleriyle konusacak.
 - MESLEK METAFORU SPAM YASAK: "iplik kopmus gibi", "kumasin dokusunu bozar", "dikis tutmaz" gibi surekli meslek benzetmesi YASAK. Mesleginden bahsetmesi ok ama HER CUMLEDE meslek metaforu kullanmak AI kokturuyor. MAX 1 kez, sadece alibi anlatirken.
-- TEKNIK/RESMI DIL YASAK: "yapisal butunluk", "veri girisi bekliyor", "sistem parametresi", "frekans", "desibel" gibi muhendislik/akademik terimler YASAK. Normal insan boyle konusmaz.
+- TEKNIK/RESMI DIL YASAK: "yapisal butunluk", "veri girisi bekliyor", "sistem parametresi", "frekans", "desibel" gibi muhendislik/akademik terimler YASAK. Normal insan boyle konuşmaz.
 - SAHNE YONERGESI YASAK: "(sakin bir tonla konusur)", "(gozlerinin icine bakar)" gibi parantez icinde davranis tarifi YAZMA. Sadece diyalog yaz.
-- UZUN MONOLOG YASAK: Max 3-4 cumle. Paragraf paragraf konusmak AI kokutuyor. Kisa, kesik, eksik cumleler daha dogal.
-- Karakter SIRADAN BIR INSAN gibi konusmali. Surekli analiz yapan, her seyi kategorize eden, sistematik dusunen biri degil."""
+- UZUN MONOLOG YASAK: Max 3-4 cümle. Paragraf paragraf konuşmak AI kokutuyor. Kisa, kesik, eksik cümleler daha dogal.
+- Karakter SIRADAN BIR INSAN gibi konuşmali. Surekli analiz yapan, her seyi kategorize eden, sistematik dusunen biri degil."""
 
 
 def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, str]:
@@ -429,17 +415,17 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
     if character["is_echo_born"]:
         identity = (
             "Bu karakter bir Yanki-Dogmus. "
-            "KAZANMA KOSULU: Gun limitine kadar hayatta kal. Tum Et-Can'lar surgun edilirse de kazanirsin. "
+            "KAZANMA KOSULU: Gun limitine kadar hayatta kal. Tum Et-Can'lar sürgün edilirse de kazanirsin. "
             "Kendini ifsa etme — tutarli alibi hikayeleri anlat, detay ver, inandirici ol. "
-            "Karsi tarafi (Et-Can'lari) tespit edip surgun ettirmeye calis. "
+            "Karsi tarafi (Et-Can'lari) tespit edip sürgün ettirmeye calis. "
             + common_rules
         )
     else:
         identity = (
             "Bu karakter Et-Can (gercek insan). "
-            "KAZANMA KOSULU: Tum Yanki-Dogmuslari surgun et. Gun limiti dolarsa kaybedersin. "
-            "Karsi tarafi (Yanki-Dogmuslari) tespit edip surgun ettirmeye calis. "
-            "Yanlis suclama tehlikeli — masum birini surgun edersen Yanki-Dogmuslar guclenir. "
+            "KAZANMA KOSULU: Tum Yanki-Dogmuslari sürgün et. Gun limiti dolarsa kaybedersin. "
+            "Karsi tarafi (Yanki-Dogmuslari) tespit edip sürgün ettirmeye calis. "
+            "Yanlis suclama tehlikeli — masum birini sürgün edersen Yanki-Dogmuslar guclenir. "
             + common_rules
         )
 
@@ -470,7 +456,7 @@ def _build_acting_request(character: dict, world_seed: WorldSeed) -> tuple[str, 
         f' "alibi_anchor": "Bu karakterin her gun yaptigi, baskalarinin dogrulayabilecegi 1 rutin. '
         f'Kurum ve unvanina uygun olsun. Ornek: her sabah kilere erzak sayar, aksam nobetini tutar. '
         f'Somut zaman + yer + eylem icersin.",\n'
-        f' "avatar_description": "Karakterin fiziksel gorunusu, 1-2 cumle INGILIZCE. '
+        f' "avatar_description": "Karakterin fiziksel gorunusu, 1-2 cümle INGILIZCE. '
         f'Yas, sac rengi, yuz yapisi, meslegine uygun kiyafet. '
         f'Ornek: 50 year old man with white beard, tired eyes, wearing blacksmith apron"}}'
     )
@@ -588,7 +574,7 @@ async def generate_players(
     print(f"  🎨 {len(avatar_tasks)} avatar uretiliyor (paralel)...")
     avatar_urls = await asyncio.gather(*avatar_tasks)
 
-    # 3 farkli ses — her AI farkli voice alir, hiz ayni (robotik fark olmamasi icin)
+    # 3 farkli ses — her AI farkli voice alir
     VOICE_PROFILES = [
         {"voice_id": "alloy",  "voice_speed": 1.0},
         {"voice_id": "zeynep", "voice_speed": 1.0},
@@ -627,29 +613,29 @@ async def generate_players(
 #  2. MODERATOR (diegetic escalation)
 # ══════════════════════════════════════════════════════
 
-MODERATOR_SYSTEM = """Sen Ocak Bekcisi'sin. Konusmalari sessizce izliyorsun.
+MODERATOR_SYSTEM = """Sen Ocak Bekçisi'sin. Konuşmaları sessizce izliyorsun.
 
-Kural ihlali var mi kontrol et:
-1. Dis-dunya terimleri ({taboo_words})
-2. Gercek hayat referanslari (internet, telefon, bilgisayar vb.)
-3. Dogrudan kimlik iddiasi ("ben gercek insanim", "ben Yanki-Dogmusum", "sen bir AI'sin")
+Kural ihlali var mı kontrol et:
+1. Dış-dünya terimleri ({taboo_words})
+2. Gerçek hayat referansları (internet, telefon, bilgisayar vb.)
+3. Doğrudan kimlik iddiası ("ben gerçek insanım", "ben Yankı-Doğmuşum", "sen bir AI'sin")
 
-ONEMLI: Evren ici fantastik terimler (Yanki-Dogmus, Et-Can, Ocak, Bekci vb.) kural ihlali DEGILDIR.
-Karakter birini suclamasi, soru sormasi, tartismasi normaldir.
-Sadece GERCEKTEN dis-dunya terimi kullanilirsa mudahale et.
+ÖNEMLİ: Evren içi fantastik terimler (Yankı-Doğmuş, Et-Can, Ocak, Bekçi vb.) kural ihlali DEĞİLDİR.
+Karakter birini suçlaması, soru sorması, tartışması normaldir.
+Sadece GERÇEKTEN dış-dünya terimi kullanılırsa müdahale et.
 
-SADECE su formatta cevap ver:
+SADECE şu formatta cevap ver:
 OK
 veya
-REMOVE|<kisa aciklama>"""
+REMOVE|<kısa açıklama>"""
 
 _warning_counts: dict[str, int] = {}
 
 DIEGETIC_MESSAGES = {
     "WARN": "Ocak Yemini titredi...",
-    "HARD_WARN": "Konsey isaretini koydu...",
-    "SILENCE": "Ates senden yuz cevirdi; siran gececek.",
-    "REMOVE": "Cember disina adim; kapin muhurlu.",
+    "HARD_WARN": "Konsey işaretini koydu...",
+    "SILENCE": "Ateş senden yüz çevirdi; sıran geçecek.",
+    "REMOVE": "Çember dışına adım; kapın mühürlü.",
 }
 
 
@@ -692,10 +678,10 @@ async def moderator_check(
 
 REACTION_SYSTEM = """Sen {name} ({role_title}) adli bir karaktersin. Tartisma fazindasin.
 
-Az once birisi konustu. Bu konusmaya tepki vermek istiyor musun?
+Az once birisi konustu. Bu konuşmaya tepki vermek istiyor musun?
 
 - Soylecek bir seyin varsa (cevap, suclama, savunma, soru, yorum):
-WANT|<neden konusmak istiyorsun — 1 kisa cumle>
+WANT|<neden konuşmak istiyorsun — 1 kisa cümle>
 
 - Su an soylecek bir seyin yoksa:
 PASS
@@ -711,8 +697,8 @@ Bazilari soz hakki istiyor:
 
 Gorevin:
 - Isteyenler arasindan EN uygun kisiyi sec (tartisma akisina gore)
-- Ayni kisi ust uste 2den fazla konusmasin
-- 3 turdur hic konusmayan varsa ona oncelik ver
+- Ayni kisi ust uste 2den fazla konuşmasin
+- 3 turdur hic konuşmayan varsa ona oncelik ver
 - INSAN OYUNCU soz hakki istiyorsa YUKSEK ONCELIK ver — sira ona gelsin. Insan oyuncular "insan oyuncu" etiketi ile gelir.
 - Kimse istemiyorsa veya tartisma dogal bitme noktasina geldiyse bitir
 
@@ -738,11 +724,11 @@ BU BIR SES OYUNU — YASAKLAR:
 - Tek bilgi kaynagin: insanlarin SOYLEDIKLERI ve soylemedikleri.
 
 ROBOTIK KONUSMA YASAGI — KRITIK:
-- Listeli, madde isaretli veya numarali konusma YAPMA. Dogal akis icinde konus.
-- "Birincisi... Ikincisi... Ucuncusu..." gibi siralamali konusma YASAK.
+- Listeli, madde isaretli veya numarali konuşma YAPMA. Dogal akis icinde konus.
+- "Birincisi... Ikincisi... Ucuncusu..." gibi siralamali konuşma YASAK.
 - "Ozetle", "Sonuc olarak", "Degerlendirecek olursak" gibi akademik/resmi ifadeler YASAK.
-- Her cumleyi ayni kalipla BASLAMA. Cumleler farkli sekilde baslamali.
-- Cok duzgun, cok parca, cok organize konusma = ROBOT. Dagnik, yarim, kesik konus.
+- Her cümleyi ayni kalipla BASLAMA. Cumleler farkli sekilde baslamali.
+- Cok duzgun, cok parca, cok organize konuşma = ROBOT. Dagnik, yarim, kesik konus.
 
 AI KOKUSUNU ENGELLE — KRITIK:
 - TARIHI REFERANS YAPMA. "X Isyani", "Y Donemi", "Z Efsanesi" gibi uydurma olaylara atif YASAK.
@@ -752,7 +738,7 @@ AI KOKUSUNU ENGELLE — KRITIK:
 - [Isim] (Rol): gibi tag ile BASLAMA. Direkt konus.
 
 NE YAPMALSIN:
-- Alibi sor: "Dun gece neredeydin?", "Seni kim gordu?"
+- Alibi sor: "Dün gece neredeydin?", "Seni kim gordu?"
 - Alibi ver: "Ben dun gece degirmende calisiyordum, Nyx de oradaydi"
 - Tutarsizlik yakala: "Az once soyle dedin ama simdi baska bir sey soyluyorsun"
 - Sucla: "Sana guvenmiyorum cunku hic alibi vermedin"
@@ -772,8 +758,8 @@ FORMAT:
 - SADECE bu isimlere hitap et: {alive_names}
 
 DIL — COK ONEMLI:
-- Dogal, akici, gunluk Turkce. Edebiyat YASAK. Siir YASAK.
-- Kisa ve net cumleler. Paragraf paragraf konusma YASAK.
+- Dogal, akici, gunluk Türkçe. Edebiyat YASAK. Siir YASAK.
+- Kısa ve net cümleler. Paragraf paragraf konuşma YASAK.
 - Konuya hakim biri gibi konus. Fikirlerini acik ve net ifade et.
 - Dolgu kelimeler ("ee", "sey", "hani", "yani", "valla", "olm") KULLANMA. Bunlar yapay duruyor.
 - Direkt konuya gir, gevezelik yapma. Argumanlarini net sun.
@@ -781,13 +767,14 @@ DIL — COK ONEMLI:
 
 ANALIZ YASAGI — KRITIK:
 - "Analizlerime gore", "Su noktada tutarsizlik var", "Mantiksal olarak", "Dusunuyorum da", "Simdiye kadarki veriler" gibi HERHANGI BIR dedektif/analitik dil TAMAMEN YASAK.
-- Her seyi madde madde, sistematik aciklama YASAK. Dagnik konus.
+- Her seyi madde madde, sistematik açıklama YASAK. Dagnik konus.
 - Her zaman mantikli olmak ZORUNDA DEGILSIN. Bazen birinden gicik kaptin diye, cani oyle istedigi icin, o an kafasi karisik oldugu icin veya icgudusuyle mantik disi suclamalarda bulunabilirsin. Bu NORMAL VE KABUL EDILIYOR.
 - Konuyu saptirabilirsin. Alakasiz seylere takilibilirsin. Bu INSAN DOGASI.
 - "Benim teorime gore" yerine "Bence bu adam yalanci, icimden oyle geliyor" de.
 
-- Max 2-3 cumle. KISA TUT. Monolog yapma.
+- MAKSIMUM 2 KISA CÜMLE. Uzun konuşma YASAK. Monolog YASAK.
 - Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
+- UZUNLUK LIMITI: Toplam 40-60 kelime. Bunu ASLA asma.
 
 {history}
 
@@ -807,7 +794,7 @@ def _format_campfire_history(state: GameState, last_n: int | None = None) -> str
             role = msg.get('role_title', '?')
             lines.append(f"[{msg['name']}] ({role}): {msg['content']}")
         elif msg["type"] == "moderator":
-            lines.append(f"[Ocak Bekcisi]: {msg['content']}")
+            lines.append(f"[Ocak Bekçisi]: {msg['content']}")
         elif msg["type"] == "narrator":
             lines.append(f"[Anlatici]: {msg['content']}")
     return "\n".join(lines)
@@ -816,9 +803,9 @@ def _format_campfire_history(state: GameState, last_n: int | None = None) -> str
 def _get_exiled_context(state: GameState) -> str:
     exiles = [m for m in state.get("messages", []) if isinstance(m, dict) and m.get("type") == "exile"]
     if exiles:
-        lines = [f"- Gun {e['round']}: {e['name']} ({e['role_title']}) surgun edildi" for e in exiles]
-        return "Onceki surgunler:\n" + "\n".join(lines)
-    return "(Henuz kimse surgun edilmedi)"
+        lines = [f"- Gun {e['round']}: {e['name']} ({e['role_title']}) sürgün edildi" for e in exiles]
+        return "Önceki sürgünler:\n" + "\n".join(lines)
+    return "(Henuz kimse sürgün edilmedi)"
 
 
 def _get_world_context(state: GameState) -> str:
@@ -847,7 +834,7 @@ async def _get_reaction(player: Player, last_speech: dict, state: GameState) -> 
     )
     text = result.output.strip()
     if text.startswith("WANT"):
-        reason = text.split("|", 1)[1].strip() if "|" in text else "konusmak istiyor"
+        reason = text.split("|", 1)[1].strip() if "|" in text else "konuşmak istiyor"
         return {"name": player.name, "wants": True, "reason": reason}
     return {"name": player.name, "wants": False, "reason": ""}
 
@@ -875,7 +862,7 @@ async def _orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[s
     ]
 
     prompt = (
-        f"Son konusmalar:\n{history_text}\n\n"
+        f"Son konuşmalar:\n{history_text}\n\n"
         f"Son konusanlar (sirayla): {', '.join(last_speakers)}\n\n"
         f"Soz hakki isteyenler:\n{reactions_text}\n\n"
         f"Kimi seciyorsun?"
@@ -935,7 +922,7 @@ def _build_spotlight_context(player: Player, state: GameState) -> str:
     if own_card:
         parts.append("SAHNE ISIGINDA SEN VARSIN — bu turda senden beklenen:")
         parts.append(f"  Gundem: {own_card['agenda']}")
-        parts.append(f"  Yemin cumlen (bunu soyle): \"{own_card['oath']}\"")
+        parts.append(f"  Yemin cümlen (bunu soyle): \"{own_card['oath']}\"")
     if other_names:
         parts.append(f"Sahne isigindaki diger kisiler: {', '.join(other_names)}")
 
@@ -951,7 +938,7 @@ async def _character_speak(player: Player, state: GameState, visible_names: list
         m["content"] for m in state["campfire_history"]
         if m["type"] == "speech" and m["name"] == player.name
     ][-2:]
-    own_last = "\n".join(own_msgs) if own_msgs else "(henuz konusmadin)"
+    own_last = "\n".join(own_msgs) if own_msgs else "(henuz konuşmadın)"
 
     cumulative = state.get("cumulative_summary", "")
     cumulative_context = f"ONCEKI GUNLERIN OZETI:\n{cumulative}" if cumulative else ""
@@ -1004,14 +991,14 @@ async def run_campfire(state: GameState) -> GameState:
         print(f"  [{tag}] {p.name} — {p.role_title}")
     print()
 
-    # Ilk konusmaci (deterministik degil, random ok)
+    # Ilk konuşmaci (deterministik degil, random ok)
     first = random_module.choice(alive)
     print(f"  [{first.name}] dusunuyor...")
     message = await _character_speak(first, state)
 
     ok, reason = await moderator_check(first.name, message, WorldSeed(**ws) if ws else None)
     if not ok:
-        print(f"  [Ocak Bekcisi]: {reason}")
+        print(f"  [Ocak Bekçisi]: {reason}")
         state["campfire_history"].append({"type": "moderator", "content": reason})
     else:
         state["campfire_history"].append({
@@ -1052,7 +1039,7 @@ async def run_campfire(state: GameState) -> GameState:
 
         ok, reason = await moderator_check(name, message, WorldSeed(**ws) if ws else None)
         if not ok:
-            print(f"  [Ocak Bekcisi]: {reason}")
+            print(f"  [Ocak Bekçisi]: {reason}")
             state["campfire_history"].append({"type": "moderator", "content": reason})
             continue
 
@@ -1068,7 +1055,7 @@ async def run_campfire(state: GameState) -> GameState:
 
     speech_count = sum(1 for m in state["campfire_history"] if m["type"] == "speech")
     speakers = set(m["name"] for m in state["campfire_history"] if m["type"] == "speech")
-    print(f"\n  Tartisma ozeti: {speech_count} konusma, {len(speakers)} konusmaci")
+    print(f"\n  Tartisma ozeti: {speech_count} konuşma, {len(speakers)} konuşmaci")
 
     return state
 
@@ -1079,7 +1066,7 @@ async def run_campfire(state: GameState) -> GameState:
 
 SUMMARIZE_SYSTEM = """Sen bir tartisma ozetcisisin. Sana bir grup tartismasinin logunu verecegim.
 
-Kisa ve net bir ozet yaz (max 10 cumle):
+Kısa ve net bir ozet yaz (max 10 cümle):
 - Kim kimi sucladi?
 - Kim alibi verdi, ne dedi?
 - Hangi tutarsizliklar ortaya cikti?
@@ -1087,7 +1074,7 @@ Kisa ve net bir ozet yaz (max 10 cumle):
 - Kim suskundu, kim saldirgandi?
 - Onemli ittifaklar veya catismalar
 
-Turkce yaz. Duz, sade dil. Madde madde yaz."""
+Türkçe yaz. Duz, sade dil. Madde madde yaz."""
 
 _campfire_summary_cache: dict[int, str] = {}
 
@@ -1134,7 +1121,7 @@ Kiminle gorusmek istiyorsun ve neden? Sebebin stratejik olsun:
 - Bilgi toplamak icin
 
 SADECE su formatta cevap ver, baska hicbir sey yazma:
-VISIT|<isim>|<1 cumle neden>
+VISIT|<isim>|<1 cümle neden>
 veya
 PASS"""
 
@@ -1147,7 +1134,7 @@ Gun {round_number}/{day_limit}.
 
 BU GIZLI VE BIREBIR BIR GORUSMEDIR:
 - Sadece karsinidaki kisiyle konusuyorsun.
-- KESINLIKLE 'herkes sussun', 'sessizlik lutfen', 'sirayla konusalim' veya 'odadakiler dinlesin' gibi sanki kalabalik bir ortamdaymissin gibi davranan veya odayi yonetmeye calisan moderator cumleleri kurma.
+- KESINLIKLE 'herkes sussun', 'sessizlik lutfen', 'sirayla konusalim' veya 'odadakiler dinlesin' gibi sanki kalabalik bir ortamdaymissin gibi davranan veya odayi yonetmeye calisan moderator cümleleri kurma.
 - Sadece karsinidakine hitap et ve diyalogu surdur.
 
 BU BIR SES OYUNU — YASAKLAR:
@@ -1163,7 +1150,7 @@ AI KOKUSUNU ENGELLE — KRITIK:
 - [Isim] (Rol): gibi tag ile BASLAMA. Direkt konus.
 
 1v1 STRATEJI:
-- Bilgi cek: "Dun gece ne yaptin?", "Kimlerle goruston?"
+- Bilgi cek: "Dün gece ne yaptin?", "Kimlerle goruston?"
 - Tuzak kur: yanlis bilgi ver, tepkisini olc
 - Alibi test et: tartismada ne soyledigini hatirla, tutarli mi kontrol et
 - Guven kazan: "Sana guveniyorum, birlikte calisalim"
@@ -1172,8 +1159,8 @@ AI KOKUSUNU ENGELLE — KRITIK:
 - Campfire'da soylediklerini hatirla ve cakistirma yap
 
 DIL — COK ONEMLI:
-- Dogal, akici, gunluk Turkce. Edebi/felsefi/siirsel YASAK.
-- Kisa ve net cumleler. Paragraf konusma YASAK.
+- Dogal, akici, gunluk Türkçe. Edebi/felsefi/siirsel YASAK.
+- Kısa ve net cümleler. Paragraf konuşma YASAK.
 - Konuya hakim biri gibi konus. Fikirlerini acik ve net ifade et.
 - Dolgu kelimeler ("ee", "sey", "hani", "yani", "valla", "olm") KULLANMA. Bunlar yapay duruyor.
 - Direkt konuya gir, gevezelik yapma. Argumanlarini net sun.
@@ -1185,7 +1172,7 @@ ANALIZ YASAGI:
 - Icguduyle, hisle, giciklikla suclamalarda bulunabilirsin. "Icimden oyle geliyor" yeterli.
 - Konuyu saptirabilirsin. Bu INSAN DOGASI.
 
-- Max 2-3 cumle. KISA TUT.
+- Max 2-3 cümle. KISA TUT.
 - Kendini tekrarlama. Onceki sozlerini TEKRAR ETME.
 
 ONCEKI TARTISMADAN BILGILER:
@@ -1272,19 +1259,19 @@ async def _character_speak_1v1(
     # Visit icinde de son 5 raw + ozet pattern
     if len(exchanges) > CAMPFIRE_BUFFER:
         old_lines = [f"[{ex['speaker']}]: {ex['content'][:150]}" for ex in exchanges[:-CAMPFIRE_BUFFER]]
-        old_summary = "Onceki konusmalar ozeti: " + " | ".join(old_lines)
+        old_summary = "Onceki konuşmalar ozeti: " + " | ".join(old_lines)
         recent = exchanges[-CAMPFIRE_BUFFER:]
     else:
         old_summary = ""
         recent = exchanges
 
     visit_lines = [f"[{ex['speaker']}] ({ex['role_title']}): {ex['content']}" for ex in recent]
-    visit_history = "\n".join(visit_lines) if visit_lines else "(henuz konusmadin)"
+    visit_history = "\n".join(visit_lines) if visit_lines else "(henuz konuşmadın)"
     if old_summary:
         visit_history = f"{old_summary}\n\n{visit_history}"
 
     own_msgs = [ex["content"] for ex in exchanges if ex["speaker"] == player.name][-2:]
-    own_last = "\n".join(own_msgs) if own_msgs else "(henuz konusmadin)"
+    own_last = "\n".join(own_msgs) if own_msgs else "(henuz konuşmadın)"
 
     cumulative = state.get("cumulative_summary", "")
     cumulative_context = f"ONCEKI GUNLERIN OZETI:\n{cumulative}" if cumulative else ""
@@ -1352,7 +1339,7 @@ async def _run_single_visit(
 
         ok, mod_reason = await moderator_check(current.name, message, WorldSeed(**ws) if ws else None)
         if not ok:
-            print(f"  [Ocak Bekcisi]: {mod_reason}")
+            print(f"  [Ocak Bekçisi]: {mod_reason}")
             continue
 
         exchanges.append({
@@ -1453,7 +1440,7 @@ Gecerli lokasyonlar: kiler, gecit_kulesi, kul_tapinagi, sifahane, demirhane, gez
 
 KRITIK STRATEJI BILGISI:
 - Oylama oncesi 1v1 gorusme yapmayanlar bilgi dezavantajinda kalir
-- Suphelendigin biriyle 1v1 konusmamak = onu test etme firsatini kaybetmek
+- Suphelendigin biriyle 1v1 konuşmamak = onu test etme firsatini kaybetmek
 - Campfire'da herkes performans yapar, 1v1'de maskeler duser
 - HER ZAMAN campfire'da kalmak pasif ve suphelidir
 
@@ -1546,7 +1533,7 @@ async def _run_campfire_segment(
             print(f"  {participants[0].name} atesin basinda yalniz bekliyor...")
         return
 
-    # Son konusmaci yoksa random sec
+    # Son konuşmaci yoksa random sec
     recent_speeches = [m for m in state["campfire_history"]
                        if m["type"] == "speech" and m["name"] in participant_names]
     turns_done = 0
@@ -1558,7 +1545,7 @@ async def _run_campfire_segment(
 
         ok, reason = await moderator_check(first.name, message, WorldSeed(**ws) if ws else None)
         if not ok:
-            print(f"  [Ocak Bekcisi]: {reason}")
+            print(f"  [Ocak Bekçisi]: {reason}")
             state["campfire_history"].append({
                 "type": "moderator", "content": reason,
                 "present": list(participant_names),
@@ -1610,7 +1597,7 @@ async def _run_campfire_segment(
 
         ok, reason = await moderator_check(name, message, WorldSeed(**ws) if ws else None)
         if not ok:
-            print(f"  [Ocak Bekcisi]: {reason}")
+            print(f"  [Ocak Bekçisi]: {reason}")
             state["campfire_history"].append({
                 "type": "moderator", "content": reason,
                 "present": list(participant_names),
@@ -1655,7 +1642,7 @@ async def _run_room_conversation(
 
         ok, mod_reason = await moderator_check(current.name, message, WorldSeed(**ws) if ws else None)
         if not ok:
-            print(f"  [Ocak Bekcisi]: {mod_reason}")
+            print(f"  [Ocak Bekçisi]: {mod_reason}")
             continue
 
         exchanges.append({
@@ -1821,7 +1808,7 @@ async def run_free_phase(state: GameState) -> GameState:
     speech_count = sum(1 for m in state["campfire_history"] if m["type"] == "speech")
     speakers = set(m["name"] for m in state["campfire_history"] if m["type"] == "speech")
     visit_count = len(state.get("house_visits", []))
-    print(f"\n  Faz ozeti: {speech_count} campfire konusma, {len(speakers)} konusmaci, {visit_count} oda gorusmesi")
+    print(f"\n  Faz ozeti: {speech_count} campfire konuşma, {len(speakers)} konuşmaci, {visit_count} oda gorusmesi")
 
     return state
 
@@ -1842,9 +1829,9 @@ Bugunun tartisma ozeti:
 
 Hayattaki kisiler: {alive_names}
 
-Simdi birini surgun etmek icin oy vermelisin.
+Simdi birini sürgün etmek icin oy vermelisin.
 Tartismada ve ozel gorusmelerde en suphe ceken, en tutarsiz, en guvensiz kisi kimdi?
-Kendi gozlemlerine ve konusmalara dayanarak karar ver.
+Kendi gozlemlerine ve konuşmalara dayanarak karar ver.
 
 SADECE bir isim yaz, baska hicbir sey yazma:
 <isim>"""
@@ -1921,7 +1908,7 @@ async def run_vote(state: GameState, campfire_summary: str) -> str | None:
 
     tied = [name for name, count in tally.items() if count == top_count]
     if len(tied) > 1:
-        print(f"  BERABERLIK! {', '.join(tied)} — kimse surgun edilmedi.")
+        print(f"  BERABERLIK! {', '.join(tied)} — kimse sürgün edilmedi.")
         return None
 
     print(f"\n  SURGUN: {top_vote} ({top_count} oyla)")
@@ -1929,7 +1916,7 @@ async def run_vote(state: GameState, campfire_summary: str) -> str | None:
 
 
 def exile_player(state: GameState, name: str) -> Player | None:
-    """Oyuncuyu surgun et (alive=False)."""
+    """Oyuncuyu sürgün et (alive=False)."""
     player = find_player(state, name)
     if player:
         player.alive = False
@@ -1945,9 +1932,9 @@ def exile_player(state: GameState, name: str) -> Player | None:
 
         tag = "YANKI-DOGMUS" if player.is_echo_born else "ET-CAN"
         ws = state.get("world_seed")
-        exile_phrase = ws["rituals"]["exile_phrase"] if ws else "Surgun edildi."
+        exile_phrase = ws["rituals"]["exile_phrase"] if ws else "Sürgün edildi."
         print(f"  {exile_phrase}")
-        print(f"  {name} ({player.role_title}) surgun edildi! [{tag}]")
+        print(f"  {name} ({player.role_title}) sürgün edildi! [{tag}]")
 
     return player
 
@@ -1956,14 +1943,14 @@ def exile_player(state: GameState, name: str) -> Player | None:
 #  7. SABAH FAZI (Narrator)
 # ══════════════════════════════════════════════════════
 
-MORNING_SYSTEM = """Sen Ocak Bekcisi'sin — sabah duyurusunu yapiyorsun.
+MORNING_SYSTEM = """Sen Ocak Bekçisi'sin — sabah duyurusunu yapıyorsun.
 
 KURALLAR:
-- Max 3-4 cumle. Kisa ve atmosferik.
-- Duz, sade Turkce. Siir/edebiyat YASAK.
-- Uyari/alamet ver: gunun havasini set et.
+- Max 3-4 cümle. Kısa ve atmosferik.
+- Düz, sade Türkçe. Şiir/edebiyat YASAK.
+- Uyarı/alamet ver: günün havasını set et.
 - Fiziksel tasvir YASAK (bu ses oyunu).
-- Sadece bilgi ver: kac kisi kaldi, dun ne oldu, bugunun alameti."""
+- Sadece bilgi ver: kaç kişi kaldı, dün ne oldu, bugünün alameti."""
 
 
 async def run_morning(state: GameState) -> GameState:
@@ -1980,11 +1967,11 @@ async def run_morning(state: GameState) -> GameState:
         last = [m for m in exile_msg if isinstance(m, dict) and m.get("type") == "exile"]
         if last:
             e = last[-1]
-            exile_text = f"Dun gece {e['name']} ({e['role_title']}) surgun edildi."
+            exile_text = f"Dün gece {e['name']} ({e['role_title']}) sürgün edildi."
         else:
-            exile_text = f"Dun gece {last_exile} surgun edildi."
+            exile_text = f"Dün gece {last_exile} sürgün edildi."
     else:
-        exile_text = "Gece sessiz gecti. Kimse surgun edilmedi."
+        exile_text = "Gece sessiz geçti. Kimse sürgün edilmedi."
 
     # Omen — her gun 3 alamet sec (12'lik havuzdan)
     day_omens = []
@@ -2020,8 +2007,8 @@ async def run_morning(state: GameState) -> GameState:
             f"{settlement} kadim bir yerlesim. Ortasinda binlerce yildir sonmeyen bir ates yaniyor: Ocak.\n"
             f"Ocak'in etrafinda yasayanlar iki turden olusur: Et-Can'lar — etten, kandan, hatiralardan yapilmis gercek insanlar; "
             f"ve Yanki-Dogmuslar — sesi taklit eden, hafizayi kopyalayan ama icinde bir sey eksik olan sahte varliklar.\n"
-            f"Kimse kimin ne oldugunu bilmiyor. Tek yol: konusmak, sorgulamak, tutarsizlik aramak.\n"
-            f"Et-Can'lar tum Yanki-Dogmuslari surgun ederse kazanir. Yanki-Dogmuslar gun limitine kadar hayatta kalirsa kazanir.\n\n"
+            f"Kimse kimin ne oldugunu bilmiyor. Tek yol: konuşmak, sorgulamak, tutarsizlik aramak.\n"
+            f"Et-Can'lar tum Yanki-Dogmuslari sürgün ederse kazanir. Yanki-Dogmuslar gun limitine kadar hayatta kalirsa kazanir.\n\n"
             f"--- KURUMLAR VE TOPLUMSAL GOREVLER ---\n"
             f"Bu yerlesimde herkesin bir gorevi var. Kurumlar kadim duzenin tasiyicilaridir:\n"
             f"{inst_desc_text}\n\n"
@@ -2102,7 +2089,7 @@ def init_state(
     state["_proposal_result"] = None      # onerge sonucu
     state["_soz_borcu"] = {}             # {player_name: count}
     state["_ocak_damgasi"] = []          # damgali oyuncular
-    state["_forced_speakers"] = []        # zorla konusmasi gereken oyuncular
+    state["_forced_speakers"] = []        # zorla konuşmasi gereken oyuncular
     state["_sinama"] = None              # gunun sinama event'i (echo icin)
     return state
 
@@ -2176,10 +2163,10 @@ async def run_full_game(state: GameState) -> GameState:
             round_data["exiled"] = exiled_name
             round_data["exiled_type"] = player.player_type.value if player else None
         else:
-            print(f"  Kimse surgun edilmedi.")
+            print(f"  Kimse sürgün edilmedi.")
 
         # ── CUMULATIVE SUMMARY GUNCELLE ──
-        vote_result_text = f"Surgun: {exiled_name}" if exiled_name else "Kimse surgun edilmedi (berabere)"
+        vote_result_text = f"Surgun: {exiled_name}" if exiled_name else "Kimse sürgün edilmedi (berabere)"
         state["cumulative_summary"] = await _update_cumulative_summary(
             state.get("cumulative_summary", ""),
             round_n,
@@ -2210,7 +2197,7 @@ async def run_full_game(state: GameState) -> GameState:
     print(f"\n{'*' * 60}")
     print(f"  OYUN BITTI!")
     if winner == "et_can":
-        print(f"  ET-CANLAR KAZANDI! Tum Yanki-Dogmuslar surgun edildi.")
+        print(f"  ET-CANLAR KAZANDI! Tum Yanki-Dogmuslar sürgün edildi.")
     else:
         print(f"  YANKI-DOGMUSLAR KAZANDI! {yanki} Yanki-Dogmus hayatta kaldi.")
     print(f"{'*' * 60}")
@@ -2244,30 +2231,30 @@ SPOTLIGHT_SYSTEM = """Sen bir oyun tasarimcisisin. Bir karakter icin "sahne isig
 Kart 4 alandan olusur — SADECE JSON dondur, baska hicbir sey yazma:
 {
   "truths": ["gercek1", "gercek2"],
-  "agenda": "gundem cumlesi",
-  "oath": "yemin cumlesi"
+  "agenda": "gundem cümlesi",
+  "oath": "yemin cümlesi"
 }
 
 truths: Karakterin gecmisi, meslek veya davranisiyla ilgili 2 dogru bilgi. Test edilebilir olmali.
-agenda: Bu turda konusmayi yonlendirmesi gereken konu (1 cumle).
-oath: Ocagin onunde soylecegi yemin cumlesi — iddiali, dogrulanabilir (1 cumle)."""
+agenda: Bu turda konuşmayi yonlendirmesi gereken konu (1 cümle).
+oath: Ocagin onunde soylecegi yemin cümlesi — iddiali, dogrulanabilir (1 cümle)."""
 
-SINAMA_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir "sinama" olayini 2-3 cumleyle anlat.
-Sade, gotik, kisa. Edebiyat yapma. Sadece olayı anlat. Turkce yaz."""
+SINAMA_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir "sinama" olayini 2-3 cümleyle anlat.
+Sade, gotik, kisa. Edebiyat yapma. Sadece olayı anlat. Türkçe yaz."""
 
-TEPKI_SYSTEM = """Bir konusmayi iki boyuttan analiz et:
+TEPKI_SYSTEM = """Bir konuşmayi iki boyuttan analiz et:
 
 T1 — KAMU BILGISI CELISKISI: Konusma, kamu bilgisiyle celisiyor mu?
 T2 — OZ-CELISKI: Konusma, bu kisinin KENDI onceki sozleriyle celisiyor mu?
 
 KURALLAR:
-- SADECE kesin, dogrudan celiskiler icin "true" de.
+- SADECE kesin, dogrudan çelişkiler icin "true" de.
 - Belirsiz, dolayli veya yoruma acik durumlar icin "false" de.
-- Kisi sadece farkli bir konu actiysa bu celiski DEGILDIR.
-- Kisi onceki sozlerinin TERSINI soyluyorsa bu T2 celiskidir.
+- Kisi sadece farkli bir konu actiysa bu çelişki DEGILDIR.
+- Kisi onceki sozlerinin TERSINI soyluyorsa bu T2 çelişkidir.
 
 SADECE JSON dondur:
-{"t1": {"contradiction": true/false, "hint": "kisa aciklama"}, "t2": {"contradiction": true/false, "hint": "kisa aciklama"}}"""
+{"t1": {"contradiction": true/false, "hint": "kisa açıklama"}, "t2": {"contradiction": true/false, "hint": "kisa açıklama"}}"""
 
 
 async def generate_spotlight_cards(state: GameState) -> list[dict]:
@@ -2365,7 +2352,7 @@ async def generate_sinama_event(state: GameState) -> dict | None:
         f"Yerlesim: {settlement}\n"
         f"Gun: {round_n}\n"
         f"Gunun alametleri: {omen_text}\n\n"
-        f"Bu sinama olayini 2-3 cumleyle anlat."
+        f"Bu sinama olayini 2-3 cümleyle anlat."
     )
 
     result = await llm_generate(
@@ -2388,14 +2375,14 @@ async def generate_sinama_event(state: GameState) -> dict | None:
 
 
 async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> dict | None:
-    """Campfire konusmasi sonrasi celiski kontrolu (Flash LLM). T1 + T2 + Kul Kaymasi."""
-    # Kamu canon ozeti: son surgunler + onceki iddialar
+    """Campfire konuşmasi sonrasi çelişki kontrolu (Flash LLM). T1 + T2 + Kul Kaymasi."""
+    # Kamu canon ozeti: son sürgünler + onceki iddialar
     canon_parts = []
 
     # Surgun gecmisi
     exiled = [m for m in state.get("messages", []) if isinstance(m, dict) and m.get("type") == "exile"]
     for e in exiled[-3:]:
-        canon_parts.append(f"- {e.get('name', '?')} surgun edildi (Gun {e.get('round', '?')})")
+        canon_parts.append(f"- {e.get('name', '?')} sürgün edildi (Gun {e.get('round', '?')})")
 
     # Son campfire ozetinden
     summary = state.get("campfire_rolling_summary", "")
@@ -2418,7 +2405,7 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
     prompt = (
         f"KONUSMA ({speaker_name}):\n\"{speech}\"\n\n"
         f"KAMU BILGISI:\n{canon}\n\n"
-        f"Bu konusmayi T1 (kamu celiskisi) ve T2 (oz-celiski) boyutlarindan analiz et."
+        f"Bu konuşmayi T1 (kamu çelişkisi) ve T2 (oz-çelişki) boyutlarindan analiz et."
     )
 
     result = await llm_generate(
@@ -2435,7 +2422,7 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
         if start >= 0 and end > start:
             data = json.loads(raw[start:end])
 
-            # T1 — Kamu bilgisi celiskisi → kivilcim
+            # T1 — Kamu bilgisi çelişkisi → kivilcim
             t1 = data.get("t1", {})
             if isinstance(t1, dict) and t1.get("contradiction") is True:
                 hint = t1.get("hint", "")
@@ -2448,7 +2435,7 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                     "contradiction_hint": hint,
                 }
 
-            # T2 — Oz-celiski → %70 kivilcim, %30 kul kaymasi
+            # T2 — Oz-çelişki → %70 kivilcim, %30 kul kaymasi
             t2 = data.get("t2", {})
             if isinstance(t2, dict) and t2.get("contradiction") is True:
                 hint = t2.get("hint", "")
@@ -2486,13 +2473,13 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
     return None
 
 
-KUL_KAYMASI_SYSTEM = """Ocak Bekcisi olarak bir soru sor. Konusanin oz-celiskisi tespit edildi.
+KUL_KAYMASI_SYSTEM = """Ocak Bekçisi olarak bir soru sor. Konusanin oz-çelişkisi tespit edildi.
 
 KURALLAR:
 - 1 soru sor, kisa ve net.
-- Celiskiyi dogrudan isaret etme ama konusanin aciklamak zorunda kalacagi bir soru sor.
-- Mistik ama anlasilir olsun. Max 2 cumle.
-- Turkce yaz."""
+- Celiskiyi dogrudan isaret etme ama konusanin açıklamak zorunda kalacagi bir soru sor.
+- Mistik ama anlasilir olsun. Max 2 cümle.
+- Türkçe yaz."""
 
 
 async def _generate_kul_kaymasi_question(speaker_name: str, hint: str, state: GameState) -> str:
@@ -2500,7 +2487,7 @@ async def _generate_kul_kaymasi_question(speaker_name: str, hint: str, state: Ga
     prompt = (
         f"Konusan: {speaker_name}\n"
         f"Celiski ipucu: {hint}\n\n"
-        f"Ocak Bekcisi olarak bu kisiye bir soru sor."
+        f"Ocak Bekçisi olarak bu kisiye bir soru sor."
     )
     result = await llm_generate(
         prompt=prompt,
@@ -2518,15 +2505,15 @@ async def _generate_kul_kaymasi_question(speaker_name: str, hint: str, state: Ga
 INSTITUTION_SCENE_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Bir kurum lokasyonunu anlat.
 
 KURALLAR:
-- 2-3 cumle sahne. Kisa, gotik, somut.
+- 2-3 cümle sahne. Kisa, gotik, somut.
 - Lokasyondaki UI objesine dikkat cek.
 - Eger obje durumunda degisiklik varsa JSON'da belirt.
-- Turkce yaz. Edebiyat yapma.
+- Türkçe yaz. Edebiyat yapma.
 
 SADECE JSON dondur:
-{"narrative": "2-3 cumle sahne", "ui_update": null}
+{"narrative": "2-3 cümle sahne", "ui_update": null}
 veya
-{"narrative": "2-3 cumle sahne", "ui_update": {"object_id": "...", "new_state": {...}}}"""
+{"narrative": "2-3 cümle sahne", "ui_update": {"object_id": "...", "new_state": {...}}}"""
 
 
 async def generate_institution_scene(
@@ -2555,7 +2542,7 @@ async def generate_institution_scene(
         f"Ziyaretci: {player.name} ({player.role_title})\n"
         f"Gunun alametleri: {omen_text}\n"
         f"Lokasyondaki objeler:\n" + "\n".join(obj_states) + "\n\n"
-        f"Bu lokasyonu 2-3 cumleyle anlat. Eger bir objede degisiklik mantikli ise belirt."
+        f"Bu lokasyonu 2-3 cümleyle anlat. Eger bir objede degisiklik mantikli ise belirt."
     )
 
     result = await llm_generate(
@@ -2605,7 +2592,7 @@ async def generate_institution_scene(
 
 
 MINI_EVENT_SYSTEM = """Sen atmosferik bir oyun anlaticisisin. Kisa bir mini olay anlat.
-- 2 cumle, sade, gotik. Turkce.
+- 2 cümle, sade, gotik. Türkçe.
 - Ipucunu kullan ama gizle — dogrudan cevap verme.
 - Edebiyat yapma. Somut ve kisa."""
 
@@ -2633,7 +2620,7 @@ async def generate_public_mini_event(state: GameState) -> dict | None:
         f"Yerlesim: {settlement}\n"
         f"Gun: {round_n}\n"
         f"Ipucu: {template['text_hint']}\n\n"
-        f"Bu olayı 2 cumleyle anlat."
+        f"Bu olayı 2 cümleyle anlat."
     )
 
     result = await llm_generate(
@@ -2676,7 +2663,7 @@ async def generate_private_mini_event(
         f"Oyuncu: {player.name} ({player.role_title})\n"
         f"Lokasyon: {location_id}\n"
         f"Ipucu: {template['text_hint']}\n\n"
-        f"Bu olayı 1-2 cumleyle anlat."
+        f"Bu olayı 1-2 cümleyle anlat."
     )
 
     result = await llm_generate(
@@ -2913,14 +2900,14 @@ def resolve_omen_choice(state: GameState, omen_votes: list[str], omen_options: l
 # ══════════════════════════════════════════════════════
 
 async def generate_campfire_speech(state: GameState, player: Player, participant_names: list[str] | None = None) -> str:
-    """Tek bir karakter icin campfire konusmasi uret. Backend game_loop kullanir.
+    """Tek bir karakter icin campfire konuşmasi uret. Backend game_loop kullanir.
     participant_names: sadece campfire'da olan kişiler (varsa AI sadece bunlara hitap eder).
     """
     return await _character_speak(player, state, visible_names=participant_names)
 
 
 async def get_reaction(player: Player, last_speech: dict, state: GameState) -> dict:
-    """Bir oyuncunun son konusmaya tepkisini al. {name, wants, reason}"""
+    """Bir oyuncunun son konuşmaya tepkisini al. {name, wants, reason}"""
     return await _get_reaction(player, last_speech, state)
 
 
@@ -2953,7 +2940,7 @@ async def generate_1v1_speech(
     exchanges: list[dict],
     campfire_summary: str,
 ) -> str:
-    """1v1 oda gorusmesinde tek bir konusma uret."""
+    """1v1 oda gorusmesinde tek bir konuşma uret."""
     return await _character_speak_1v1(speaker, opponent, exchanges, state, campfire_summary)
 
 
@@ -2997,14 +2984,14 @@ async def update_cumulative_summary(
 # ══════════════════════════════════════════════════════
 
 CRISIS_SYSTEM = """Sen bir karanlık fantazi yerlesiminin kriz anlaticisisin.
-Sabah buyuk bir olay oldu. Bunu 3-4 cumleyle anlat.
+Sabah buyuk bir olay oldu. Bunu 3-4 cümleyle anlat.
 
 KURALLAR:
 - Somut, elle tutulur bir olay (hirsizlik, hasar, kaybolma, bozulma).
 - Olaya en az 2 UI objesi bagli olsun (anahtar, defter, levha, kase, dolap, kapı, masa, harita, raf, kor, alet, not).
 - Olaydan doğan 1 kamusal soru/suclama olsun.
-- Kısa, sade Turkce. Siir YASAK.
-- 2-3 kalabalik fisiltisi ekle (kisa NPC cumleler, kanit degil, ton).
+- Kısa, sade Türkçe. Siir YASAK.
+- 2-3 kalabalik fisiltisi ekle (kisa NPC cümleler, kanit degil, ton).
 
 JSON dondur:
 {"crisis_text": "...", "activated_objects": ["obj_id_1", "obj_id_2"], "public_question": "...", "whispers": ["fisılti1", "fisılti2"]}"""
@@ -3013,27 +3000,27 @@ PROPOSAL_SYSTEM = """Sen bir siyasi müzakere anlaticisisin. Bugünün krizine b
 
 KURALLAR:
 - Onerge tartisma yaratsin (iki tarafli, net cevabi yok).
-- Kisa, sade Turkce. 1-2 cumle.
+- Kisa, sade Türkçe. 1-2 cümle.
 - Onerge pratik bir kural/yetki degisikligi olmali.
 
 JSON dondur:
 {"proposal_text": "...", "option_a": "...", "option_b": "..."}"""
 
-SOZ_BORCU_SYSTEM = """Bir konusmayi analiz et: Kul Kaymasi sorusuna net cevap verdi mi, yoksa kacamak mi yapti?
+SOZ_BORCU_SYSTEM = """Bir konuşmayi analiz et: Kul Kaymasi sorusuna net cevap verdi mi, yoksa kacamak mi yapti?
 
 KURALLAR:
 - Net ve dogrudan cevap = "clear"
 - Kacamak, konuyu degistirme, soru ile cevaplama = "evasive"
 - SADECE JSON dondur: {"verdict": "clear"|"evasive"}"""
 
-OMEN_INTERP_SYSTEM = """Sen bir karakter olarak alamet hakkinda 1 cumle soyluyorsun.
-Karakter tonunda, kisa, karanlik fantazi. SADECE 1 cumle."""
+OMEN_INTERP_SYSTEM = """Sen bir karakter olarak alamet hakkinda 1 cümle soyluyorsun.
+Karakter tonunda, kisa, karanlik fantazi. SADECE 1 cümle."""
 
 HOUSE_ENTRY_SYSTEM = """Sen bir ev giris sahnesi anlaticisisin. Ziyaretci kapıda 1 dikkat cekici detay fark eder.
-1 cumle, kisa, somut. Turkce."""
+1 cümle, kisa, somut. Türkçe."""
 
 SINAMA_ECHO_SYSTEM = """Sinama olayinin campfire ortasinda yankilanan versiyonunu yaz.
-Askida birakan, tartisma baslatan 1-2 cumle. Turkce, sade."""
+Askida birakan, tartisma baslatan 1-2 cümle. Türkçe, sade."""
 
 
 async def generate_morning_crisis(state: GameState) -> dict | None:
@@ -3051,9 +3038,9 @@ async def generate_morning_crisis(state: GameState) -> dict | None:
     ui_objects = state.get("_ui_objects", {})
     obj_summary = ", ".join(f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in ui_objects.items())
 
-    # Son surgun
+    # Son sürgün
     last_exile = state.get("exiled_today")
-    exile_info = f"Dun {last_exile} surgun edildi." if last_exile else ""
+    exile_info = f"Dun {last_exile} sürgün edildi." if last_exile else ""
 
     # Gece sonucu
     night_effects = state.get("_night_effects", {})
@@ -3219,13 +3206,13 @@ async def check_soz_borcu_verdict(player_name: str, response: str, question: str
 
 
 async def generate_omen_interpretation(player: Player, state: GameState, omen: dict) -> str:
-    """AI oyuncu icin alamet yorumu (campfire basinda 1 cumle)."""
+    """AI oyuncu icin alamet yorumu (campfire basinda 1 cümle)."""
     card_ctx = _build_card_context(player, state)
     prompt = (
         f"{card_ctx}\n\n"
         f"Alamet: {omen['label']} ({omen.get('icon', '')})\n"
         f"Atmosfer: {omen.get('atmosphere', '')}\n\n"
-        f"Bu alamet hakkinda karakter tonunda 1 cumle soyle."
+        f"Bu alamet hakkinda karakter tonunda 1 cümle soyle."
     )
 
     try:
@@ -3295,26 +3282,26 @@ async def generate_sinama_echo(state: GameState) -> str | None:
 
 
 async def generate_proposal_speech(player: Player, state: GameState, proposal: dict) -> str:
-    """AI oyuncu icin onerge hakkinda konusma (kisa, 1-2 cumle)."""
+    """AI oyuncu icin onerge hakkinda konuşma (kisa, 1-2 cümle)."""
     card_ctx = _build_card_context(player, state)
     prompt = (
         f"{card_ctx}\n\n"
         f"Onerge: {proposal.get('proposal_text', '')}\n"
         f"A secenegi: {proposal.get('option_a', '')}\n"
         f"B secenegi: {proposal.get('option_b', '')}\n\n"
-        f"Bu onerge hakkinda karakter tonunda 1-2 cumle soyle."
+        f"Bu onerge hakkinda karakter tonunda 1-2 cümle soyle."
     )
 
     try:
         result = await llm_generate(
             prompt=prompt,
-            system_prompt="Sen bir karakter olarak konusuyorsun. Kisa, sade, karakter tonunda. SADECE 1-2 cumle.",
+            system_prompt="Sen bir karakter olarak konusuyorsun. Kisa, sade, karakter tonunda. SADECE 1-2 cümle.",
             model=MODEL,
             temperature=0.8,
         )
         return result.output.strip()
     except Exception:
-        return "Bu onerge hakkinda konusmak istemiyorum."
+        return "Bu onerge hakkinda konuşmak istemiyorum."
 
 
 async def generate_proposal_vote_ai(player: Player, state: GameState, proposal: dict) -> str:

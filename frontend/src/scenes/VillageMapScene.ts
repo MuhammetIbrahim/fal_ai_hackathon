@@ -63,6 +63,7 @@ export class VillageMapScene implements Scene {
 
   // Houses
   private houses: House[] = []
+  private _lastAliveCount = -1
 
   // Character animation positions (name → anim state)
   private charAnims: Map<string, CharAnim> = new Map()
@@ -130,8 +131,12 @@ export class VillageMapScene implements Scene {
     this.camera.follow(VILLAGE_CENTER.x, VILLAGE_CENTER.y)
     this.camera.update()
 
-    // Rebuild houses if player count changed
-    this.rebuildHouses()
+    // Rebuild houses only if alive player count changed
+    const aliveCount = useGameStore.getState().players.filter(p => p.alive).length
+    if (aliveCount !== this._lastAliveCount) {
+      this._lastAliveCount = aliveCount
+      this.rebuildHouses()
+    }
 
     // ── Check ocak tepki ──
     const tepki = useGameStore.getState().ocakTepki
@@ -468,7 +473,7 @@ export class VillageMapScene implements Scene {
   private rebuildHouses(): void {
     const players = useGameStore.getState().players
     const alivePlayers = players.filter(p => p.alive)
-    const count = Math.max(alivePlayers.length, 6)
+    const count = alivePlayers.length
 
     const newHouses: House[] = []
     for (let i = 0; i < count; i++) {
@@ -690,11 +695,11 @@ export class VillageMapScene implements Scene {
   private getCampfireSeat(index: number, total: number): { x: number; y: number } {
     if (total === 0) return { x: VILLAGE_CENTER.x, y: VILLAGE_CENTER.y + 100 }
 
-    const startAngle = Math.PI * 0.8
-    const endAngle = Math.PI * 2.2
+    const startAngle = Math.PI * 0.6
+    const endAngle = Math.PI * 2.4
     const step = (endAngle - startAngle) / Math.max(1, total - 1)
     const angle = total === 1 ? Math.PI * 1.5 : startAngle + step * index
-    const radius = 120
+    const radius = 170
 
     return {
       x: VILLAGE_CENTER.x + Math.cos(angle) * radius,

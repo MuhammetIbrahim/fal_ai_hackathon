@@ -22,7 +22,6 @@ function usePlayerColor() {
   }
 }
 
-// ── Single chat panel (reused for campfire and each 1v1) ──
 const ChatPanel: React.FC<{
   title: string
   titleColor: string
@@ -39,11 +38,21 @@ const ChatPanel: React.FC<{
   }, [speeches])
 
   return (
-    <div className="flex flex-col border-2 border-wood/60 bg-bg-dark/95 shadow-lg shadow-black/40 min-h-0 flex-1">
+    <div
+      className="flex flex-col min-h-0 flex-1 rounded-lg overflow-hidden"
+      style={{
+        backgroundColor: 'rgba(18,14,6,0.95)',
+        border: '1px solid rgba(139,94,60,0.25)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+      }}
+    >
       {/* Header */}
-      <div className="px-2 py-1.5 border-b-2 border-wood/30 flex-shrink-0">
-        <span className="text-[9px] font-pixel" style={{ color: titleColor }}>
-          {icon && <span className="mr-1">{icon}</span>}
+      <div
+        className="px-3 py-2 flex-shrink-0"
+        style={{ borderBottom: '1px solid rgba(139,94,60,0.2)' }}
+      >
+        <span className="text-[9px] font-pixel tracking-wider" style={{ color: titleColor }}>
+          {icon && <span className="mr-1.5">{icon}</span>}
           {title}
         </span>
       </div>
@@ -51,75 +60,77 @@ const ChatPanel: React.FC<{
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-2 py-1.5 space-y-1.5 scrollbar-thin min-h-0"
+        className="flex-1 overflow-y-auto px-2.5 py-2 space-y-2 scrollbar-thin min-h-0"
       >
         {speeches.length === 0 && (
-          <p className="text-stone text-[7px] text-center mt-2 opacity-50 font-pixel">
+          <p className="text-stone/40 text-[7px] text-center mt-3 font-pixel">
             Bekleniyor...
           </p>
         )}
 
-        {speeches.map((speech, idx) => (
-          <div key={idx} className="flex flex-col gap-0.5">
-            <span
-              className="text-[8px] font-pixel font-bold"
-              style={{ color: getColor(speech.speaker) }}
-            >
-              {speech.speaker}
-            </span>
-            <p className="text-text-light text-[8px] font-pixel leading-relaxed pl-1.5 border-l-2 border-wood/30">
-              {speech.content}
-            </p>
-          </div>
-        ))}
+        {speeches.map((speech, idx) => {
+          const color = getColor(speech.speaker)
+
+          return (
+            <div key={idx} className="flex flex-col gap-0.5">
+              <span
+                className="text-[8px] font-pixel font-bold"
+                style={{ color }}
+              >
+                {speech.speaker}
+              </span>
+              <p
+                className="text-text-light/85 text-[8px] font-pixel leading-relaxed pl-1.5"
+                style={{ borderLeft: `2px solid ${color}25` }}
+              >
+                {speech.content}
+              </p>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ── Main split view: campfire + 1v1s ──
 export const SplitChatView: React.FC = () => {
   const speeches = useGameStore((s) => s.speeches)
   const houseVisits = useGameStore((s) => s.houseVisits)
 
   const hasVisits = houseVisits.length > 0
 
-  // If no 1v1s, show full-width campfire chat
   if (!hasVisits) {
     return (
-      <div className="fixed right-0 top-12 bottom-16 w-[300px] z-30 flex flex-col">
+      <div className="fixed right-0 top-12 bottom-16 w-[300px] z-30 flex flex-col p-1.5">
         <ChatPanel
           title="Ates Basi"
           titleColor="#DAA520"
           speeches={speeches}
-          icon="🔥"
+          icon="\uD83D\uDD25"
         />
       </div>
     )
   }
 
-  // Split layout: campfire left panel + 1v1s right panel
   return (
-    <div className="fixed right-0 top-12 bottom-16 z-30 flex gap-1" style={{ width: '580px' }}>
-      {/* Campfire chat — left column */}
+    <div className="fixed right-0 top-12 bottom-16 z-30 flex gap-1.5 p-1.5" style={{ width: '580px' }}>
       <div className="flex flex-col w-[280px] min-h-0">
         <ChatPanel
           title="Ates Basi"
           titleColor="#DAA520"
           speeches={speeches}
-          icon="🔥"
+          icon="\uD83D\uDD25"
         />
       </div>
 
-      {/* 1v1 visits — right column, stacked */}
-      <div className="flex flex-col w-[280px] gap-1 min-h-0">
+      <div className="flex flex-col w-[280px] gap-1.5 min-h-0">
         {houseVisits.map((visit) => (
           <ChatPanel
             key={visit.visit_id}
-            title={`${visit.visitor} → ${visit.host}`}
+            title={`${visit.visitor} \u2192 ${visit.host}`}
             titleColor="#C2B280"
             speeches={visit.speeches}
-            icon="🏠"
+            icon="\uD83C\uDFE0"
           />
         ))}
       </div>
