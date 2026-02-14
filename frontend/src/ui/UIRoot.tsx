@@ -19,6 +19,7 @@ import TransitionOverlay from './TransitionOverlay'
 import PlayerCardOverlay from './PlayerCardOverlay'
 import PixelButton from './PixelButton'
 import { EventCard } from './EventCard'
+import ActiveConditionsPanel from './ActiveConditionsPanel'
 
 // ── Lobby UI (inline) ──
 const LobbyUI: React.FC = () => {
@@ -565,6 +566,9 @@ export const UIRoot: React.FC = () => {
       <div className="pointer-events-auto">
         <PlayerCardOverlay />
       </div>
+
+      {/* Active world conditions panel (Living Event System) */}
+      <ActiveConditionsPanel />
 
       {/* Event card modal (critical events) */}
       <div className="pointer-events-auto">

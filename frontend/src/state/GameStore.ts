@@ -3,6 +3,7 @@ import type {
   Phase, Player, Omen, Speech, LocationDecision, HouseVisit,
   ExileResult, NightResult, SpotlightCard, Sinama, OcakTepki,
   Proposal, SozBorcu, UIObject, InputAction, GameOverData, EventCard, ActiveEffect,
+  WorldEvent,
 } from './types'
 import { audioQueue } from '../audio/AudioQueue'
 
@@ -55,6 +56,7 @@ export interface GameStore {
   transitioning: boolean
   showParchment: boolean
   eventCard: EventCard | null  // Critical event display
+  activeWorldEvents: WorldEvent[]  // Living Event System
 
   // Actions
   setConnection: (gameId: string, playerId: string) => void
@@ -86,6 +88,7 @@ export interface GameStore {
   setShowParchment: (show: boolean) => void
   setRound: (round: number) => void
   setEventCard: (card: EventCard | null) => void
+  setActiveWorldEvents: (events: WorldEvent[]) => void
   addPlayerEffect: (playerName: string, effect: ActiveEffect) => void
   removePlayerEffect: (playerName: string, effectId: string) => void
   clearPlayerEffects: (playerName: string) => void
@@ -130,6 +133,7 @@ const initialState = {
   transitioning: false,
   showParchment: false,
   eventCard: null,
+  activeWorldEvents: [],
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -184,6 +188,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setRound: (round) => set({ round }),
   
   setEventCard: (card) => set({ eventCard: card }),
+  
+  setActiveWorldEvents: (events) => set({ activeWorldEvents: events }),
   
   addPlayerEffect: (playerName, effect) => {
     set((state) => ({
@@ -395,6 +401,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         setTimeout(() => set({ notification: null }), 6000)
         break
 
+      case 'world_events_update': {
+        const events = (data.active_events as WorldEvent[]) ?? []
+        store.setActiveWorldEvents(events)
+        break
+      }
+
       case 'sinama_echo':
         store.addSpeech({
           speaker: 'Sınama',
@@ -460,10 +472,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         store.addVote(data.voter as string, data.target as string)
         break
 
-      case 'exile':
+      case 'exile': {
+        const exiledName = (data.exiled as string) ?? ''
+        
         set({
           exileResult: {
-            exiled: (data.exiled as string) ?? '',
+            exiled: exiledName,
             active_players: (data.active_players as string[]) ?? [],
             exiled_type: (data.exiled_type as string) ?? '',
             exiled_role: (data.exiled_role as string) ?? '',
@@ -471,7 +485,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
           votes: (data.votes as Record<string, string>) ?? store.votes,
           phase: 'exile',
         })
+        
+        // ── Lifecycle Cleanup: Elenen oyuncuya ait etkileri temizle ──
+        if (exiledName) {
+          // Oyuncunun kendi etkilerini temizle
+          store.clearPlayerEffects(exiledName)
+          
+          // UI objelerini temizle (owner veya target bu oyuncu olanlar)
+          set((state) => ({
+            uiObjects: Object.fromEntries(
+              Object.entries(state.uiObjects).filter(
+                ([_, obj]) => {
+                  const objData = obj as Record<string, unknown>
+                  return objData.owner_id !== exiledName && objData.target_id !== exiledName
+                }
+              )
+            ),
+          }))
+          
+          console.log(`[Cleanup] ${exiledName} için UI cleanup tamamlandı`)
+        }
         break
+      }
 
       case 'game_over':
         set({
@@ -482,6 +517,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
           phase: 'game_over',
         })
         break
+      
+      case 'remove_ui_object': {
+        const objectId = data.object_id as string
+        const reason = data.reason as string
+        
+        if (objectId) {
+          set((state) => {
+            const newUiObjects = { ...state.uiObjects }
+            delete newUiObjects[objectId]
+            return { uiObjects: newUiObjects }
+          })
+          
+          console.log(`[Cleanup] UI object removed: ${objectId} (${reason})`)
+        }
+        break
+      }
 
       case 'speech_audio': {
         const audioUrl = data.audio_url as string

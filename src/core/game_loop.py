@@ -243,6 +243,9 @@ async def _game_loop_runner(game_id: str, state: Any):
             generate_spotlight_cards, generate_sinama_event, check_ocak_tepki,
             generate_institution_scene, generate_public_mini_event,
             generate_private_mini_event,
+            cleanup_expired_effects,  # Lifecycle cleanup
+            cleanup_expired_world_events,  # Living event system cleanup
+            add_world_event,  # Living event system
             # Katman 3
             generate_night_move, generate_omen_vote,
             resolve_night_phase, resolve_omen_choice,
@@ -352,6 +355,41 @@ async def _game_loop_runner(game_id: str, state: Any):
             state["house_visits"] = []
             state["campfire_rolling_summary"] = ""
             state["_summary_cursor"] = 0
+            
+            # ── Lifecycle Cleanup: Süresi dolmuş etkileri temizle ──
+            logger.info(f"[Cleanup] Round {round_n} başlangıcında expired effects temizleniyor...")
+            removed_objects = cleanup_expired_effects(state)
+            
+            # ── Living Event System: süresi dolmuş dünya olaylarını temizle ──
+            expired_world = cleanup_expired_world_events(state)
+            if expired_world > 0:
+                logger.info(f"[WorldEvents] {expired_world} dünya olayı süresi doldu")
+            
+            # Aktif dünya olaylarını frontend'e bildir
+            await manager.broadcast(game_id, {
+                "event": "world_events_update",
+                "data": {
+                    "active_events": state.get("active_world_events", []),
+                    "round": round_n,
+                },
+            })
+            
+            # Temizlenen objeleri frontend'e bildir
+            if removed_objects:
+                for removal in removed_objects:
+                    await manager.broadcast(game_id, {
+                        "event": "remove_ui_object",
+                        "data": removal,
+                    })
+            
+            # Pending removals (exile sırasında eklenenler) varsa gönder
+            pending_removals = state.pop("_pending_removals", [])
+            if pending_removals:
+                for removal in pending_removals:
+                    await manager.broadcast(game_id, {
+                        "event": "remove_ui_object",
+                        "data": removal,
+                    })
 
             # ═══════════════════════════════════════
             # 1. SABAH FAZI
@@ -427,6 +465,17 @@ async def _game_loop_runner(game_id: str, state: Any):
                     await asyncio.sleep(1)
             except Exception as e:
                 logger.warning(f"Mini event generation failed: {e}")
+
+            # ── Living Event System: güncel dünya olaylarını broadcast et ──
+            world_events = state.get("active_world_events", [])
+            if world_events:
+                await manager.broadcast(game_id, {
+                    "event": "world_events_update",
+                    "data": {
+                        "active_events": world_events,
+                        "round": round_n,
+                    },
+                })
 
             # ── SPOTLIGHT KARTLARI (Katman 1) ──
             try:

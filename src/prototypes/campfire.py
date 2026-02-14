@@ -194,11 +194,32 @@ async def orchestrator_pick(state: GameState, reactions: list[dict]) -> tuple[st
     return "NEXT", wanters[0]["name"]
 
 
+# -- Aktif Dünya Olaylari Helper ------------------------------------
+
+def _build_active_events_context(state: GameState) -> str:
+    """Aktif dünya olaylarını prompt-injection formatına çevir."""
+    events = state.get("active_world_events", [])
+    if not events:
+        return ""
+    
+    lines = ["AKTIF DUNYA DURUMU (koyde su olaylar yasaniyor, bunlari konusmana yansit):"]
+    for ev in events:
+        target = ev.get("target_player")
+        target_info = f" (etkilenen: {target})" if target else ""
+        lines.append(f"- {ev['icon']} {ev['name']}: {ev['description'][:120]}{target_info}")
+        if ev.get("mechanical_effect"):
+            lines.append(f"  → Etki: {ev['mechanical_effect']}")
+    
+    lines.append("Bu olaylardan dogrudan veya dolayli bahsedebilirsin. Korku, suphelerinle bagla. Ama ZORUNLU degil — dogal ol.")
+    return "\n".join(lines)
+
+
 # -- Karakter Konusmasi -------------------------------------------
 
 CHARACTER_WRAPPER = """Tartisma fazindasin. Gun {round_number}/{day_limit}.
 Hayattaki kisiler: {alive_names}
 {exiled_context}
+{active_events_context}
 Soz hakki sana geldi.
 
 BU BIR SES OYUNU — YASAKLAR:
@@ -264,6 +285,7 @@ async def character_speak(player: Player, state: GameState) -> str:
         day_limit=state.get("day_limit", 5),
         alive_names=alive_names,
         exiled_context=exiled_context,
+        active_events_context=_build_active_events_context(state),
         history=history_text or "(henuz kimse konusmadi)",
         own_last=own_last,
         name=player.name,

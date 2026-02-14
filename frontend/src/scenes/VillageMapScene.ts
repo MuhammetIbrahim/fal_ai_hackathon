@@ -80,6 +80,10 @@ export class VillageMapScene implements Scene {
   private tepkiTimer = 0
   private lastTepkiId: string | null = null
 
+  // Fade-out tracking for removed effects/players (name → opacity 0-1)
+  private fadingEffects: Map<string, number> = new Map()
+  private exiledPlayers: Set<string> = new Set()
+
   constructor() {
     this.camera = new Camera()
   }
@@ -213,6 +217,24 @@ export class VillageMapScene implements Scene {
         anim.currentY = anim.targetY
       }
     }
+    
+    // ── Track exiled players for fade-out ──
+    const exileResult = store.exileResult
+    if (exileResult?.exiled && !this.exiledPlayers.has(exileResult.exiled)) {
+      this.exiledPlayers.add(exileResult.exiled)
+      this.fadingEffects.set(exileResult.exiled, 1.0) // Start at full opacity
+    }
+    
+    // ── Update fade-out animations (0.5s duration) ──
+    const FADE_SPEED = 2.0 // opacity per second
+    for (const [key, opacity] of this.fadingEffects.entries()) {
+      const newOpacity = Math.max(0, opacity - FADE_SPEED * dt)
+      if (newOpacity <= 0) {
+        this.fadingEffects.delete(key)
+      } else {
+        this.fadingEffects.set(key, newOpacity)
+      }
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
@@ -308,10 +330,17 @@ export class VillageMapScene implements Scene {
       const color = player.color ?? getPlayerColor(i)
       const isMe = player.name === myName
       const half = AVATAR_DISPLAY_SIZE / 2
+      
+      // Check fade-out opacity (for exiled players or effect removal)
+      const fadeOpacity = this.fadingEffects.get(player.name) ?? 1.0
 
       // Load avatar if needed
       const avatarImg = this.avatarImages.get(player.name)
       if (!avatarImg) this.loadAvatar(player.name, player.avatar_url)
+
+      // Apply fade-out opacity
+      ctx.save()
+      ctx.globalAlpha = fadeOpacity
 
       // Gold glow for human player
       if (isMe) {
@@ -457,6 +486,9 @@ export class VillageMapScene implements Scene {
           ctx.restore()
         })
       }
+      
+      // Restore fade-out opacity
+      ctx.restore()
     }
 
     // ── Room activity indicators (speech bubble icon) ──

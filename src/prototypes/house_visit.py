@@ -273,9 +273,28 @@ def match_pairs(requests: list[dict]) -> list[tuple[str, str, str]]:
 #  3. 1v1 KONUSMA
 # ==================================================================
 
+def _build_active_events_context(state: GameState) -> str:
+    """Aktif dünya olaylarını prompt-injection formatına çevir (1v1 versiyonu)."""
+    events = state.get("active_world_events", [])
+    if not events:
+        return ""
+    
+    lines = ["AKTIF DUNYA DURUMU (koyde su olaylar yasaniyor):"]
+    for ev in events:
+        target = ev.get("target_player")
+        target_info = f" (etkilenen: {target})" if target else ""
+        lines.append(f"- {ev['icon']} {ev['name']}: {ev['description'][:120]}{target_info}")
+        if ev.get("mechanical_effect"):
+            lines.append(f"  → Etki: {ev['mechanical_effect']}")
+    
+    lines.append("Bu olaylardan bahsedebilirsin. Ozel gorusmede daha samimi/direkt olabilirsin.")
+    return "\n".join(lines)
+
+
 VISIT_WRAPPER = """Ozel gorusme. Karsinizda: {opponent_name} ({opponent_role}).
 Gun {round_number}/{day_limit}.
 {exiled_context}
+{active_events_context}
 
 BU GIZLI VE BIREBIR BIR GORUSMEDIR:
 - Sadece karsinidaki kisiyle konusuyorsun.
@@ -359,6 +378,7 @@ async def character_speak_1v1(
         round_number=state.get("round_number", 1),
         day_limit=state.get("day_limit", 5),
         exiled_context=exiled_context,
+        active_events_context=_build_active_events_context(state),
         campfire_summary=campfire_summary,
         visit_history=visit_history,
         own_last=own_last,

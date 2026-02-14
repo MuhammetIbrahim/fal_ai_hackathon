@@ -1938,8 +1938,168 @@ async def run_vote(state: GameState, campfire_summary: str) -> str | None:
     return top_vote
 
 
+def cleanup_player_effects(state: GameState, player_name: str) -> list[dict]:
+    """Elenen/ölen oyuncuya ait tüm aktif etkileri ve UI objelerini temizle.
+    
+    Returns:
+        list[dict]: Temizlenen objelerin listesi (frontend'e gönderilmek üzere)
+    """
+    removed_objects = []
+    
+    # 1. Oyuncunun kendi aktif etkilerini temizle
+    player = find_player(state, player_name)
+    if player and hasattr(player, "active_effects"):
+        player.active_effects = []
+    
+    # 2. Diğer oyuncuların üzerindeki, bu oyuncudan kaynaklanan etkileri temizle
+    for p in state.get("players", []):
+        if hasattr(p, "active_effects") and p.active_effects:
+            original_count = len(p.active_effects)
+            p.active_effects = [
+                eff for eff in p.active_effects 
+                if eff.get("source_player") != player_name
+            ]
+            if len(p.active_effects) < original_count:
+                print(f"    → {p.name}'in üzerindeki {player_name} kaynaklı etkiler temizlendi")
+    
+    # 3. UI objelerini temizle (owner veya target bu oyuncu olanlar)
+    ui_objects = state.get("ui_objects", [])
+    remaining_objects = []
+    for obj in ui_objects:
+        if obj.get("owner_id") == player_name or obj.get("target_id") == player_name:
+            removed_objects.append({
+                "object_id": obj.get("id"),
+                "reason": "owner_exiled"
+            })
+            print(f"    → UI objesi temizlendi: {obj.get('name', obj.get('id'))}")
+        else:
+            remaining_objects.append(obj)
+    state["ui_objects"] = remaining_objects
+    
+    return removed_objects
+
+
+def cleanup_expired_effects(state: GameState) -> list[dict]:
+    """Süresi dolmuş etkileri ve geçici objeleri temizle.
+    
+    Her round başında çağrılmalı.
+    
+    Returns:
+        list[dict]: Temizlenen objelerin listesi (frontend'e gönderilmek üzere)
+    """
+    removed_objects = []
+    current_round = state.get("round_number", 1)
+    
+    # 1. Oyuncuların aktif etkilerinden süresi dolmuş olanları kaldır
+    for player in state.get("players", []):
+        if not hasattr(player, "active_effects") or not player.active_effects:
+            continue
+            
+        original_effects = player.active_effects[:]
+        player.active_effects = [
+            eff for eff in player.active_effects
+            if eff.get("duration", 0) > 0
+        ]
+        
+        # Duration'ları azalt
+        for eff in player.active_effects:
+            if "duration" in eff:
+                eff["duration"] -= 1
+        
+        removed_count = len(original_effects) - len(player.active_effects)
+        if removed_count > 0:
+            print(f"    → {player.name}: {removed_count} etki süresi doldu")
+    
+    # 2. UI objelerinden süresi dolmuş olanları kaldır
+    ui_objects = state.get("ui_objects", [])
+    remaining_objects = []
+    for obj in ui_objects:
+        expiry = obj.get("expiry_round")
+        if expiry and expiry <= current_round:
+            removed_objects.append({
+                "object_id": obj.get("id"),
+                "reason": "expired"
+            })
+            print(f"    → UI objesi süresi doldu: {obj.get('name', obj.get('id'))}")
+        elif obj.get("temporary") and obj.get("created_round", 0) < current_round:
+            removed_objects.append({
+                "object_id": obj.get("id"),
+                "reason": "temporary_expired"
+            })
+            print(f"    → Geçici UI objesi temizlendi: {obj.get('name', obj.get('id'))}")
+        else:
+            remaining_objects.append(obj)
+    state["ui_objects"] = remaining_objects
+    
+    return removed_objects
+
+
+def cleanup_expired_world_events(state: GameState) -> int:
+    """Süresi dolmuş dünya olaylarını temizle. Her round başında çağrılmalı.
+    
+    Returns:
+        int: Temizlenen olay sayısı
+    """
+    current_round = state.get("round_number", 1)
+    events = state.get("active_world_events", [])
+    if not events:
+        return 0
+    
+    remaining = []
+    removed_count = 0
+    for ev in events:
+        expiry = ev.get("expiry_round")
+        if expiry and expiry <= current_round:
+            removed_count += 1
+            print(f"    → Dünya olayı süresi doldu: {ev.get('name', ev.get('id'))}")
+        else:
+            remaining.append(ev)
+    
+    state["active_world_events"] = remaining
+    return removed_count
+
+
+def add_world_event(state: GameState, event_type: str, name: str, description: str, 
+                    mechanical_effect: str, icon: str = "⚡", duration: int = 2,
+                    target_player: str | None = None) -> dict:
+    """Aktif dünya olaylarına yeni olay ekle.
+    
+    Args:
+        state: GameState
+        event_type: 'sinama' | 'kriz' | 'mini_event'
+        name: Olay başlığı
+        description: Olay açıklaması
+        mechanical_effect: Mekanik etki açıklaması (karakter davranışına yansıyacak)
+        icon: Emoji ikonu
+        duration: Kaç round sürecek
+        target_player: Etkilenen oyuncu adı (varsa)
+    
+    Returns:
+        dict: Oluşturulan olay
+    """
+    current_round = state.get("round_number", 1)
+    event_id = f"we_{event_type}_{current_round}_{random_module.randint(1000, 9999)}"
+    
+    world_event = {
+        "id": event_id,
+        "event_type": event_type,
+        "name": name,
+        "description": description,
+        "mechanical_effect": mechanical_effect,
+        "icon": icon,
+        "created_round": current_round,
+        "expiry_round": current_round + duration,
+        "target_player": target_player,
+    }
+    
+    state.setdefault("active_world_events", [])
+    state["active_world_events"].append(world_event)
+    print(f"  [WorldEvent] +{name} (round {current_round}→{current_round + duration})")
+    return world_event
+
+
 def exile_player(state: GameState, name: str) -> Player | None:
-    """Oyuncuyu surgun et (alive=False)."""
+    """Oyuncuyu surgun et (alive=False) ve ona bağlı tüm etkileri temizle."""
     player = find_player(state, name)
     if player:
         player.alive = False
@@ -1958,6 +2118,14 @@ def exile_player(state: GameState, name: str) -> Player | None:
         exile_phrase = ws["rituals"]["exile_phrase"] if ws else "Surgun edildi."
         print(f"  {exile_phrase}")
         print(f"  {name} ({player.role_title}) surgun edildi! [{tag}]")
+        
+        # ── Lifecycle cleanup ──
+        print(f"  [Cleanup] {name} için temizlik başlatılıyor...")
+        removed_objects = cleanup_player_effects(state, name)
+        
+        # Frontend'e temizlik bilgisi gönder (eğer WebSocket aktifse)
+        if removed_objects:
+            state.setdefault("_pending_removals", []).extend(removed_objects)
 
     return player
 
@@ -2400,13 +2568,20 @@ async def generate_sinama_event(state: GameState) -> dict | None:
             rng_target = random_module.Random(f"sinama_target_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
             target = rng_target.choice(alive_players)
             
+            effect_id = f"effect_sinama_{sinama_type['id']}_{round_n}_{target.name}"
+            effect_duration = sinama_type.get("effect_duration", 2)
+            
             sinama.update({
+                "effect_id": effect_id,
                 "affected_player": target.name,
                 "effect_type": sinama_type.get("effect_type", "cursed"),
                 "effect_name": sinama_type.get("effect_name", "Sınama Laneti"),
                 "effect_description": sinama_type.get("effect_description", ""),
                 "consequence_text": sinama_type.get("consequence_text", "Sınamadan etkilendiniz"),
-                "duration": sinama_type.get("effect_duration", 2),
+                "duration": effect_duration,
+                "source_player": "sinama",
+                "created_round": round_n,
+                "expiry_round": round_n + effect_duration,
                 "is_critical": sinama_type.get("is_critical", True),
                 "event_title": sinama_type.get("event_title", sinama_type["label"]),
                 "severity": sinama_type.get("severity", "high"),
@@ -2414,6 +2589,21 @@ async def generate_sinama_event(state: GameState) -> dict | None:
 
     state["_sinama"] = sinama
     print(f"  [Sinama] {sinama_type['label']}: {sinama['content'][:60]}...")
+    
+    # ── Living Event System: dünya olayına ekle ──
+    target_name = sinama.get("affected_player")
+    mechanical = sinama_type.get("consequence_text", "Köyü etkileyen bir sınama gerçekleşti")
+    add_world_event(
+        state,
+        event_type="sinama",
+        name=sinama_type["label"],
+        description=sinama["content"],
+        mechanical_effect=mechanical,
+        icon=sinama_type.get("icon", "⚖️"),
+        duration=sinama_type.get("effect_duration", 2),
+        target_player=target_name,
+    )
+    
     return sinama
 
 
@@ -2469,6 +2659,9 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
             t1 = data.get("t1", {})
             if isinstance(t1, dict) and t1.get("contradiction") is True:
                 hint = t1.get("hint", "")
+                round_n = state.get("round_number", 1)
+                effect_id = f"effect_ocak_t1_{round_n}_{speaker_name}"
+                
                 print(f"  [Ocak Tepki] T1 KIVILCIM! {speaker_name}: {hint}")
                 return {
                     "speaker": speaker_name,
@@ -2476,12 +2669,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                     "tier": "T1",
                     "message": "Ocak kisa kivilcim atti; kalabalik huzursuzlandi.",
                     "contradiction_hint": hint,
+                    "effect_id": effect_id,
                     "target_player": speaker_name,
                     "effect_type": "accused",
                     "effect_name": "Şüpheli",
                     "effect_description": "Ocak tepkisi nedeniyle şüphe altında",
                     "consequence_text": "Oylama sırasında daha fazla dikkat çekebilir",
                     "duration": 1,
+                    "source_player": "ocak",
+                    "created_round": round_n,
+                    "expiry_round": round_n + 1,
                     "is_critical": True,
                     "event_title": "Ocak Kıvılcımı",
                     "icon": "🔥",
@@ -2492,9 +2689,11 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
             t2 = data.get("t2", {})
             if isinstance(t2, dict) and t2.get("contradiction") is True:
                 hint = t2.get("hint", "")
+                round_n = state.get("round_number", 1)
                 rng = random_module.Random(f"tepki_{speaker_name}_{len(state['campfire_history'])}")
                 roll = rng.random()
                 if roll < 0.7:
+                    effect_id = f"effect_ocak_t2_{round_n}_{speaker_name}"
                     print(f"  [Ocak Tepki] T2 KIVILCIM! {speaker_name}: {hint}")
                     return {
                         "speaker": speaker_name,
@@ -2502,12 +2701,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                         "tier": "T2",
                         "message": "Ocak'in koru parladi; soylediklerin birbiriyle celisiyor.",
                         "contradiction_hint": hint,
+                        "effect_id": effect_id,
                         "target_player": speaker_name,
                         "effect_type": "marked",
                         "effect_name": "İşaretli",
                         "effect_description": "Kendi sözleriyle çelişti, Ocak işaretledi",
                         "consequence_text": "Diğer oyuncular tarafından hedef olabilir",
                         "duration": 2,
+                        "source_player": "ocak",
+                        "created_round": round_n,
+                        "expiry_round": round_n + 2,
                         "is_critical": True,
                         "event_title": "Öz-Çelişki",
                         "icon": "⚠️",
@@ -2522,6 +2725,7 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                         "question": forced_q,
                         "round": state.get("round_number", 1),
                     })
+                    effect_id = f"effect_kul_{round_n}_{speaker_name}"
                     return {
                         "speaker": speaker_name,
                         "type": "kul_kaymasi",
@@ -2529,12 +2733,16 @@ async def check_ocak_tepki(speaker_name: str, speech: str, state: GameState) -> 
                         "message": "Kuller kaymaya basladi... Ocak sana bir soru soruyor.",
                         "contradiction_hint": hint,
                         "forced_question": forced_q,
+                        "effect_id": effect_id,
                         "target_player": speaker_name,
                         "effect_type": "silenced",
                         "effect_name": "Ocak Sorusu",
                         "effect_description": "Ocak tarafından sorgulanıyor",
                         "consequence_text": "Zorunlu olarak cevap vermeli",
                         "duration": 1,
+                        "source_player": "ocak",
+                        "created_round": round_n,
+                        "expiry_round": round_n + 1,
                         "is_critical": True,
                         "event_title": "Kül Kayması",
                         "icon": "🔥",
@@ -2718,13 +2926,20 @@ async def generate_public_mini_event(state: GameState) -> dict | None:
             rng = random_module.Random(f"mini_target_{state.get('world_seed', {}).get('seed', '')}_{round_n}")
             target = rng.choice(alive_players)
             
+            # Generate unique effect ID
+            effect_id = f"effect_mini_{template['id']}_{round_n}_{target.name}"
+            
             mini_event.update({
+                "effect_id": effect_id,
                 "target_player": target.name,
                 "effect_type": template.get("effect_type", "marked"),
                 "effect_name": template.get("effect_name", "Olay Etkisi"),
                 "effect_description": template.get("effect_description", ""),
                 "consequence_text": template.get("consequence_text", "Bir sonraki gün etkilenecek"),
                 "duration": template.get("effect_duration", 1),
+                "source_player": "mini_event",  # System kaynaklı
+                "created_round": round_n,
+                "expiry_round": round_n + template.get("effect_duration", 1),
                 "is_critical": template.get("is_critical", False),
                 "event_title": template.get("event_title", "Önemli Olay"),
                 "icon": template.get("icon", "⚡"),
@@ -2733,6 +2948,20 @@ async def generate_public_mini_event(state: GameState) -> dict | None:
     
     state["_mini_events"].append(mini_event)
     print(f"  [Mini Event] Kamu: {template['id']}: {mini_event['content'][:60]}...")
+    
+    # ── Living Event System: dünya olayına ekle ──
+    target_name = mini_event.get("target_player")
+    add_world_event(
+        state,
+        event_type="mini_event",
+        name=template.get("event_title", "Garip Olay"),
+        description=mini_event["content"],
+        mechanical_effect=template.get("consequence_text", "Köyde tuhaf bir olay yaşandı"),
+        icon=template.get("icon", "⚡"),
+        duration=template.get("effect_duration", 1),
+        target_player=target_name,
+    )
+    
     return mini_event
 
 
@@ -3182,6 +3411,19 @@ async def generate_morning_crisis(state: GameState) -> dict | None:
 
         state["_morning_crisis"] = crisis
         print(f"  [Kriz] {crisis.get('crisis_text', '')[:80]}...")
+        
+        # ── Living Event System: dünya olayına ekle ──
+        crisis_text = crisis.get("crisis_text", "Bilinmeyen kriz")
+        add_world_event(
+            state,
+            event_type="kriz",
+            name="Sabah Krizi",
+            description=crisis_text,
+            mechanical_effect=crisis.get("public_question", "Köyde panik ve huzursuzluk hakim"),
+            icon="🔥",
+            duration=1,  # krizler genelde 1 round sürer
+        )
+        
         return crisis
 
     except Exception as e:

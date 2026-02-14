@@ -101,6 +101,8 @@ class GameState(TypedDict, total=False):
     cumulative_summary: str         # cross-round kumulatif ozet
     # Visual assets
     scene_backgrounds: dict         # key → URL (campfire, village, house_interior, night)
+    # Living event system
+    active_world_events: list       # aktif dünya olayları [{id, name, description, mechanical_effect, event_type, icon, created_round, expiry_round}]
 
 
 # ── Helper'lar ────────────────────────────────────────────

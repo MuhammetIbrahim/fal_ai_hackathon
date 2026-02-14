@@ -180,6 +180,19 @@ export interface NightMove {
   icon?: string
 }
 
+// ── World Event (Living Event System) ──
+export interface WorldEvent {
+  id: string
+  event_type: 'sinama' | 'kriz' | 'mini_event'
+  name: string
+  description: string
+  mechanical_effect: string
+  icon: string
+  created_round: number
+  expiry_round: number
+  target_player?: string
+}
+
 // ── WS Event ──
 export interface WSEvent {
   event: string
