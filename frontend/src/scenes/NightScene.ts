@@ -5,6 +5,7 @@
 
 import type { Scene } from './SceneManager'
 import { Camera } from '../engine/Camera'
+import { useGameStore } from '../state/GameStore'
 import { COLORS, SCALED_TILE, BUILDING_POSITIONS, BUILDING, MAP_COLS, MAP_ROWS } from '../utils/constants'
 import { rgba, randFloat, randInt, clamp } from '../utils/helpers'
 
@@ -58,6 +59,14 @@ export class NightScene implements Scene {
   private campfireX = 0
   private campfireY = 0
 
+  // Avatar images
+  private avatarImages = new Map<string, HTMLImageElement>()
+  private avatarLoadingSet = new Set<string>()
+
+  // Background image
+  private backgroundImage: HTMLImageElement | null = null
+  private backgroundLoading = false
+
   constructor() {
     this.camera = new Camera()
   }
@@ -75,6 +84,19 @@ export class NightScene implements Scene {
     this.camera.setScale(0.8)
     this.camera.follow(this.campfireX, this.campfireY)
     this.camera.snapToTarget()
+
+    // Load background and avatars
+    const state = useGameStore.getState()
+    const bgUrl = state.sceneBackgrounds?.night
+    if (bgUrl && !this.backgroundLoading) {
+      this.loadBackground(bgUrl)
+    }
+
+    for (const player of state.players) {
+      if (player.avatar_url) {
+        this.loadAvatar(player.name, player.avatar_url)
+      }
+    }
 
     // Generate stars
     this.stars = []
@@ -186,11 +208,13 @@ export class NightScene implements Scene {
     ctx.scale(this.camera.scale, this.camera.scale)
     ctx.translate(-this.camera.x, -this.camera.y)
 
-    // Draw simplified dark tile map
-    this.drawDarkTileMap(ctx)
-
-    // Draw buildings (dark silhouettes)
-    this.drawDarkBuildings(ctx)
+    // Draw background or dark tile map
+    if (this.backgroundImage) {
+      this.drawBackground(ctx)
+    } else {
+      this.drawDarkTileMap(ctx)
+      this.drawDarkBuildings(ctx)
+    }
 
     // ── Faint campfire glow ──
     const glowR = 100 + Math.sin(this.time * 1.5) * 15
@@ -351,5 +375,46 @@ export class NightScene implements Scene {
       ctx.lineWidth = 2
       ctx.strokeRect(bx, by, bw, bh)
     }
+  }
+
+  private drawBackground(ctx: CanvasRenderingContext2D): void {
+    if (!this.backgroundImage) return
+    const imgW = this.backgroundImage.width
+    const imgH = this.backgroundImage.height
+    const tilePixels = SCALED_TILE
+    const worldW = 40 * tilePixels
+    const worldH = 30 * tilePixels
+    const scale = Math.max(worldW / imgW, worldH / imgH)
+    const drawW = imgW * scale
+    const drawH = imgH * scale
+    ctx.drawImage(this.backgroundImage, 0, 0, drawW, drawH)
+  }
+
+  private loadAvatar(name: string, url?: string): void {
+    if (!url || this.avatarLoadingSet.has(name)) return
+    this.avatarLoadingSet.add(name)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.avatarImages.set(name, img)
+    }
+    img.onerror = () => {
+      this.avatarLoadingSet.delete(name)
+    }
+    img.src = url
+  }
+
+  private loadBackground(url: string): void {
+    this.backgroundLoading = true
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.backgroundImage = img
+      this.backgroundLoading = false
+    }
+    img.onerror = () => {
+      this.backgroundLoading = false
+    }
+    img.src = url
   }
 }

@@ -64,6 +64,14 @@ export class ExileScene implements Scene {
   // Fire particles
   private fireParticles: FireParticle[] = []
 
+  // Avatar images
+  private avatarImages = new Map<string, HTMLImageElement>()
+  private avatarLoadingSet = new Set<string>()
+
+  // Background image
+  private backgroundImage: HTMLImageElement | null = null
+  private backgroundLoading = false
+
   constructor() {
     this.camera = new Camera()
   }
@@ -87,6 +95,19 @@ export class ExileScene implements Scene {
     const state = useGameStore.getState()
     const exileResult = state.exileResult
     const players = state.players
+
+    // Load background
+    const bgUrl = state.sceneBackgrounds?.night || state.sceneBackgrounds?.campfire
+    if (bgUrl && !this.backgroundLoading) {
+      this.loadBackground(bgUrl)
+    }
+
+    // Load avatars for all players
+    for (const player of players) {
+      if (player.avatar_url) {
+        this.loadAvatar(player.name, player.avatar_url)
+      }
+    }
 
     if (exileResult) {
       const exiledPlayer = players.find(
@@ -140,6 +161,7 @@ export class ExileScene implements Scene {
   exit(): void {
     this.fireParticles = []
     this.watcherPositions = []
+    // Keep avatars and background cached for performance
   }
 
   update(dt: number): void {
@@ -199,8 +221,12 @@ export class ExileScene implements Scene {
     ctx.scale(this.camera.scale, this.camera.scale)
     ctx.translate(-this.camera.x, -this.camera.y)
 
-    // ── Simplified tile map ──
-    this.drawTileMap(ctx)
+    // ── Background or tile map ──
+    if (this.backgroundImage) {
+      this.drawBackground(ctx)
+    } else {
+      this.drawTileMap(ctx)
+    }
 
     // ── Campfire glow ──
     const glowR = 120 + Math.sin(this.time * 2) * 10
@@ -245,15 +271,22 @@ export class ExileScene implements Scene {
           ? ddx > 0 ? 'right' : 'left'
           : ddy > 0 ? 'down' : 'up'
 
-      SpriteSheet.drawPlaceholderCharacter(
-        ctx,
-        wp.x - CHAR_SCALED / 2,
-        wp.y - CHAR_SCALED / 2,
-        color,
-        dir,
-        0,
-        player.alive,
-      )
+      const avatarImg = this.avatarImages.get(player.name)
+      if (avatarImg) {
+        // Draw avatar as circular character
+        this.drawAvatarCharacter(ctx, wp.x, wp.y, avatarImg, color, player.alive)
+      } else {
+        // Fallback to placeholder
+        SpriteSheet.drawPlaceholderCharacter(
+          ctx,
+          wp.x - CHAR_SCALED / 2,
+          wp.y - CHAR_SCALED / 2,
+          color,
+          dir,
+          0,
+          player.alive,
+        )
+      }
     }
 
     // ── Draw exiled character (walking away) ──
@@ -263,15 +296,21 @@ export class ExileScene implements Scene {
     // Fade out exile character as they walk into fog
     ctx.save()
     ctx.globalAlpha = 1 - progress * 0.7
-    SpriteSheet.drawPlaceholderCharacter(
-      ctx,
-      this.exileX - CHAR_SCALED / 2,
-      this.exileY - CHAR_SCALED / 2,
-      this.exileColor,
-      this.exileDir,
-      animFrame,
-      true, // still drawn as alive (walking away)
-    )
+    
+    const exileAvatarImg = this.avatarImages.get(this.exileName)
+    if (exileAvatarImg) {
+      this.drawAvatarCharacter(ctx, this.exileX, this.exileY, exileAvatarImg, this.exileColor, true)
+    } else {
+      SpriteSheet.drawPlaceholderCharacter(
+        ctx,
+        this.exileX - CHAR_SCALED / 2,
+        this.exileY - CHAR_SCALED / 2,
+        this.exileColor,
+        this.exileDir,
+        animFrame,
+        true, // still drawn as alive (walking away)
+      )
+    }
 
     // Exile name tag (more prominent)
     ctx.fillStyle = COLORS.ACCENT_RED
@@ -379,5 +418,85 @@ export class ExileScene implements Scene {
         ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
       }
     }
+  }
+
+  private drawBackground(ctx: CanvasRenderingContext2D): void {
+    if (!this.backgroundImage) return
+    const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
+    const imgW = this.backgroundImage.width
+    const imgH = this.backgroundImage.height
+    const tilePixels = SCALED_TILE
+    const worldW = 40 * tilePixels
+    const worldH = 30 * tilePixels
+    const scale = Math.max(worldW / imgW, worldH / imgH)
+    const drawW = imgW * scale
+    const drawH = imgH * scale
+    ctx.drawImage(this.backgroundImage, 0, 0, drawW, drawH)
+  }
+
+  private drawAvatarCharacter(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    img: HTMLImageElement,
+    color: string,
+    alive: boolean,
+  ): void {
+    const size = CHAR_SCALED
+    const half = size / 2
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(x, y, half, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.drawImage(img, x - half, y - half, size, size)
+    ctx.restore()
+
+    // Border
+    ctx.save()
+    ctx.strokeStyle = color
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(x, y, half, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.restore()
+
+    // Dead overlay
+    if (!alive) {
+      ctx.save()
+      ctx.globalAlpha = 0.5
+      ctx.fillStyle = '#000'
+      ctx.beginPath()
+      ctx.arc(x, y, half, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+
+  private loadAvatar(name: string, url?: string): void {
+    if (!url || this.avatarLoadingSet.has(name)) return
+    this.avatarLoadingSet.add(name)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.avatarImages.set(name, img)
+    }
+    img.onerror = () => {
+      this.avatarLoadingSet.delete(name)
+    }
+    img.src = url
+  }
+
+  private loadBackground(url: string): void {
+    this.backgroundLoading = true
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.backgroundImage = img
+      this.backgroundLoading = false
+    }
+    img.onerror = () => {
+      this.backgroundLoading = false
+    }
+    img.src = url
   }
 }

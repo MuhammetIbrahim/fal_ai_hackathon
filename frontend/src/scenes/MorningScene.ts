@@ -5,6 +5,7 @@
 
 import type { Scene } from './SceneManager'
 import { Camera } from '../engine/Camera'
+import { useGameStore } from '../state/GameStore'
 import { COLORS, SCALED_TILE, BUILDING_POSITIONS, BUILDING, TILE, MAP_COLS, MAP_ROWS } from '../utils/constants'
 import { rgba, randFloat, tileToPixel, lerp, clamp } from '../utils/helpers'
 
@@ -47,6 +48,14 @@ export class MorningScene implements Scene {
   private campfireX = 0
   private campfireY = 0
 
+  // Avatar images
+  private avatarImages = new Map<string, HTMLImageElement>()
+  private avatarLoadingSet = new Set<string>()
+
+  // Background image
+  private backgroundImage: HTMLImageElement | null = null
+  private backgroundLoading = false
+
   constructor() {
     this.camera = new Camera()
   }
@@ -66,6 +75,19 @@ export class MorningScene implements Scene {
     this.camera.setScale(0.6)
     this.camera.follow(this.campfireX, this.campfireY)
     this.camera.snapToTarget()
+
+    // Load background and avatars
+    const state = useGameStore.getState()
+    const bgUrl = state.sceneBackgrounds?.village || state.sceneBackgrounds?.campfire
+    if (bgUrl && !this.backgroundLoading) {
+      this.loadBackground(bgUrl)
+    }
+
+    for (const player of state.players) {
+      if (player.avatar_url) {
+        this.loadAvatar(player.name, player.avatar_url)
+      }
+    }
 
     // Pre-fill fire particles
     for (let i = 0; i < MAX_FIRE; i++) {
@@ -142,11 +164,13 @@ export class MorningScene implements Scene {
     ctx.scale(this.camera.scale, this.camera.scale)
     ctx.translate(-this.camera.x, -this.camera.y)
 
-    // ── Draw tile map (simplified placeholder grid) ──
-    this.drawTileMap(ctx)
-
-    // ── Draw buildings ──
-    this.drawBuildings(ctx)
+    // ── Background or tile map ──
+    if (this.backgroundImage) {
+      this.drawBackground(ctx)
+    } else {
+      this.drawTileMap(ctx)
+      this.drawBuildings(ctx)
+    }
 
     // ── Fire glow on ground ──
     const glowR = 140 + Math.sin(this.time * 2) * 20
@@ -272,5 +296,46 @@ export class MorningScene implements Scene {
       ctx.textBaseline = 'bottom'
       ctx.fillText(b.label, bx + bw / 2, by - 4)
     }
+  }
+
+  private drawBackground(ctx: CanvasRenderingContext2D): void {
+    if (!this.backgroundImage) return
+    const imgW = this.backgroundImage.width
+    const imgH = this.backgroundImage.height
+    const tilePixels = SCALED_TILE
+    const worldW = 40 * tilePixels
+    const worldH = 30 * tilePixels
+    const scale = Math.max(worldW / imgW, worldH / imgH)
+    const drawW = imgW * scale
+    const drawH = imgH * scale
+    ctx.drawImage(this.backgroundImage, 0, 0, drawW, drawH)
+  }
+
+  private loadAvatar(name: string, url?: string): void {
+    if (!url || this.avatarLoadingSet.has(name)) return
+    this.avatarLoadingSet.add(name)
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.avatarImages.set(name, img)
+    }
+    img.onerror = () => {
+      this.avatarLoadingSet.delete(name)
+    }
+    img.src = url
+  }
+
+  private loadBackground(url: string): void {
+    this.backgroundLoading = true
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      this.backgroundImage = img
+      this.backgroundLoading = false
+    }
+    img.onerror = () => {
+      this.backgroundLoading = false
+    }
+    img.src = url
   }
 }
