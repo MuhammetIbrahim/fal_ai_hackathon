@@ -23,6 +23,10 @@ export class HouseScene implements Scene {
   private visitorColor: string = COLORS.TEXT_LIGHT
   private hostName = ''
   private visitorName = ''
+  
+  // Background image
+  private bgImage: HTMLImageElement | null = null
+  private bgImageUrl: string | null = null
 
   enter(): void {
     this.time = 0
@@ -58,22 +62,44 @@ export class HouseScene implements Scene {
     const w = ctx.canvas.width
     const h = ctx.canvas.height
 
-    // ── Room background ──
-    // Wall (top portion)
-    ctx.fillStyle = WALL_COLOR
-    ctx.fillRect(0, 0, w, h * 0.45)
+    // Load background if available
+    const bgUrl = useGameStore.getState().sceneBackgrounds?.house_interior
+    if (bgUrl && bgUrl !== this.bgImageUrl) {
+      this.bgImageUrl = bgUrl
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => { this.bgImage = img }
+      img.src = bgUrl
+    }
 
-    // Wall top accent
-    ctx.fillStyle = WALL_TOP_COLOR
-    ctx.fillRect(0, 0, w, 20)
+    if (this.bgImage) {
+      // Draw AI-generated interior background
+      const imgW = this.bgImage.width
+      const imgH = this.bgImage.height
+      const scale = Math.max(w / imgW, h / imgH)
+      const drawW = imgW * scale
+      const drawH = imgH * scale
+      const offsetX = (w - drawW) / 2
+      const offsetY = (h - drawH) / 2
+      ctx.drawImage(this.bgImage, offsetX, offsetY, drawW, drawH)
+    } else {
+      // Fallback: Hand-drawn room
+      // Wall (top portion)
+      ctx.fillStyle = WALL_COLOR
+      ctx.fillRect(0, 0, w, h * 0.45)
 
-    // Wall decorative line
-    ctx.fillStyle = rgba(COLORS.TEXT_GOLD, 0.15)
-    ctx.fillRect(0, h * 0.45 - 4, w, 4)
+      // Wall top accent
+      ctx.fillStyle = WALL_TOP_COLOR
+      ctx.fillRect(0, 0, w, 20)
 
-    // Floor (bottom portion)
-    ctx.fillStyle = FLOOR_COLOR
-    ctx.fillRect(0, h * 0.45, w, h * 0.55)
+      // Wall decorative line
+      ctx.fillStyle = rgba(COLORS.TEXT_GOLD, 0.15)
+      ctx.fillRect(0, h * 0.45 - 4, w, 4)
+
+      // Floor (bottom portion)
+      ctx.fillStyle = FLOOR_COLOR
+      ctx.fillRect(0, h * 0.45, w, h * 0.55)
+    }
 
     // Draw floor planks
     ctx.strokeStyle = rgba('#000000', 0.1)
@@ -164,6 +190,21 @@ export class HouseScene implements Scene {
     ctx.font = '12px monospace'
     ctx.fillText('Ziyaretci', visitorX + PORTRAIT_SIZE / 2, visitorY + PORTRAIT_SIZE + 30)
 
+    // ── Flickering candle light overlay ──
+    const candleFlicker = 0.08 + Math.sin(this.time * 7) * 0.03
+    const candleGlow = ctx.createRadialGradient(
+      w / 2, h * 0.55 - 20, 10,
+      w / 2, h * 0.55 - 20, 200
+    )
+    candleGlow.addColorStop(0, rgba(COLORS.FIRE_YELLOW, candleFlicker * 0.4))
+    candleGlow.addColorStop(0.5, rgba(COLORS.FIRE_ORANGE, candleFlicker * 0.15))
+    candleGlow.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.fillStyle = candleGlow
+    ctx.fillRect(0, 0, w, h)
+    ctx.restore()
+
     // ── Warm interior lighting overlay ──
     ctx.save()
     ctx.fillStyle = rgba(COLORS.FIRE_ORANGE, 0.04 + Math.sin(this.time * 1.2) * 0.01)
@@ -203,12 +244,31 @@ export class HouseScene implements Scene {
     ctx.restore()
   }
 
-  /** Draw a subtle vignette (dark edges) */
+  /** Draw enhanced vignette with film grain */
   private drawVignette(ctx: CanvasRenderingContext2D, w: number, h: number): void {
-    const gradient = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.8)
+    // Stronger vignette for intimate atmosphere
+    const gradient = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.15,
+      w / 2, h / 2, Math.max(w, h) * 0.6
+    )
     gradient.addColorStop(0, 'rgba(0,0,0,0)')
-    gradient.addColorStop(1, rgba('#000000', 0.3))
+    gradient.addColorStop(0.7, rgba(COLORS.BG_DARK, 0.3))
+    gradient.addColorStop(1, rgba(COLORS.BG_DARK, 0.6))
     ctx.fillStyle = gradient
     ctx.fillRect(0, 0, w, h)
+    
+    // Subtle film grain
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const data = imageData.data
+    const grainIntensity = 0.025
+    
+    for (let i = 0; i < data.length; i += 16) {
+      const noise = (Math.random() - 0.5) * 255 * grainIntensity
+      data[i] += noise
+      data[i + 1] += noise
+      data[i + 2] += noise
+    }
+    
+    ctx.putImageData(imageData, 0, 0)
   }
 }

@@ -499,25 +499,35 @@ export class VillageMapScene implements Scene {
     }
 
     if (this.bgImage) {
-      // Draw background image covering the village area
-      const size = (HOUSE_RADIUS + HOUSE_SIZE) * 2 + 100
-      const ox = VILLAGE_CENTER.x - size / 2
-      const oy = VILLAGE_CENTER.y - size / 2
-      ctx.globalAlpha = 0.4
-      ctx.drawImage(this.bgImage, ox, oy, size, size)
-      ctx.globalAlpha = 1.0
-    }
-
-    // Draw visible tiles as grass (on top of or without bg)
-    const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
-    for (let row = minRow; row <= maxRow; row++) {
-      for (let col = minCol; col <= maxCol; col++) {
-        const x = col * SCALED_TILE
-        const y = row * SCALED_TILE
-        ctx.fillStyle = this.bgImage ? rgba(COLORS.GRASS, 0.3) : COLORS.GRASS
-        ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
-        ctx.strokeStyle = rgba('#000000', 0.04)
-        ctx.strokeRect(x, y, SCALED_TILE, SCALED_TILE)
+      // Draw background image covering the entire visible area
+      const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
+      const worldX = minCol * SCALED_TILE
+      const worldY = minRow * SCALED_TILE
+      const worldW = (maxCol - minCol + 1) * SCALED_TILE
+      const worldH = (maxRow - minRow + 1) * SCALED_TILE
+      
+      // Scale background to cover world
+      const imgW = this.bgImage.width
+      const imgH = this.bgImage.height
+      const scale = Math.max(worldW / imgW, worldH / imgH) * 1.2
+      const drawW = imgW * scale
+      const drawH = imgH * scale
+      const offsetX = (worldW - drawW) / 2
+      const offsetY = (worldH - drawH) / 2
+      
+      ctx.drawImage(this.bgImage, worldX + offsetX, worldY + offsetY, drawW, drawH)
+    } else {
+      // Fallback: Draw visible tiles as grass
+      const { minCol, maxCol, minRow, maxRow } = this.camera.getVisibleTileRange()
+      for (let row = minRow; row <= maxRow; row++) {
+        for (let col = minCol; col <= maxCol; col++) {
+          const x = col * SCALED_TILE
+          const y = row * SCALED_TILE
+          ctx.fillStyle = COLORS.GRASS
+          ctx.fillRect(x, y, SCALED_TILE, SCALED_TILE)
+          ctx.strokeStyle = rgba('#000000', 0.04)
+          ctx.strokeRect(x, y, SCALED_TILE, SCALED_TILE)
+        }
       }
     }
   }

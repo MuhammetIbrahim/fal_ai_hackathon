@@ -104,24 +104,44 @@ async def generate_scene_backgrounds(world_seed: WorldSeed) -> dict[str, str | N
     tone = world_seed.tone
     season = world_seed.season
 
+    # Common style keywords for consistency across all scenes
+    style_base = (
+        "hyper-detailed dark fantasy pixel art, atmospheric lighting, "
+        "cinematic composition, hand-painted textures, high contrast, "
+        "volumetric fog, masterpiece quality, 16-bit inspired"
+    )
+
     prompts = {
         "campfire": (
-            f"Dark fantasy campfire scene at night, {settlement} village, "
-            f"{tone} atmosphere, {season} season, medieval setting, "
-            f"warm fire glow, surrounding stone circle, pixel art style, wide shot"
+            f"Dark fantasy campfire scene at night in {settlement} village, "
+            f"{tone} atmosphere, {season} season, medieval Ottoman Anatolian setting, "
+            f"warm crackling fire glow with dancing embers, ancient stone circle, "
+            f"dramatic shadows cast by flames, smoke wisps rising into starlit sky, "
+            f"{style_base}, wide establishing shot"
         ),
         "village": (
-            f"2D isometric village map, {settlement}, medieval dark fantasy, "
-            f"{season} season, {tone} atmosphere, 6 small houses around a central fire, "
-            f"dirt paths, pixel art style, top-down view"
+            f"2D isometric top-down aerial view of {settlement} village, "
+            f"medieval dark fantasy Ottoman Anatolian settlement, {season} season, "
+            f"{tone} atmosphere, 6 weathered timber houses arranged in circle around central bonfire, "
+            f"worn dirt paths connecting buildings, ancient architecture with wooden beams, "
+            f"high-angle bird's eye perspective, detailed rooftops and courtyards, "
+            f"{style_base}"
         ),
         "house_interior": (
-            f"Interior of medieval house, warm candlelight, dark fantasy, "
-            f"wooden furniture, stone walls, {tone} atmosphere, pixel art style"
+            f"Interior of medieval Ottoman Anatolian house, "
+            f"warm candle-lit atmosphere with deep shadows, cozy fireplace glow, "
+            f"dark fantasy aesthetic, rustic wooden furniture and hand-woven carpets, "
+            f"weathered stone walls with cracks showing age, copper lanterns casting flickering light, "
+            f"intimate perspective from guest viewpoint, {tone} mood, "
+            f"{style_base}"
         ),
         "night": (
-            f"Night scene of {settlement} village, moonlit, {tone} atmosphere, "
-            f"{season} season, dark fantasy medieval, eerie fog, pixel art style"
+            f"Night scene of {settlement} village under pale moonlight, "
+            f"{tone} and eerie atmosphere, {season} season, "
+            f"dark fantasy medieval Ottoman Anatolian setting, thick rolling fog between buildings, "
+            f"mysterious silhouettes, distant campfire glow barely visible, "
+            f"stars visible through mist, ominous yet beautiful, "
+            f"{style_base}"
         ),
     }
 

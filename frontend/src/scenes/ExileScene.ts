@@ -338,6 +338,9 @@ export class ExileScene implements Scene {
       ctx.fillRect(0, 0, w, h)
     }
 
+    // ── Vignette and film grain ──
+    this.drawPostEffects(ctx, w, h)
+
     // ── "SÜRGÜN" title and dramatic reveal ──
     ctx.save()
     const titleAlpha = clamp(this.time / 1.5, 0, 0.9)
@@ -498,5 +501,33 @@ export class ExileScene implements Scene {
       this.backgroundLoading = false
     }
     img.src = url
+  }
+
+  /** Post-processing: vignette and film grain */
+  private drawPostEffects(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    // Vignette (dark edges for dramatic effect)
+    const vignette = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.2,
+      w / 2, h / 2, Math.max(w, h) * 0.65
+    )
+    vignette.addColorStop(0, 'rgba(0,0,0,0)')
+    vignette.addColorStop(0.6, rgba(COLORS.BG_DARK, 0.25))
+    vignette.addColorStop(1, rgba(COLORS.BG_DARK, 0.6))
+    ctx.fillStyle = vignette
+    ctx.fillRect(0, 0, w, h)
+
+    // Film grain
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const data = imageData.data
+    const grainIntensity = 0.03
+    
+    for (let i = 0; i < data.length; i += 16) {
+      const noise = (Math.random() - 0.5) * 255 * grainIntensity
+      data[i] += noise
+      data[i + 1] += noise
+      data[i + 2] += noise
+    }
+    
+    ctx.putImageData(imageData, 0, 0)
   }
 }

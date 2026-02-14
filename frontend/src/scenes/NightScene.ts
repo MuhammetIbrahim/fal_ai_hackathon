@@ -270,6 +270,9 @@ export class NightScene implements Scene {
     ctx.fillStyle = punch
     ctx.fillRect(0, 0, w, h)
 
+    // ── Vignette and grain ──
+    this.drawPostEffects(ctx, w, h)
+
     // ── "GECE" title (subtle) ──
     ctx.save()
     ctx.fillStyle = rgba(COLORS.TEXT_LIGHT, 0.3)
@@ -416,5 +419,33 @@ export class NightScene implements Scene {
       this.backgroundLoading = false
     }
     img.src = url
+  }
+
+  /** Post-processing: vignette and film grain for night atmosphere */
+  private drawPostEffects(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    // Strong vignette for night mystery
+    const vignette = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.15,
+      w / 2, h / 2, Math.max(w, h) * 0.6
+    )
+    vignette.addColorStop(0, 'rgba(0,0,0,0)')
+    vignette.addColorStop(0.6, rgba(COLORS.NIGHT_BLUE, 0.3))
+    vignette.addColorStop(1, rgba(COLORS.NIGHT_BLUE, 0.7))
+    ctx.fillStyle = vignette
+    ctx.fillRect(0, 0, w, h)
+
+    // Film grain
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const data = imageData.data
+    const grainIntensity = 0.035
+    
+    for (let i = 0; i < data.length; i += 16) {
+      const noise = (Math.random() - 0.5) * 255 * grainIntensity
+      data[i] += noise
+      data[i + 1] += noise
+      data[i + 2] += noise
+    }
+    
+    ctx.putImageData(imageData, 0, 0)
   }
 }

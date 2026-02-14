@@ -215,6 +215,9 @@ export class MorningScene implements Scene {
 
     ctx.restore()
 
+    // ── Vignette and grain ──
+    this.drawPostEffects(ctx, w, h)
+
     // ── Golden morning light overlay (full-screen, warm yellow) ──
     ctx.save()
     ctx.fillStyle = rgba('#FFD700', 0.06 + Math.sin(this.time * 0.8) * 0.02)
@@ -337,5 +340,33 @@ export class MorningScene implements Scene {
       this.backgroundLoading = false
     }
     img.src = url
+  }
+
+  /** Post-processing: vignette and film grain */
+  private drawPostEffects(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    // Light vignette for morning warmth
+    const vignette = ctx.createRadialGradient(
+      w / 2, h / 2, Math.min(w, h) * 0.3,
+      w / 2, h / 2, Math.max(w, h) * 0.7
+    )
+    vignette.addColorStop(0, 'rgba(0,0,0,0)')
+    vignette.addColorStop(0.8, rgba(COLORS.BG_DARK, 0.15))
+    vignette.addColorStop(1, rgba(COLORS.BG_DARK, 0.35))
+    ctx.fillStyle = vignette
+    ctx.fillRect(0, 0, w, h)
+
+    // Subtle film grain
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const data = imageData.data
+    const grainIntensity = 0.02
+    
+    for (let i = 0; i < data.length; i += 16) {
+      const noise = (Math.random() - 0.5) * 255 * grainIntensity
+      data[i] += noise
+      data[i + 1] += noise
+      data[i + 2] += noise
+    }
+    
+    ctx.putImageData(imageData, 0, 0)
   }
 }
