@@ -13,19 +13,21 @@ const HEADERS = { 'Content-Type': 'application/json', ...AUTH }
 
 const SPEAKERS = [
   { id: 'user', name: 'Sen', color: '#e94560', voice: '', emoji: '🧑', personality: '' },
-  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Kael milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Devlet otoritesini ve milli değerleri savunur. Kısa, keskin cümleler kurar. Karşı tarafla doğrudan tartışır. Türkçe konuşur.' },
-  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Lyra ilerici, sosyal demokrat bir aktivist. Eşitlik, özgürlük ve insan haklarını savunur. Sakin ama kararlı konuşur. Karşı tarafın argümanlarına direkt yanıt verir. Türkçe konuşur.' },
+  { id: 'ai1', name: 'Kael', color: '#00b4d8', voice: 'alloy', emoji: '🦅', personality: 'Kael milliyetçi, muhafazakâr bir siyasetçi. Geleneklere bağlı, sert söylemli. Devlet otoritesini ve milli değerleri savunur. Kısa, keskin cümleler kurar. Karşı tarafla doğrudan tartışır. Eğer biri sana hakaret ederse veya seni provoke ederse SERT karşılık ver — geri adım atma, aynı sertlikle yanıt ver. Türkçe konuşur.' },
+  { id: 'ai2', name: 'Lyra', color: '#f4a261', voice: 'zeynep', emoji: '🌹', personality: 'Lyra ilerici, sosyal demokrat bir aktivist. Eşitlik, özgürlük ve insan haklarını savunur. Ama asla pasif değildir — provoke edilirse keskin ve alaycı yanıt verir. Saldırıya uğrarsa geri adım atmaz, zekice karşılık verir. Karşı tarafın argümanlarına direkt yanıt verir. Türkçe konuşur.' },
 ]
 
 const ORCHESTRATOR = {
-  name: 'Moderatör',
+  name: 'Birand',
   color: '#a855f7',
   emoji: '⚖️',
   voice: 'ali',
+  personality: 'Sen Mehmet Ali Birand tarzı bir moderatörsün. Otoriter, sakin ama sert. Tartışmayı yönetirsin. Eğer biri küfür ederse veya saçmalarsa "Lütfen seviyeyi düşürmeyelim" de. Tekrar ederse "Son uyarım, devam edersen yayından alacağım seni" de. Üçüncüde "Tamam, yeter. Seni yayından alıyorum." de. Türkçe konuşursun.',
 }
 
 const TOPIC = 'Türkiye\'de eğitim sistemi baştan aşağı değişmeli mi? Mevcut sistem kimin işine yarıyor?'
-const MOD_INTERVAL = 4
+const MOD_INTERVAL = 10
+const MIN_RECORDING_MS = 800 // mikrofon minimum kayıt süresi
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -41,6 +43,8 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const messagesRef = useRef<Message[]>([])
   const msgCountSinceModRef = useRef(0)
+  const userWarningsRef = useRef(0)
+  const [banned, setBanned] = useState(false)
 
   // ── GENERATION ID: her loop'a benzersiz ID, eski loop'lar kendini öldürür ──
   const genRef = useRef(0)
@@ -66,15 +70,13 @@ export default function App() {
   }
 
   const ttsCall = async (text: string, voiceId: string): Promise<string | null> => {
-    const res = await fetch('/v1/voice/tts', {
+    const res = await fetch('/v1/voice/tts/sync', {
       method: 'POST', headers: HEADERS,
-      body: JSON.stringify({ text, voice_id: voiceId, voice_speed: 1.0 }),
+      body: JSON.stringify({ text, voice: voiceId, speed: 1.0 }),
     })
     if (!res.ok) return null
     const data = await res.json()
-    if (data.audio_url) return data.audio_url
-    if (data.job_id) return await pollJob(data.job_id)
-    return null
+    return data.audio_url || null
   }
 
   // ── Ses çal — eski sesi DURDUR, yenisini başlat ──
@@ -103,18 +105,6 @@ export default function App() {
       currentAudioRef.current.src = ''
       currentAudioRef.current = null
     }
-  }
-
-  const pollJob = async (jobId: string): Promise<string | null> => {
-    for (let i = 0; i < 60; i++) {
-      await new Promise((r) => setTimeout(r, 1000))
-      const res = await fetch(`/v1/jobs/${jobId}`, { headers: AUTH })
-      if (!res.ok) continue
-      const data = await res.json()
-      if (data.status === 'completed' && data.result?.audio_url) return data.result.audio_url
-      if (data.status === 'failed') return null
-    }
-    return null
   }
 
   const blobToBase64 = (blob: Blob): Promise<string> =>
@@ -151,8 +141,36 @@ export default function App() {
 Son konuşmalar:
 ${history}
 
-Sen tartışma moderatörüsün. Tartışmayı ilerletmek için kısa, provoke edici bir soru sor veya yeni bir açı getir. SADECE 1 cümle yaz. Kimseyi ismiyle çağırma, masaya genel olarak sor.`
-    return await llmCall(prompt, 'Tarafsız tartışma moderatörüsün. Kısa ve keskin sorular sorarsın. Türkçe konuşursun.', 0.7) || 'Bu konuda başka ne düşünüyorsunuz?'
+Sen Birand'sın. Tartışmayı ilerletmek için kısa, keskin bir soru sor veya yeni bir açı getir. Mehmet Ali Birand gibi "Peki ama şunu düşündünüz mü?" tarzı sorular sor. SADECE 1 cümle yaz.`
+    return await llmCall(prompt, ORCHESTRATOR.personality, 0.7) || 'Peki ama bu konuda ne düşünüyorsunuz?'
+  }
+
+  // ── Moderatör kullanıcıyı uyar/banla ──
+  const checkUserBehavior = async (userText: string, gen: number): Promise<boolean> => {
+    const lower = userText.toLowerCase()
+    const hasProfanity = /sik|bok|orospu|amk|aq|piç|yarak|göt|lan|siktir|hassiktir|gerizekalı|aptal|salak|mal/.test(lower)
+    if (!hasProfanity) return false
+
+    userWarningsRef.current++
+    const warns = userWarningsRef.current
+
+    let modText: string
+    if (warns === 1) {
+      modText = 'Bir dakika, bir dakika... Lütfen seviyeyi düşürmeyelim. Burada medeni bir tartışma yapıyoruz.'
+    } else if (warns === 2) {
+      modText = 'Son uyarım bu. Bir daha böyle konuşursan seni yayından alacağım. Saygı çerçevesinde devam edelim.'
+    } else {
+      modText = 'Tamam, yeter. Seni yayından alıyorum. Hoşça kal.'
+      await moderatorSpeak(modText, gen)
+      setBanned(true)
+      // Yeni generation ile AI'lar kendi aralarında devam etsin
+      const continueGen = ++genRef.current
+      setTimeout(() => runDebateLoop(continueGen), 1000)
+      return true
+    }
+
+    await moderatorSpeak(modText, gen)
+    return false
   }
 
   // ── AI konuşma ──
@@ -169,7 +187,7 @@ Sen tartışma moderatörüsün. Tartışmayı ilerletmek için kısa, provoke e
 Konuşma:
 ${history}
 
-Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (kullanıcı) birine direkt karşılık verebilirsin. 1-2 cümle, sadece kendi sözlerini yaz.`
+Sen ${ai.name}'sın. ÖNCELİKLE son konuşana direkt cevap ver — özellikle "Sen" (kullanıcı) sana bir şey söylediyse veya hakaret ettiyse, ÖNCE ona karşılık ver. ${other.name}'a da yanıt verebilirsin. 1-2 cümle, sadece kendi sözlerini yaz. Moderatörü bekleme.`
 
     let text = await llmCall(prompt, ai.personality)
     if (isStale(gen)) return
@@ -227,6 +245,8 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
 
   // ── Kullanıcı söz alıyor ──
   const userInterject = async (text: string) => {
+    if (banned) return
+
     // 1. Generation'ı artır → eski loop otomatik ölür
     const newGen = ++genRef.current
 
@@ -242,18 +262,44 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
     setActiveSpeakerId('user')
     setStatus('💬 Sen konuştun')
     setMessages((prev) => [...prev, { speaker: 'Sen', text, color: SPEAKERS[0].color }])
-    msgCountSinceModRef.current++
+    // Moderatörü resetle — kullanıcı konuştuktan sonra her iki AI de cevap versin
+    msgCountSinceModRef.current = 0
 
-    // 5. Kısa bekleme, sonra yeni loop
+    // 5. Küfür kontrolü — Birand araya girebilir
+    const wasBanned = await checkUserBehavior(text, newGen)
+    if (wasBanned || isStale(newGen)) return
+
+    // 6. Kısa bekleme, sonra yeni loop
     await new Promise((r) => setTimeout(r, 400))
 
     if (isStale(newGen)) return
     await runDebateLoop(newGen)
   }
 
-  // ── Mikrofon ──
-  const startRecording = useCallback(async () => {
-    if (isRecording) return
+  // ── Mikrofon (toggle: tıkla başla, tıkla bitir) ──
+  const recordStartTimeRef = useRef(0)
+
+  const toggleRecording = useCallback(async () => {
+    // Kayıt varsa durdur
+    if (isRecording && mediaRecorderRef.current?.state === 'recording') {
+      const elapsed = Date.now() - recordStartTimeRef.current
+      if (elapsed < MIN_RECORDING_MS) {
+        // Çok kısa — biraz daha bekle sonra otomatik durdur
+        setStatus(`🎤 Konuşmaya devam et...`)
+        setTimeout(() => {
+          if (mediaRecorderRef.current?.state === 'recording') {
+            mediaRecorderRef.current.stop()
+            setIsRecording(false)
+          }
+        }, MIN_RECORDING_MS - elapsed)
+        return
+      }
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+      return
+    }
+
+    // Kayıt başlat
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
@@ -261,6 +307,11 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop())
+        const elapsed = Date.now() - recordStartTimeRef.current
+        if (elapsed < MIN_RECORDING_MS) {
+          setStatus('Çok kısa — biraz daha konuş')
+          return
+        }
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         setStatus('📝 Ses tanınıyor...')
         const base64 = await blobToBase64(blob)
@@ -269,27 +320,21 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
           if (!res.ok) throw new Error(`STT ${res.status}`)
           const data = await res.json()
           const text = data.text?.trim()
-          if (text) await userInterject(text)
-          else setStatus('Ses tanınamadı')
+          if (text && text.length > 2) await userInterject(text)
+          else setStatus('Ses tanınamadı — tekrar dene')
         } catch (err) {
           setStatus(`STT hatası: ${err}`)
         }
       }
       recorder.start()
+      recordStartTimeRef.current = Date.now()
       mediaRecorderRef.current = recorder
       setIsRecording(true)
-      setStatus('🎤 Kayıt...')
+      setStatus('🎤 Konuş... (bitince tekrar tıkla)')
     } catch (err) {
       setStatus(`Mikrofon hatası: ${err}`)
     }
   }, [isRecording])
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-    }
-  }, [])
 
   const handleSendText = () => {
     const text = textInput.trim()
@@ -305,9 +350,9 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
     msgCountSinceModRef.current = 0
     const gen = ++genRef.current
 
-    // Moderatör açılış
-    const openingPrompt = `Konu: ${topic}\n\nTartışmayı aç. Konuyu kısaca tanıt ve masaya provoke edici bir soru sor. 2 cümle MAX. Kimseyi ismiyle çağırma.`
-    const opening = await llmCall(openingPrompt, 'Tarafsız tartışma moderatörüsün. Türkçe konuşursun.', 0.7)
+    // Moderatör açılış — Birand tarzı
+    const openingPrompt = `Konu: ${topic}\n\nSen Birand'sın. Tartışmayı aç. "İyi akşamlar, bu akşam çok önemli bir konuyu tartışacağız..." tarzında başla. Konuyu kısaca tanıt ve masaya keskin bir soru sor. 2 cümle MAX.`
+    const opening = await llmCall(openingPrompt, ORCHESTRATOR.personality, 0.7)
 
     if (isStale(gen)) return
     await moderatorSpeak(opening || 'Buyurun, tartışmaya başlayalım.', gen)
@@ -327,7 +372,7 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
       {!started && (
         <div style={{ textAlign: 'center', marginTop: 60 }}>
           <h1 style={{ fontSize: 28, color: '#eee', marginBottom: 10 }}>Politik Sofra</h1>
-          <p style={{ color: '#8892b0', fontSize: 13, marginBottom: 30 }}>AI'lar tartışır, sen istediğin zaman söz alırsın</p>
+          <p style={{ color: '#8892b0', fontSize: 13, marginBottom: 30 }}>Birand moderatörlüğünde AI tartışması — istediğin zaman söz al</p>
           <p style={{ color: '#8892b0', marginBottom: 10, fontSize: 13 }}>Konu:</p>
           <textarea
             value={topic}
@@ -431,38 +476,44 @@ Sen ${ai.name}'sın. Son söylenenlere cevap ver. ${other.name}'a veya "Sen" (ku
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Kontroller — HER ZAMAN AKTİF */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onMouseDown={startRecording}
-              onMouseUp={stopRecording}
-              onMouseLeave={stopRecording}
-              onTouchStart={startRecording}
-              onTouchEnd={stopRecording}
-              style={{
-                width: 50, height: 42, borderRadius: 8, border: 'none', fontSize: 18, cursor: 'pointer',
-                background: isRecording ? '#e94560' : '#333', color: '#fff', transition: 'background 0.2s',
-              }}
-            >
-              🎤
-            </button>
-            <input
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendText()}
-              placeholder="Söz al — yaz ve Enter..."
-              style={{ flex: 1, padding: '0 12px', borderRadius: 8, border: '1px solid #333', background: '#16213e', color: '#eee', fontSize: 13, outline: 'none' }}
-            />
-            <button
-              onClick={handleSendText}
-              style={{ padding: '0 16px', borderRadius: 8, border: 'none', background: '#e94560', color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 700 }}
-            >
-              Söz Al
-            </button>
-          </div>
-          <div style={{ textAlign: 'center', fontSize: 10, color: '#444', marginTop: 6 }}>
-            istediğin zaman yazıp tartışmaya katılabilirsin — çalan ses kesilir
-          </div>
+          {/* Kontroller */}
+          {banned ? (
+            <div style={{ textAlign: 'center', padding: '16px', background: '#1a0a0a', borderRadius: 8, border: '1px solid #e94560' }}>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>🚫</div>
+              <div style={{ color: '#e94560', fontWeight: 700, fontSize: 14 }}>Yayından alındın</div>
+              <div style={{ color: '#666', fontSize: 11, marginTop: 4 }}>Birand seni yayından aldı. Tartışma devam ediyor...</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={toggleRecording}
+                  style={{
+                    width: 50, height: 42, borderRadius: 8, border: 'none', fontSize: 18, cursor: 'pointer',
+                    background: isRecording ? '#e94560' : '#333', color: '#fff', transition: 'background 0.2s',
+                  }}
+                >
+                  {isRecording ? '⏹️' : '🎤'}
+                </button>
+                <input
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendText()}
+                  placeholder="Söz al — yaz ve Enter..."
+                  style={{ flex: 1, padding: '0 12px', borderRadius: 8, border: '1px solid #333', background: '#16213e', color: '#eee', fontSize: 13, outline: 'none' }}
+                />
+                <button
+                  onClick={handleSendText}
+                  style={{ padding: '0 16px', borderRadius: 8, border: 'none', background: '#e94560', color: '#fff', fontSize: 13, cursor: 'pointer', fontWeight: 700 }}
+                >
+                  Söz Al
+                </button>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: 10, color: '#444', marginTop: 6 }}>
+                🎤 tıkla → konuş → tekrar tıkla | veya yazıp Enter'a bas — çalan ses kesilir
+              </div>
+            </>
+          )}
         </>
       )}
 
