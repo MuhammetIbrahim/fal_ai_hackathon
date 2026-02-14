@@ -419,7 +419,7 @@ async def _process_human_interjection(
     })
 
     # Wait for audio (interruptible)
-    wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+    wait_time = max(audio_duration + 1.0, 3.0) if audio_duration > 0 else 3.0
     interrupted = await _interruptible_sleep(game_id, wait_time)
     if interrupted:
         logger.warning(f"[INTERRUPT] Human interjection audio wait interrupted")
@@ -1537,7 +1537,7 @@ async def _run_campfire_segment_ws(
             })
 
             # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
-            wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+            wait_time = max(audio_duration + 1.0, 3.0) if audio_duration > 0 else 3.0
             interrupted = await _interruptible_sleep(game_id, wait_time)
             if interrupted:
                 logger.warning(f"[INTERRUPT] Sleep interrupted by human input (first speaker)")
@@ -1722,7 +1722,7 @@ async def _run_campfire_segment_ws(
         })
 
         # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
-        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        wait_time = max(audio_duration + 1.0, 3.0) if audio_duration > 0 else 3.0
         interrupted = await _interruptible_sleep(game_id, wait_time)
         if interrupted:
             logger.warning(f"[INTERRUPT] Sleep interrupted by human input (campfire loop)")
@@ -1921,7 +1921,7 @@ async def _run_room_conversation_ws(
         })
 
         # Audio suresi kadar bekle — interruptible (human aninda soz alabilsin)
-        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        wait_time = max(audio_duration + 1.0, 3.0) if audio_duration > 0 else 3.0
         interrupted = await _interruptible_sleep(game_id, wait_time)
         if interrupted:
             logger.warning(f"[INTERRUPT] Sleep interrupted by human input (room visit)")
@@ -2357,7 +2357,7 @@ async def _run_persistent_campfire_ws(
             },
         })
 
-        wait_time = min(max(audio_duration * 0.95, 2.0), 10.0) if audio_duration > 0 else 2.0
+        wait_time = max(audio_duration + 1.0, 3.0) if audio_duration > 0 else 3.0
         interrupted = await _interruptible_sleep(game_id, wait_time)
         if interrupted:
             logger.warning(f"[INTERRUPT] Sleep interrupted by human input (persistent campfire)")
