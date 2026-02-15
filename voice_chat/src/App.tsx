@@ -308,13 +308,27 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve ${userName
           noiseSuppression: true,
           echoCancellation: true,
           autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1,
         },
       })
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+
+      // Web Audio API: high-pass filter ile düşük frekanslı gürültüyü kes
+      const audioCtx = new AudioContext({ sampleRate: 16000 })
+      const source = audioCtx.createMediaStreamSource(stream)
+      const highpass = audioCtx.createBiquadFilter()
+      highpass.type = 'highpass'
+      highpass.frequency.value = 100 // 100Hz altını kes (fan, klima, uğultu)
+      const dest = audioCtx.createMediaStreamDestination()
+      source.connect(highpass)
+      highpass.connect(dest)
+
+      const recorder = new MediaRecorder(dest.stream, { mimeType: 'audio/webm' })
       chunksRef.current = []
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop())
+        audioCtx.close()
         const elapsed = Date.now() - recordStartTimeRef.current
         if (elapsed < MIN_RECORDING_MS) {
           setStatus('Çok kısa — biraz daha konuş')

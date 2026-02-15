@@ -76,9 +76,22 @@ export const ActionBar: React.FC = () => {
           noiseSuppression: true,
           echoCancellation: true,
           autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1,
         },
       })
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+
+      // Web Audio API: high-pass filter ile düşük frekanslı gürültüyü kes
+      const audioCtx = new AudioContext({ sampleRate: 16000 })
+      const source = audioCtx.createMediaStreamSource(stream)
+      const highpass = audioCtx.createBiquadFilter()
+      highpass.type = 'highpass'
+      highpass.frequency.value = 100 // 100Hz altını kes (fan, klima, uğultu)
+      const dest = audioCtx.createMediaStreamDestination()
+      source.connect(highpass)
+      highpass.connect(dest)
+
+      const mediaRecorder = new MediaRecorder(dest.stream, { mimeType: 'audio/webm' })
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
@@ -89,6 +102,7 @@ export const ActionBar: React.FC = () => {
       mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         stream.getTracks().forEach((t) => t.stop())
+        audioCtx.close()
 
         const reader = new FileReader()
         reader.onloadend = () => {
