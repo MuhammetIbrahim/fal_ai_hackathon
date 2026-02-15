@@ -189,7 +189,7 @@ Sen Birand'sın. Tartışmayı ilerletmek için kısa, keskin bir soru sor veya 
 Konuşma:
 ${history}
 
-Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve ${userName} (stüdyodaki vatandaş). Son konuşmaya BAK — kim sana bir şey söylediyse SADECE ona yanıt ver. ${userName} sana hakaret ettiyse ona sert ol ama ${other.name}'a boşuna saldırma. ${other.name} sana laf attıysa ona yanıt ver ama ${userName}'a bulaşma. HEDEFİNİ BİL. 1-2 cümle, sadece kendi sözlerini yaz.`
+Tartışmada 3 kişi var: sen (${ai.name}), ${other.name}, ve ${userName} (stüdyodaki vatandaş). Son konuşmaya BAK — kim sana bir şey söylediyse SADECE ona yanıt ver. ${userName} sana hakaret ettiyse ona sert ol ama ${other.name}'a boşuna saldırma. ${other.name} sana laf attıysa ona yanıt ver ama ${userName}'a bulaşma. HEDEFİNİ BİL. 1-2 cümle, sadece kendi sözlerini yaz. KENDİNİ TANITMA — "Ben Kael'im" gibi şeyler YAZMA, direkt konuya gir.`
 
     let text = await llmCall(prompt, ai.personality)
     if (isStale(gen)) return
