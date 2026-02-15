@@ -303,7 +303,13 @@ Sen ${ai.name}'sın. Tartışmada 3 kişi var: sen, ${other.name}, ve ${userName
 
     // Kayıt başlat
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          noiseSuppression: true,
+          echoCancellation: true,
+          autoGainControl: true,
+        },
+      })
       const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
       chunksRef.current = []
       recorder.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data) }
